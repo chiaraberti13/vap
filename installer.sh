@@ -21,6 +21,9 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+# Selected Python binary for the installer.
+PYTHON_BIN=""
+
 # ASCII logo for the installer UI.
 print_logo() {
     echo -e "${BLUE}"
@@ -116,13 +119,16 @@ detect_platform() {
 check_python_version() {
     log_info "Checking Python version..."
 
-    if ! command -v python3 &> /dev/null; then
-        log_error "python3 not found. Install Python 3.10-3.12 and re-run the installer."
-        exit 1
-    fi
+    local candidates=("python3.12" "python3.11" "python3.10" "python3")
+    local version_output=""
+    local last_error=""
 
-    local version_output
-    if ! version_output=$(python3 << 'PY'
+    for candidate in "${candidates[@]}"; do
+        if ! command -v "$candidate" &> /dev/null; then
+            continue
+        fi
+
+        if version_output=$("$candidate" << 'PY'
 import sys
 min_v = (3, 10)
 max_v = (3, 12)
@@ -136,12 +142,22 @@ if current < min_v or current > max_v:
 print(f"Python {current[0]}.{current[1]}.{current[2]} detected (OK).")
 PY
 ); then
-        log_error "$version_output"
-        log_error "Install Python 3.10-3.12 and re-run the installer."
+            PYTHON_BIN="$candidate"
+            log_success "${version_output} (using ${PYTHON_BIN})"
+            return 0
+        else
+            last_error="$version_output"
+        fi
+    done
+
+    if [ -z "$last_error" ]; then
+        log_error "python3 not found. Install Python 3.10-3.12 and re-run the installer."
         exit 1
     fi
 
-    log_success "$version_output"
+    log_error "$last_error"
+    log_error "Install Python 3.10-3.12 or ensure python3.12/3.11/3.10 is on your PATH."
+    exit 1
 }
 
 # Validate required project files and detect incomplete/empty files early.
@@ -399,8 +415,8 @@ create_python_venv() {
         rm -rf venv
     fi
 
-    # Create venv using python3.
-    python3 -m venv venv
+    # Create venv using the selected Python binary.
+    "$PYTHON_BIN" -m venv venv
     log_success "Virtual environment created"
 
     # Activate venv for dependency installation.
@@ -452,7 +468,7 @@ initialize_database() {
     log_info "Initializing database..."
 
     source venv/bin/activate
-    python3 -c "from database import init_db; init_db()"
+    "$PYTHON_BIN" -c "from database import init_db; init_db()"
 
     log_success "Database initialized"
 }
@@ -486,7 +502,7 @@ verify_installation() {
 
     # Validate core Python packages.
     source venv/bin/activate
-    python3 << EOF
+    "$PYTHON_BIN" << EOF
 import sys
 packages = ['fastapi', 'uvicorn', 'reportlab', 'sqlalchemy', 'aiohttp']
 errors = 0
@@ -526,14 +542,14 @@ print_final_instructions() {
     echo -e "   ${YELLOW}source venv/bin/activate${NC}"
     echo ""
     echo -e "2️⃣  Start the server:"
-    echo -e "   ${YELLOW}python3 app.py${NC}"
+    echo -e "   ${YELLOW}${PYTHON_BIN} app.py${NC}"
     echo ""
     echo -e "3️⃣  Open your browser at:"
     echo -e "   ${YELLOW}http://localhost:8000${NC}"
     echo ""
     echo -e "${BLUE}📚 USEFUL COMMANDS:${NC}"
-    echo -e "   • Start with verbose logs: ${YELLOW}python3 app.py --debug${NC}"
-    echo -e "   • Run a CLI scan: ${YELLOW}python3 scanner_engine.py --target <URL>${NC}"
+    echo -e "   • Start with verbose logs: ${YELLOW}${PYTHON_BIN} app.py --debug${NC}"
+    echo -e "   • Run a CLI scan: ${YELLOW}${PYTHON_BIN} scanner_engine.py --target <URL>${NC}"
     echo ""
     echo -e "${RED}⚠️  DISCLAIMER:${NC}"
     echo -e "   This tool is intended ONLY for authorized testing."
