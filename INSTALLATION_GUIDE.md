@@ -1,172 +1,113 @@
-# 🚀 Guida Completa all'Installazione
+# 🚀 Complete Installation Guide
 
-## 📦 Contenuto del Pacchetto
+## 📦 Package Contents
 
-Questo archivio contiene:
-- ✅ Struttura directory completa
-- ✅ File di configurazione (installer.sh, requirements.txt, .env.example)
-- ✅ File CSS e struttura web
-- ✅ README e documentazione
+This archive includes:
+- ✅ Complete directory structure
+- ✅ Configuration files (`installer.sh`, `requirements.txt`, `.env.example`)
+- ✅ CSS assets and web structure
+- ✅ README and documentation
 
-## ⚠️ IMPORTANTE: Completamento dei File Python
+## ⚠️ Important: Validate Required Files
 
-I file Python nella struttura sono **placeholder vuoti**. 
-Per completare l'installazione, devi copiare il codice completo 
-dalla conversazione precedente.
+Before installing, ensure all required Python and template files are present
+and non-empty. The installer now checks for missing or empty files and
+will stop with an actionable error message if the project is incomplete.
 
-### File da Completare:
+### Required Files
 
-#### 1. **config.py** (Configurazioni)
-Copia il contenuto completo fornito nella conversazione.
+#### 1. **config.py** (Configuration)
+Contains application settings and defaults.
 
 #### 2. **database.py** (Database ORM)
-Copia il contenuto completo con tutti i modelli SQLAlchemy.
+Defines SQLAlchemy models and database initialization.
 
-#### 3. **scanner_engine.py** (Motore Scansione)
-Copia il motore principale di orchestrazione.
+#### 3. **scanner_engine.py** (Scan Orchestrator)
+Main asynchronous scan orchestration engine.
 
-#### 4. **report_generator.py** (Generatore PDF)
-Copia il generatore completo di report PDF.
+#### 4. **report_generator.py** (PDF Report Generator)
+Builds PDF reports from scan results.
 
-#### 5. **app.py** (Server FastAPI)
-Copia l'applicazione FastAPI completa.
+#### 5. **app.py** (FastAPI Server)
+API and web server entry point.
 
-#### 6. Scanner Modules (scanners/)
+#### 6. Scanner Modules (`scanners/`)
 - `nuclei_scanner.py`
 - `nmap_scanner.py`
 - `whatweb_scanner.py`
 - `subfinder_scanner.py`
 - `nikto_scanner.py`
 
-#### 7. Templates HTML (templates/)
+#### 7. HTML Templates (`templates/`)
 - `index.html`
 - `scan_detail.html`
 - `scans_list.html`
 
-## 🔧 Procedura di Installazione
+## 🔧 Installation Steps (Linux/macOS)
 
-### Passo 1: Estrai l'Archivio
+### Step 1: Extract the Archive
 ```bash
 tar -xzf vulnerability-assessment-platform-COMPLETE.tar.gz
 cd vulnerability-assessment-platform
 ```
 
-### Passo 2: Completa i File Python
-Apri ciascun file .py e incolla il codice completo dalla conversazione:
-
-```bash
-# Esempio:
-nano config.py
-# Incolla il codice completo di config.py
-# Salva e chiudi
-
-# Ripeti per tutti i file Python
-```
-
-### Passo 3: Completa i Template HTML
-Stessa procedura per i file HTML in `templates/`
-
-### Passo 4: Esegui l'Installer
+### Step 2: Run the Installer
 ```bash
 chmod +x installer.sh
 ./installer.sh
 ```
 
-L'installer automaticamente:
-- Rileva la tua distribuzione Linux
-- Installa dipendenze di sistema
-- Installa tool di sicurezza (Nuclei, Subfinder, etc.)
-- Crea ambiente virtuale Python
-- Installa dipendenze Python
-- Inizializza il database
+The installer will:
+- Detect the OS platform
+- Install system dependencies (Ubuntu/Debian or macOS)
+- Install external security tools (Nuclei, Subfinder, etc.)
+- Create a Python virtual environment
+- Install Python dependencies
+- Initialize the database
 
-### Passo 5: Avvia la Piattaforma
+### Step 3: Start the Platform
 ```bash
-# Attiva ambiente virtuale
 source venv/bin/activate
-
-# Avvia il server
 python3 app.py
 ```
 
-### Passo 6: Accedi alla Dashboard
-Apri il browser su: `http://localhost:8000`
+### Step 4: Open the Dashboard
+Open your browser at: `http://localhost:8000`
 
-## 🎯 Verifica Installazione
+## 🪟 Installation Steps (Windows)
 
-Dopo l'installazione, verifica che tutto funzioni:
+Open PowerShell and run:
+```powershell
+Set-ExecutionPolicy Bypass -Scope Process -Force
+.\installer.ps1
+```
+
+Then start the server:
+```powershell
+.\venv\Scripts\Activate.ps1
+python app.py
+```
+
+## ✅ Post-Install Verification
+
+After installation, verify core functionality:
 
 ```bash
-# 1. Verifica Python imports
+# 1. Verify Python imports
 python3 -c "from scanner_engine import ScannerEngine; print('✓ OK')"
 
-# 2. Verifica database
+# 2. Verify database initialization
 python3 -c "from database import init_db; init_db(); print('✓ OK')"
 
-# 3. Verifica tool esterni
+# 3. Verify external tools
 nuclei -version
 nmap --version
 ```
 
-## 🐛 Risoluzione Problemi
+## 🐛 Troubleshooting
 
-### Errore: "Module not found"
+### Error: "Module not found"
 ```bash
-# Assicurati che venv sia attivo
 source venv/bin/activate
-
-# Reinstalla dipendenze
 pip install -r requirements.txt
 ```
-
-### Errore: "Tool not found" (nuclei, nmap, etc.)
-```bash
-# Riesegui l'installer
-./installer.sh
-```
-
-### Errore: "Permission denied"
-```bash
-# Dai permessi di esecuzione
-chmod +x installer.sh app.py
-```
-
-## 📚 Utilizzo
-
-### Via Web UI
-1. Vai su http://localhost:8000
-2. Inserisci target URL
-3. Clicca "Start Scan"
-4. Visualizza risultati
-
-### Via CLI
-```bash
-python3 scanner_engine.py --target https://example.com
-```
-
-### Via API
-```bash
-curl -X POST http://localhost:8000/api/v1/scans \
-  -H "Content-Type: application/json" \
-  -d '{"target": "https://example.com", "scan_type": "full"}'
-```
-
-## ⚠️ Disclaimer
-
-Questo tool è per **SOLO USO AUTORIZZATO**:
-- Test di penetrazione autorizzati
-- Security auditing professionale
-- Ricerca in cybersecurity
-
-L'uso non autorizzato può violare leggi locali e internazionali.
-
-## 📞 Supporto
-
-Per domande o problemi:
-1. Consulta la conversazione completa
-2. Verifica che tutti i file Python siano completi
-3. Controlla i log in `logs/vuln_scanner.log`
-
----
-
-**Buon Security Testing! 🛡️**
