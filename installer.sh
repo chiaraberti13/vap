@@ -222,7 +222,7 @@ setup_go_environment() {
     fi
 
     # Configure GOPATH if missing.
-    if [ -z "$GOPATH" ]; then
+    if [ -z "${GOPATH:-}" ]; then
         export GOPATH=$HOME/go
         export PATH=$PATH:$GOPATH/bin
 
