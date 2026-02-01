@@ -1,0 +1,29 @@
+
+ISTRUZIONI PER IL COMPLETAMENTO DELLA PIATTAFORMA
+==================================================
+
+Tutti i file necessari sono stati forniti nella conversazione precedente.
+
+Per completare l'installazione manualmente:
+
+1. Copia ciascun file Python fornito nella conversazione:
+   - config.py
+   - database.py  
+   - scanner_engine.py
+   - report_generator.py
+   - app.py
+   - scanners/nuclei_scanner.py
+   - scanners/nmap_scanner.py
+   - scanners/whatweb_scanner.py
+   - scanners/subfinder_scanner.py
+   - scanners/nikto_scanner.py
+
+2. Copia ciascun template HTML:
+   - templates/index.html
+   - templates/scan_detail.html
+   - templates/scans_list.html
+
+3. Esegui l'installer:
+   ./installer.sh
+
+OPPURE usa il pacchetto completo che sto preparando!

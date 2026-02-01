@@ -1,0 +1,60 @@
+╔══════════════════════════════════════════════════════════════╗
+║    VULNERABILITY ASSESSMENT PLATFORM - PACCHETTO COMPLETO    ║
+╚══════════════════════════════════════════════════════════════╝
+
+📦 CONTENUTO DEL PACCHETTO:
+
+✅ File di configurazione:
+   - installer.sh (auto-installer completo)
+   - requirements.txt (dipendenze Python)
+   - .env.example (configurazione)
+   - .gitignore
+   
+✅ Documentazione:
+   - README.md (guida completa)
+   
+✅ Struttura directory:
+   - scanners/ (moduli scanner)
+   - templates/ (template HTML)
+   - static/ (CSS/JS)
+   - reports/ (output PDF)
+   - logs/ (log applicazione)
+   - scans/ (dati scansioni)
+
+🔧 INSTALLAZIONE:
+
+1. Estrai l'archivio:
+   tar -xzf vulnerability-assessment-platform.tar.gz
+   cd vulnerability-assessment-platform
+
+2. Completa i file Python:
+   I file Python completi sono forniti nella conversazione precedente.
+   Copia il contenuto di ciascun file nei file corrispondenti:
+   
+   - config.py
+   - database.py
+   - scanner_engine.py
+   - report_generator.py
+   - app.py
+   - scanners/*.py (tutti i 5 scanner)
+   - templates/*.html (tutti i 3 template)
+
+3. Esegui l'installer:
+   chmod +x installer.sh
+   ./installer.sh
+
+4. Avvia la piattaforma:
+   source venv/bin/activate
+   python3 app.py
+
+🌐 ACCESSO:
+   http://localhost:8000
+
+⚠️  NOTA IMPORTANTE:
+   Questo pacchetto contiene la struttura completa e i file di 
+   configurazione. Per i file Python e HTML completi, fare riferimento
+   alla conversazione precedente dove sono stati forniti integralmente.
+
+📧 SUPPORTO:
+   Per assistenza, consultare la conversazione completa con tutti i file.
+
