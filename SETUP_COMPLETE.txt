@@ -1,60 +1,52 @@
 ╔══════════════════════════════════════════════════════════════╗
-║    VULNERABILITY ASSESSMENT PLATFORM - PACCHETTO COMPLETO    ║
+║    VULNERABILITY ASSESSMENT PLATFORM - COMPLETE PACKAGE     ║
 ╚══════════════════════════════════════════════════════════════╝
 
-📦 CONTENUTO DEL PACCHETTO:
+📦 PACKAGE CONTENTS:
 
-✅ File di configurazione:
-   - installer.sh (auto-installer completo)
-   - requirements.txt (dipendenze Python)
-   - .env.example (configurazione)
+✅ Configuration files:
+   - installer.sh (Linux/macOS installer)
+   - installer.ps1 (Windows installer)
+   - requirements.txt (Python dependencies)
+   - .env.example (configuration)
    - .gitignore
-   
-✅ Documentazione:
-   - README.md (guida completa)
-   
-✅ Struttura directory:
-   - scanners/ (moduli scanner)
-   - templates/ (template HTML)
+
+✅ Documentation:
+   - README.md (full guide)
+   - INSTALLATION_GUIDE.md (step-by-step installation)
+
+✅ Directory structure:
+   - scanners/ (scanner modules)
+   - templates/ (HTML templates)
    - static/ (CSS/JS)
-   - reports/ (output PDF)
-   - logs/ (log applicazione)
-   - scans/ (dati scansioni)
+   - reports/ (PDF output)
+   - logs/ (application logs)
+   - scans/ (scan data)
 
-🔧 INSTALLAZIONE:
+🔧 INSTALLATION:
 
-1. Estrai l'archivio:
+1. Extract the archive:
    tar -xzf vulnerability-assessment-platform.tar.gz
    cd vulnerability-assessment-platform
 
-2. Completa i file Python:
-   I file Python completi sono forniti nella conversazione precedente.
-   Copia il contenuto di ciascun file nei file corrispondenti:
-   
-   - config.py
-   - database.py
-   - scanner_engine.py
-   - report_generator.py
-   - app.py
-   - scanners/*.py (tutti i 5 scanner)
-   - templates/*.html (tutti i 3 template)
+2. Ensure all required files are present:
+   The installer will validate required files and stop if anything is missing.
 
-3. Esegui l'installer:
+3. Run the installer:
    chmod +x installer.sh
    ./installer.sh
 
-4. Avvia la piattaforma:
+4. Start the platform:
    source venv/bin/activate
    python3 app.py
 
-🌐 ACCESSO:
+🌐 ACCESS:
    http://localhost:8000
 
-⚠️  NOTA IMPORTANTE:
-   Questo pacchetto contiene la struttura completa e i file di 
-   configurazione. Per i file Python e HTML completi, fare riferimento
-   alla conversazione precedente dove sono stati forniti integralmente.
+⚠️  IMPORTANT NOTE:
+   This package includes the full structure and configuration files.
+   If any Python or HTML files are missing or empty, restore them from
+   your source archive before running the installer.
 
-📧 SUPPORTO:
-   Per assistenza, consultare la conversazione completa con tutti i file.
-
+📧 SUPPORT:
+   For support, consult your project documentation or internal team channels.

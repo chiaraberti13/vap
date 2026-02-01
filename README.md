@@ -1,130 +1,160 @@
 # 🛡️ Vulnerability Assessment Platform
 
-Piattaforma professionale di **Vulnerability Assessment** modulare con capacità di scansione avanzate e reportistica PDF completa.
+Professional, modular **Vulnerability Assessment** platform with advanced scanning capabilities and full PDF reporting.
 
-## ✨ Caratteristiche
+## ✨ Features
 
 - **Multi-Scanner Integration**: Nuclei, Nmap, WhatWeb, Subfinder, Nikto
-- **Scansione Asincrona**: Esecuzione parallela per performance ottimali
-- **Report PDF Professionali**: Executive summary, grafici, mappatura OWASP Top 10
-- **Web Dashboard**: Interfaccia moderna con Tailwind CSS
-- **REST API**: API completa per integrazione
-- **Database SQLite**: Storage persistente di scansioni e vulnerabilità
+- **Asynchronous Scans**: Parallel execution for optimal performance
+- **Professional PDF Reports**: Executive summary, charts, OWASP Top 10 mapping
+- **Web Dashboard**: Modern UI with Tailwind CSS
+- **REST API**: Full API for automation and integrations
+- **SQLite Database**: Persistent storage for scans and findings
 
-## 🚀 Installazione Rapida
+## ✅ Supported Platforms
+
+- **Linux**: Ubuntu/Debian (fully supported by `installer.sh`)
+- **macOS**: Supported via Homebrew (`installer.sh`)
+- **Windows**: Supported via PowerShell (`installer.ps1`)
+
+## 🚀 Quick Start (Linux/macOS)
 
 ```bash
-# 1. Estrai l'archivio
+# 1. Extract the archive
 tar -xzf vulnerability-assessment-platform.tar.gz
 cd vulnerability-assessment-platform
 
-# 2. Esegui l'installer automatico
+# 2. Run the installer
 chmod +x installer.sh
 ./installer.sh
 
-# 3. Attiva l'ambiente virtuale
+# 3. Activate the virtual environment
 source venv/bin/activate
 
-# 4. Avvia il server
+# 4. Start the server
 python3 app.py
 ```
 
-Il server sarà disponibile su `http://localhost:8000`
+The server will be available at `http://localhost:8000`.
 
-## 📋 Requisiti
+## 🚀 Quick Start (Windows)
 
-- **Sistema Operativo**: Linux (Debian, Ubuntu, Kali, Arch)
+Open PowerShell and run:
+
+```powershell
+Set-ExecutionPolicy Bypass -Scope Process -Force
+.\installer.ps1
+```
+
+Then start the server:
+
+```powershell
+.\venv\Scripts\Activate.ps1
+python app.py
+```
+
+## 📋 Requirements
+
 - **Python**: 3.9+
-- **Go**: 1.19+ (per tool esterni)
-- **Tool Esterni**: Nmap, Nikto (installati automaticamente)
+- **Go**: 1.19+ (for external tools)
+- **External Tools**: Nmap, Nikto (installed by the installer when possible)
 
-## 🎯 Utilizzo
+## 🎯 Usage
 
-### Via Web UI
+### Web UI
 
-1. Apri `http://localhost:8000` nel browser
-2. Inserisci il target (URL o IP)
-3. Seleziona il tipo di scansione
-4. Avvia la scansione
-5. Visualizza i risultati e genera il report PDF
+1. Open `http://localhost:8000` in your browser
+2. Enter a target (URL or IP)
+3. Select a scan type
+4. Start the scan
+5. Review findings and generate the PDF report
 
-### Via API
+### API
 
 ```bash
-# Crea una nuova scansione
+# Create a new scan
 curl -X POST http://localhost:8000/api/v1/scans \
   -H "Content-Type: application/json" \
   -d '{"target": "https://example.com", "scan_type": "full"}'
 
-# Controlla lo status
+# Check status
 curl http://localhost:8000/api/v1/scans/{scan_id}/status
 
-# Scarica il report
+# Download report
 curl -O http://localhost:8000/api/v1/scans/{scan_id}/report/download
 ```
 
-### Via CLI
+### CLI
 
 ```bash
 python3 scanner_engine.py --target https://example.com --output results.json
 ```
 
-## 🏗️ Architettura
+## 🏗️ Architecture
 
 ```
 vulnerability-assessment-platform/
 ├── app.py                      # FastAPI server
-├── scanner_engine.py           # Motore orchestrazione
-├── report_generator.py         # Generatore PDF
-├── database.py                 # Modelli ORM
-├── config.py                   # Configurazioni
-├── installer.sh                # Auto-installer
-├── requirements.txt            # Dipendenze Python
-├── scanners/                   # Moduli scanner
+├── scanner_engine.py           # Scan orchestration engine
+├── report_generator.py         # PDF report generator
+├── database.py                 # ORM models
+├── config.py                   # Configuration
+├── installer.sh                # Linux/macOS installer
+├── installer.ps1               # Windows installer
+├── requirements.txt            # Python dependencies
+├── scanners/                   # Scanner modules
 │   ├── nuclei_scanner.py
 │   ├── nmap_scanner.py
 │   ├── whatweb_scanner.py
 │   ├── subfinder_scanner.py
 │   └── nikto_scanner.py
-├── templates/                  # Template HTML
-└── reports/                    # Report PDF generati
+├── templates/                  # HTML templates
+└── reports/                    # Generated PDF reports
 ```
 
-## 🔧 Configurazione
+## 🔧 Configuration
 
-Modifica `config.py` per personalizzare:
-- Timeout scanner
-- Percorsi tool
-- Parametri report PDF
-- Configurazione database
+Edit `config.py` to customize:
+- Scanner timeouts
+- External tool paths
+- PDF report settings
+- Database configuration
 
 ## 📊 Report Features
 
-I report PDF includono:
-- **Executive Summary** con risk level
-- **Grafici** (pie chart, bar chart)
-- **Dettaglio tecnico** di ogni vulnerabilità
-- **CVE** e **CVSS score**
-- **Mappatura OWASP Top 10**
-- **Raccomandazioni** di remediation
+PDF reports include:
+- **Executive summary** with risk level
+- **Charts** (pie chart, bar chart)
+- **Technical details** for every vulnerability
+- **CVE** and **CVSS score**
+- **OWASP Top 10 mapping**
+- **Remediation recommendations**
 
-## ⚠️ Disclaimer
+## 🔒 Security Notice
 
-Questo tool è destinato **ESCLUSIVAMENTE** a:
-- Test di penetrazione autorizzati
-- Auditing di sicurezza professionale
-- Ricerca in ambito cybersecurity
+This tool is intended **ONLY** for:
+- Authorized penetration testing
+- Professional security auditing
+- Security research
 
-L'uso non autorizzato può violare leggi locali e internazionali. L'utente è responsabile dell'uso appropriato del software.
+Unauthorized use may violate local and international laws. You are responsible for appropriate usage.
 
-## 📝 Licenza
+## 📚 Official Documentation
 
-Questo progetto è fornito a scopo educativo e di ricerca.
+- **FastAPI**: https://fastapi.tiangolo.com/
+- **Uvicorn**: https://www.uvicorn.org/
+- **SQLAlchemy**: https://docs.sqlalchemy.org/
+- **ReportLab**: https://www.reportlab.com/documentation/
+- **Tailwind CSS**: https://tailwindcss.com/docs
 
-## 👨‍💻 Autore
+## 📝 License
+
+This project is provided for educational and research purposes.
+
+## 👨‍💻 Author
 
 Developed by DevSecOps Team
 
 ---
 
-**⭐ Se trovi utile questo progetto, lascia una stella!**
+**⭐ If you find this useful, please star the project!**
