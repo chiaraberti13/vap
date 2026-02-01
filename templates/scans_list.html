@@ -15,7 +15,7 @@
           <p class="text-sm uppercase tracking-[0.3em] text-slate-400">Dashboard</p>
           <h1 class="text-3xl font-semibold">Storico scansioni</h1>
         </div>
-        <a href="/" class="inline-flex items-center rounded-lg border border-slate-700 px-4 py-2 text-sm hover:border-cyan-400">Nuova scansione</a>
+        <a href="/{% if api_key %}?api_key={{ api_key }}{% endif %}" class="inline-flex items-center rounded-lg border border-slate-700 px-4 py-2 text-sm hover:border-cyan-400">Nuova scansione</a>
       </div>
 
       <div class="mt-8 overflow-x-auto border border-slate-800 rounded-2xl">
@@ -41,7 +41,7 @@
               </td>
               <td class="px-4 py-3">{{ scan.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
               <td class="px-4 py-3">
-                <a class="text-cyan-300 hover:underline" href="/scans/{{ scan.id }}">Dettagli</a>
+                <a class="text-cyan-300 hover:underline" href="/scans/{{ scan.id }}{% if api_key %}?api_key={{ api_key }}{% endif %}">Dettagli</a>
               </td>
             </tr>
             {% else %}

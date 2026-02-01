@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime, timezone
 import json
+from ipaddress import ip_address
 import re
 import sys
 from typing import Any, Dict, List
@@ -48,6 +49,12 @@ def validate_target(target: str) -> str:
     parsed = urlparse(target if target.startswith("http") else f"http://{target}")
     if not parsed.hostname:
         raise ScanValidationError("Hostname non valido.")
+    hostname = parsed.hostname
+    if re.fullmatch(r"\d+(?:\.\d+){3}", hostname):
+        try:
+            ip_address(hostname)
+        except ValueError as exc:
+            raise ScanValidationError("IP non valido.") from exc
 
     return target
 

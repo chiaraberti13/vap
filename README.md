@@ -5,7 +5,7 @@ Professional, modular **Vulnerability Assessment** platform with advanced scanni
 ## ✨ Features
 
 - **Multi-Scanner Integration**: Nuclei, Nmap, WhatWeb, Subfinder, Nikto
-- **Asynchronous Scans**: Parallel execution for optimal performance
+- **Scans Sequenziali**: Esecuzione controllata per compatibilità e stabilità dei tool
 - **Professional PDF Reports**: Executive summary, charts, OWASP Top 10 mapping
 - **Web Dashboard**: Modern UI with Tailwind CSS
 - **REST API**: Full API for automation and integrations
