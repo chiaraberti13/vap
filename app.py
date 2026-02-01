@@ -32,10 +32,22 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
 
+def _resolve_api_key(request: Request, submitted_key: Optional[str] = None) -> Optional[str]:
+    return submitted_key or request.headers.get("x-api-key") or request.query_params.get("api_key")
+
+
 def enforce_api_key(request: Request) -> None:
     if not settings.api_key:
         return
-    api_key = request.headers.get("x-api-key")
+    api_key = _resolve_api_key(request)
+    if api_key != settings.api_key:
+        raise HTTPException(status_code=401, detail="API key non valida")
+
+
+def enforce_api_key_from_form(request: Request, submitted_key: Optional[str]) -> None:
+    if not settings.api_key:
+        return
+    api_key = _resolve_api_key(request, submitted_key)
     if api_key != settings.api_key:
         raise HTTPException(status_code=401, detail="API key non valida")
 
@@ -73,6 +85,7 @@ def index(request: Request) -> HTMLResponse:
         {
             "request": request,
             "scan_types": ["full", "nuclei", "nmap", "whatweb", "subfinder", "nikto"],
+            "api_key_required": bool(settings.api_key),
         },
     )
 
@@ -82,8 +95,23 @@ def create_scan_form(
     request: Request,
     target: str = Form(...),
     scan_type: str = Form("full"),
+    api_key: Optional[str] = Form(None),
     db: Session = Depends(get_db),
 ) -> HTMLResponse:
+    try:
+        enforce_api_key_from_form(request, api_key)
+    except HTTPException:
+        return templates.TemplateResponse(
+            "index.html",
+            {
+                "request": request,
+                "scan_types": ["full", "nuclei", "nmap", "whatweb", "subfinder", "nikto"],
+                "api_key_required": bool(settings.api_key),
+                "error": "API key non valida o mancante.",
+            },
+            status_code=401,
+        )
+
     try:
         scan_result = run_scan(target=target, scan_type=scan_type)
     except ScanValidationError as exc:
@@ -92,6 +120,7 @@ def create_scan_form(
             {
                 "request": request,
                 "scan_types": ["full", "nuclei", "nmap", "whatweb", "subfinder", "nikto"],
+                "api_key_required": bool(settings.api_key),
                 "error": str(exc),
             },
             status_code=400,
@@ -109,21 +138,50 @@ def create_scan_form(
     db.commit()
     db.refresh(scan)
 
-    report_path = generate_report(scan.id, scan.target, scan.scan_type, scan_result.findings)
-    scan.report_path = str(report_path)
-    db.commit()
+    report_error = None
+    try:
+        report_path = generate_report(scan.id, scan.target, scan.scan_type, scan_result.findings)
+    except Exception:
+        report_error = "Impossibile generare il report PDF. Verifica i permessi della cartella reports/."
+        scan.status = "report_failed"
+        scan.report_path = None
+        db.commit()
+    else:
+        scan.report_path = str(report_path)
+        db.commit()
 
-    return RedirectResponse(url=f"/scans/{scan.id}", status_code=303)
+    redirect_url = f"/scans/{scan.id}"
+    if api_key:
+        redirect_url = f"{redirect_url}?api_key={api_key}"
+
+    if report_error:
+        findings = json.loads(scan.findings_json or "[]")
+        return templates.TemplateResponse(
+            "scan_detail.html",
+            {
+                "request": request,
+                "scan": scan,
+                "findings": findings,
+                "report_error": report_error,
+                "download_url": None,
+                "api_key": api_key,
+            },
+            status_code=500,
+        )
+
+    return RedirectResponse(url=redirect_url, status_code=303)
 
 
 @app.get("/scans", response_class=HTMLResponse)
 def scans_list(request: Request, db: Session = Depends(get_db)) -> HTMLResponse:
     scans = db.query(Scan).order_by(Scan.created_at.desc()).all()
+    api_key = request.query_params.get("api_key")
     return templates.TemplateResponse(
         "scans_list.html",
         {
             "request": request,
             "scans": scans,
+            "api_key": api_key,
         },
     )
 
@@ -135,12 +193,20 @@ def scan_detail(request: Request, scan_id: int, db: Session = Depends(get_db)) -
         raise HTTPException(status_code=404, detail="Scan non trovata")
 
     findings = json.loads(scan.findings_json or "[]")
+    api_key = request.query_params.get("api_key")
+    download_url = None
+    if scan.report_path:
+        download_url = f"/api/v1/scans/{scan.id}/report/download"
+        if api_key:
+            download_url = f"{download_url}?api_key={api_key}"
     return templates.TemplateResponse(
         "scan_detail.html",
         {
             "request": request,
             "scan": scan,
             "findings": findings,
+            "download_url": download_url,
+            "api_key": api_key,
         },
     )
 
@@ -168,7 +234,17 @@ def create_scan(
     db.commit()
     db.refresh(scan)
 
-    report_path = generate_report(scan.id, scan.target, scan.scan_type, scan_result.findings)
+    try:
+        report_path = generate_report(scan.id, scan.target, scan.scan_type, scan_result.findings)
+    except Exception as exc:
+        scan.status = "report_failed"
+        scan.report_path = None
+        db.commit()
+        raise HTTPException(
+            status_code=500,
+            detail="Errore durante la generazione del report.",
+        ) from exc
+
     scan.report_path = str(report_path)
     db.commit()
 

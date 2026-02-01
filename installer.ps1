@@ -48,6 +48,7 @@ function Test-RequiredFiles {
         "scanner_engine.py",
         "report_generator.py",
         "requirements.txt",
+        "scanners/__init__.py",
         "templates/index.html",
         "templates/scan_detail.html",
         "templates/scans_list.html"
@@ -78,14 +79,14 @@ function Assert-PythonVersion {
 import sys
 min_v = (3, 10)
 max_v = (3, 12)
-current = sys.version_info[:3]
+current = sys.version_info[:2]
 if current < min_v or current > max_v:
     print(
-        f"Unsupported Python {current[0]}.{current[1]}.{current[2]} detected. "
+        f"Unsupported Python {current[0]}.{current[1]} detected. "
         "Supported versions: 3.10 - 3.12."
     )
     raise SystemExit(1)
-print(f"Python {current[0]}.{current[1]}.{current[2]} detected (OK).")
+print(f"Python {current[0]}.{current[1]} detected (OK).")
 "@
 
     if ($LASTEXITCODE -ne 0) {
@@ -150,11 +151,21 @@ try {
 
     # Install Go-based tools (best effort)
     if (Get-Command go -ErrorAction SilentlyContinue) {
-        Write-Log "Installing Go-based security tools..."
-        go install -v github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest
-        go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest
-        go install github.com/tomnomnom/assetfinder@latest
-        Write-Log "Go-based tools installed" "SUCCESS"
+        $goVersionText = (go version)
+        $goVersion = $goVersionText -replace "go version go", "" -replace "\s.*", ""
+        $goParts = $goVersion.Split(".")
+        $major = [int]$goParts[0]
+        $minor = [int]$goParts[1]
+        if ($major -lt 1 -or ($major -eq 1 -and $minor -lt 19)) {
+            Write-Log "Go $goVersion rilevato. Nuclei v3 richiede Go >= 1.19." "WARN"
+            Write-Log "Aggiorna Go da https://go.dev/dl/ e riprova l'installazione." "WARN"
+        } else {
+            Write-Log "Installing Go-based security tools..."
+            go install -v github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest
+            go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest
+            go install github.com/tomnomnom/assetfinder@latest
+            Write-Log "Go-based tools installed" "SUCCESS"
+        }
     } else {
         Write-Log "Go not available. Skipping Go-based tools." "WARN"
     }

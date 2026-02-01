@@ -16,12 +16,18 @@
           <h1 class="text-3xl font-semibold">Dettaglio scansione</h1>
         </div>
         <div class="flex flex-wrap gap-3">
-          <a href="/scans" class="inline-flex items-center rounded-lg border border-slate-700 px-4 py-2 text-sm hover:border-cyan-400">Storico</a>
-          {% if scan.report_path %}
-          <a href="/api/v1/scans/{{ scan.id }}/report/download" class="inline-flex items-center rounded-lg bg-cyan-500 px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-cyan-400">Scarica PDF</a>
+          <a href="/scans{% if api_key %}?api_key={{ api_key }}{% endif %}" class="inline-flex items-center rounded-lg border border-slate-700 px-4 py-2 text-sm hover:border-cyan-400">Storico</a>
+          {% if download_url %}
+          <a href="{{ download_url }}" class="inline-flex items-center rounded-lg bg-cyan-500 px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-cyan-400">Scarica PDF</a>
           {% endif %}
         </div>
       </div>
+
+      {% if report_error %}
+      <div class="rounded-xl border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-amber-100">
+        {{ report_error }}
+      </div>
+      {% endif %}
 
       <section class="grid gap-4 md:grid-cols-3">
         <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5">

@@ -23,6 +23,7 @@ NC='\033[0m' # No Color
 
 # Selected Python binary for the installer.
 PYTHON_BIN=""
+GO_TOO_OLD=0
 
 # ASCII logo for the installer UI.
 print_logo() {
@@ -132,14 +133,14 @@ check_python_version() {
 import sys
 min_v = (3, 10)
 max_v = (3, 12)
-current = sys.version_info[:3]
+current = sys.version_info[:2]
 if current < min_v or current > max_v:
     print(
-        f"Unsupported Python {current[0]}.{current[1]}.{current[2]} detected. "
+        f"Unsupported Python {current[0]}.{current[1]} detected. "
         "Supported versions: 3.10 - 3.12."
     )
     sys.exit(1)
-print(f"Python {current[0]}.{current[1]}.{current[2]} detected (OK).")
+print(f"Python {current[0]}.{current[1]} detected (OK).")
 PY
 ); then
             PYTHON_BIN="$candidate"
@@ -170,6 +171,7 @@ check_required_files() {
         "scanner_engine.py"
         "report_generator.py"
         "requirements.txt"
+        "scanners/__init__.py"
         "templates/index.html"
         "templates/scan_detail.html"
         "templates/scans_list.html"
@@ -227,10 +229,7 @@ install_system_dependencies() {
                         libpango1.0-dev \
                         python3-dev \
                         sqlite3 \
-                        libsqlite3-dev \
-                        wkhtmltopdf \
-                        xvfb \
-                        fonts-liberation
+                        libsqlite3-dev
                     ;;
                 *)
                     log_error "Unsupported Linux distribution: $DISTRO"
@@ -261,13 +260,6 @@ install_system_dependencies() {
                 pango \
                 sqlite
 
-            if brew info --cask wkhtmltopdf &> /dev/null; then
-                log_info "Installing wkhtmltopdf (cask)..."
-                brew install --cask wkhtmltopdf
-            else
-                log_warning "wkhtmltopdf not available via Homebrew. Skipping installation."
-                log_warning "Install wkhtmltopdf manually if you need HTML-to-PDF features."
-            fi
             ;;
         windows)
             log_warning "Windows detected. System dependencies must be installed manually."
@@ -308,6 +300,18 @@ setup_go_environment() {
         fi
     fi
     
+    local go_version
+    go_version=$(go version | awk '{print $3}' | sed 's/go//')
+    if [[ "$go_version" =~ ^([0-9]+)\.([0-9]+) ]]; then
+        local major="${BASH_REMATCH[1]}"
+        local minor="${BASH_REMATCH[2]}"
+        if (( major < 1 || (major == 1 && minor < 19) )); then
+            log_warning "Go ${go_version} rilevato. Nuclei v3 richiede Go >= 1.19."
+            log_warning "Aggiorna Go (es. https://go.dev/dl/) prima di installare i tool."
+            GO_TOO_OLD=1
+        fi
+    fi
+
     log_success "Go environment configured"
 }
 
@@ -316,12 +320,16 @@ install_security_tools() {
     log_info "Installing external security tools..."
 
     # Create a dedicated directory to keep third-party tools together.
-    mkdir -p ~/security-tools
-    cd ~/security-tools
+    local tools_dir="$HOME/security-tools"
+    local start_dir="$PWD"
+    mkdir -p "$tools_dir"
+    cd "$tools_dir"
 
     # Install Nuclei via Go if missing.
     log_info "Installing Nuclei..."
-    if ! command -v nuclei &> /dev/null; then
+    if [ "${GO_TOO_OLD:-0}" -eq 1 ]; then
+        log_warning "Skipping Nuclei install because Go is outdated."
+    elif ! command -v nuclei &> /dev/null; then
         go install -v github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest
         log_success "Nuclei installed"
     else
@@ -334,7 +342,9 @@ install_security_tools() {
 
     # Install Subfinder.
     log_info "Installing Subfinder..."
-    if ! command -v subfinder &> /dev/null; then
+    if [ "${GO_TOO_OLD:-0}" -eq 1 ]; then
+        log_warning "Skipping Subfinder install because Go is outdated."
+    elif ! command -v subfinder &> /dev/null; then
         go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest
         log_success "Subfinder installed"
     else
@@ -343,7 +353,9 @@ install_security_tools() {
 
     # Install Assetfinder.
     log_info "Installing Assetfinder..."
-    if ! command -v assetfinder &> /dev/null; then
+    if [ "${GO_TOO_OLD:-0}" -eq 1 ]; then
+        log_warning "Skipping Assetfinder install because Go is outdated."
+    elif ! command -v assetfinder &> /dev/null; then
         go install github.com/tomnomnom/assetfinder@latest
         log_success "Assetfinder installed"
     else
@@ -387,7 +399,7 @@ EOF
                 chmod +x "$HOME/.local/bin/whatweb"
                 log_success "WhatWeb wrapper installed to ~/.local/bin"
             fi
-            cd ..
+            cd "$tools_dir"
         else
             log_warning "WhatWeb directory not available. Continuing without WhatWeb."
         fi
@@ -397,17 +409,16 @@ EOF
 
     # Install Dirsearch for content discovery.
     log_info "Installing Dirsearch..."
-    if [ ! -d "$HOME/security-tools/dirsearch" ]; then
-        git clone https://github.com/maurosoria/dirsearch.git
-        cd dirsearch
-        pip3 install -r requirements.txt --break-system-packages 2>/dev/null || pip3 install -r requirements.txt
-        cd ..
+    if [ ! -d "$tools_dir/dirsearch" ]; then
+        git clone https://github.com/maurosoria/dirsearch.git "$tools_dir/dirsearch"
+        pip3 install -r "$tools_dir/dirsearch/requirements.txt" --break-system-packages 2>/dev/null || \
+            pip3 install -r "$tools_dir/dirsearch/requirements.txt"
         log_success "Dirsearch installed"
     else
         log_success "Dirsearch already installed"
     fi
 
-    cd - > /dev/null
+    cd "$start_dir"
     log_success "Security tools installed successfully"
 }
 
@@ -510,7 +521,7 @@ verify_installation() {
     source venv/bin/activate
     "$PYTHON_BIN" << EOF
 import sys
-packages = ['fastapi', 'uvicorn', 'reportlab', 'sqlalchemy', 'aiohttp']
+packages = ['fastapi', 'uvicorn', 'reportlab', 'sqlalchemy']
 errors = 0
 for pkg in packages:
     try:

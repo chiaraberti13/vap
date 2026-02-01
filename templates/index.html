@@ -40,6 +40,18 @@
                 required
               />
             </label>
+            {% if api_key_required %}
+            <label class="grid gap-2">
+              <span class="text-sm text-slate-300">API Key</span>
+              <input
+                name="api_key"
+                type="password"
+                placeholder="Inserisci la chiave API"
+                class="w-full rounded-lg border border-slate-700 bg-slate-950/70 px-4 py-3 text-slate-100 focus:border-cyan-400 focus:outline-none"
+                required
+              />
+            </label>
+            {% endif %}
             <label class="grid gap-2">
               <span class="text-sm text-slate-300">Tipo di scansione</span>
               <select
