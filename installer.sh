@@ -188,8 +188,15 @@ install_system_dependencies() {
                 nmap \
                 nikto \
                 go \
-                sqlite \
-                wkhtmltopdf
+                sqlite
+
+            if brew info --cask wkhtmltopdf &> /dev/null; then
+                log_info "Installing wkhtmltopdf (cask)..."
+                brew install --cask wkhtmltopdf
+            else
+                log_warning "wkhtmltopdf not available via Homebrew. Skipping installation."
+                log_warning "Install wkhtmltopdf manually if you need HTML-to-PDF features."
+            fi
             ;;
         windows)
             log_warning "Windows detected. System dependencies must be installed manually."
