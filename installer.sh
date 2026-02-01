@@ -295,24 +295,44 @@ install_security_tools() {
     # Install WhatWeb when missing.
     log_info "Checking WhatWeb..."
     if ! command -v whatweb &> /dev/null; then
+        local whatweb_dir="$HOME/security-tools/WhatWeb"
         log_info "Installing WhatWeb from GitHub..."
-        git clone https://github.com/urbanadventurer/WhatWeb.git
-        cd WhatWeb
-        ensure_local_bin_path
-        if make install PREFIX="$HOME/.local"; then
-            log_success "WhatWeb installed to ~/.local"
+
+        if [ -d "$whatweb_dir" ]; then
+            log_warning "WhatWeb directory already exists. Trying to update it..."
+            if git -C "$whatweb_dir" rev-parse --is-inside-work-tree &> /dev/null; then
+                git -C "$whatweb_dir" fetch --all --prune || log_warning "WhatWeb update failed. Using existing files."
+            else
+                log_warning "Existing WhatWeb directory is not a git repo. Skipping update."
+            fi
         else
-            log_warning "WhatWeb make install failed. Falling back to local wrapper."
-            mkdir -p "$HOME/.local/bin"
-            cat << 'EOF' > "$HOME/.local/bin/whatweb"
+            if ! git clone https://github.com/urbanadventurer/WhatWeb.git "$whatweb_dir"; then
+                log_warning "WhatWeb clone failed. Skipping installation."
+            else
+                log_success "WhatWeb repository cloned"
+            fi
+        fi
+
+        if [ -d "$whatweb_dir" ]; then
+            cd "$whatweb_dir"
+            ensure_local_bin_path
+            if make install PREFIX="$HOME/.local"; then
+                log_success "WhatWeb installed to ~/.local"
+            else
+                log_warning "WhatWeb make install failed. Falling back to local wrapper."
+                mkdir -p "$HOME/.local/bin"
+                cat << 'EOF' > "$HOME/.local/bin/whatweb"
 #!/bin/bash
 WHATWEB_HOME="$HOME/security-tools/WhatWeb"
 exec "$WHATWEB_HOME/whatweb" "$@"
 EOF
-            chmod +x "$HOME/.local/bin/whatweb"
-            log_success "WhatWeb wrapper installed to ~/.local/bin"
+                chmod +x "$HOME/.local/bin/whatweb"
+                log_success "WhatWeb wrapper installed to ~/.local/bin"
+            fi
+            cd ..
+        else
+            log_warning "WhatWeb directory not available. Continuing without WhatWeb."
         fi
-        cd ..
     else
         log_success "WhatWeb already installed"
     fi
