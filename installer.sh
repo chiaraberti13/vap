@@ -112,6 +112,38 @@ detect_platform() {
     esac
 }
 
+# Validate Python runtime version to prevent unsupported builds (e.g., pydantic-core).
+check_python_version() {
+    log_info "Checking Python version..."
+
+    if ! command -v python3 &> /dev/null; then
+        log_error "python3 not found. Install Python 3.10-3.12 and re-run the installer."
+        exit 1
+    fi
+
+    local version_output
+    if ! version_output=$(python3 << 'PY'
+import sys
+min_v = (3, 10)
+max_v = (3, 12)
+current = sys.version_info[:3]
+if current < min_v or current > max_v:
+    print(
+        f"Unsupported Python {current[0]}.{current[1]}.{current[2]} detected. "
+        "Supported versions: 3.10 - 3.12."
+    )
+    sys.exit(1)
+print(f"Python {current[0]}.{current[1]}.{current[2]} detected (OK).")
+PY
+); then
+        log_error "$version_output"
+        log_error "Install Python 3.10-3.12 and re-run the installer."
+        exit 1
+    fi
+
+    log_success "$version_output"
+}
+
 # Validate required project files and detect incomplete/empty files early.
 check_required_files() {
     log_info "Validating required project files..."
@@ -538,6 +570,7 @@ main() {
     install_system_dependencies
 
     if [ "$PLATFORM" != "windows" ]; then
+        check_python_version
         setup_go_environment
         install_security_tools
         create_directory_structure

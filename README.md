@@ -55,7 +55,7 @@ python app.py
 
 ## 📋 Requirements
 
-- **Python**: 3.9+
+- **Python**: 3.10 - 3.12 (3.13+ not yet supported)
 - **Go**: 1.19+ (for external tools)
 - **External Tools**: Nmap, Nikto (installed by the installer when possible)
 
