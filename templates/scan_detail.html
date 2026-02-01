@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dettaglio scansione</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-slate-100">
+  <main class="min-h-screen px-6 py-10">
+    <div class="max-w-6xl mx-auto space-y-8">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <p class="text-sm uppercase tracking-[0.3em] text-slate-400">Scan #{{ scan.id }}</p>
+          <h1 class="text-3xl font-semibold">Dettaglio scansione</h1>
+        </div>
+        <div class="flex flex-wrap gap-3">
+          <a href="/scans" class="inline-flex items-center rounded-lg border border-slate-700 px-4 py-2 text-sm hover:border-cyan-400">Storico</a>
+          {% if scan.report_path %}
+          <a href="/api/v1/scans/{{ scan.id }}/report/download" class="inline-flex items-center rounded-lg bg-cyan-500 px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-cyan-400">Scarica PDF</a>
+          {% endif %}
+        </div>
+      </div>
+
+      <section class="grid gap-4 md:grid-cols-3">
+        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5">
+          <p class="text-xs uppercase text-slate-400">Target</p>
+          <p class="text-lg font-semibold mt-1">{{ scan.target }}</p>
+        </div>
+        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5">
+          <p class="text-xs uppercase text-slate-400">Tipo</p>
+          <p class="text-lg font-semibold mt-1">{{ scan.scan_type | upper }}</p>
+        </div>
+        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5">
+          <p class="text-xs uppercase text-slate-400">Stato</p>
+          <p class="text-lg font-semibold mt-1">{{ scan.status }}</p>
+        </div>
+      </section>
+
+      <section class="bg-slate-900/80 border border-slate-800 rounded-2xl p-6">
+        <h2 class="text-xl font-semibold">Findings</h2>
+        <div class="mt-4 space-y-4">
+          {% for finding in findings %}
+          <div class="border border-slate-800 rounded-xl p-4">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+              <h3 class="text-lg font-semibold">{{ finding.title }}</h3>
+              <span class="text-xs uppercase tracking-wide rounded-full bg-slate-800 px-3 py-1">{{ finding.severity }}</span>
+            </div>
+            <p class="text-slate-300 mt-2">{{ finding.description }}</p>
+            {% if finding.recommendation %}
+            <p class="text-cyan-300 mt-2"><span class="font-semibold">Remediation:</span> {{ finding.recommendation }}</p>
+            {% endif %}
+          </div>
+          {% else %}
+          <p class="text-slate-400">Nessun finding disponibile.</p>
+          {% endfor %}
+        </div>
+      </section>
+    </div>
+  </main>
+</body>
+</html>

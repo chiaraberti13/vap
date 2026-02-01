@@ -5,7 +5,6 @@ This script does not generate application code; it reports missing or empty file
 and writes a manual setup guide to help users restore the project structure.
 """
 
-import os
 from pathlib import Path
 
 print("🚀 Validating project files and generating manual setup guide...")
@@ -21,6 +20,11 @@ required_files = [
     "templates/index.html",
     "templates/scan_detail.html",
     "templates/scans_list.html",
+    "scanners/nuclei_scanner.py",
+    "scanners/nmap_scanner.py",
+    "scanners/whatweb_scanner.py",
+    "scanners/subfinder_scanner.py",
+    "scanners/nikto_scanner.py",
 ]
 
 missing_or_empty = []
