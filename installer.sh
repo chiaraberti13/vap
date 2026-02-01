@@ -222,6 +222,9 @@ install_system_dependencies() {
                         build-essential \
                         libssl-dev \
                         libffi-dev \
+                        libcairo2-dev \
+                        libgdk-pixbuf2.0-dev \
+                        libpango1.0-dev \
                         python3-dev \
                         sqlite3 \
                         libsqlite3-dev \
@@ -253,6 +256,9 @@ install_system_dependencies() {
                 nmap \
                 nikto \
                 go \
+                cairo \
+                gdk-pixbuf \
+                pango \
                 sqlite
 
             if brew info --cask wkhtmltopdf &> /dev/null; then

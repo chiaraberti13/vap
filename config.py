@@ -5,8 +5,13 @@ Configurazione centrale per Vulnerability Assessment Platform.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from pathlib import Path
 import os
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+
+load_dotenv()
 
 
 @dataclass(frozen=True)
