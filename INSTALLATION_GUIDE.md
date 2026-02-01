@@ -43,6 +43,12 @@ API and web server entry point.
 - `scan_detail.html`
 - `scans_list.html`
 
+## 🐍 Python Version Compatibility
+
+This project currently supports **Python 3.10 - 3.12**. Newer versions (3.13+)
+can fail during dependency builds (e.g., `pydantic-core`). Install a supported
+Python version before running the installer.
+
 ## 🔧 Installation Steps (Linux/macOS)
 
 ### Step 1: Extract the Archive

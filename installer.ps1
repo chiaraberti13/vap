@@ -71,6 +71,30 @@ function Test-RequiredFiles {
     }
 }
 
+function Assert-PythonVersion {
+    param([string]$PythonCommand = "python")
+    Write-Log "Checking Python version..."
+    $versionOutput = & $PythonCommand -c @"
+import sys
+min_v = (3, 10)
+max_v = (3, 12)
+current = sys.version_info[:3]
+if current < min_v or current > max_v:
+    print(
+        f"Unsupported Python {current[0]}.{current[1]}.{current[2]} detected. "
+        "Supported versions: 3.10 - 3.12."
+    )
+    raise SystemExit(1)
+print(f"Python {current[0]}.{current[1]}.{current[2]} detected (OK).")
+"@
+
+    if ($LASTEXITCODE -ne 0) {
+        throw $versionOutput
+    }
+
+    Write-Log $versionOutput "SUCCESS"
+}
+
 # -----------------------------------------------------------------------------
 # Dependency installers (best effort)
 # -----------------------------------------------------------------------------
@@ -109,6 +133,8 @@ try {
     Ensure-Command -Command "python" -Name "Python 3" -WingetId "Python.Python.3.11"
     Ensure-Command -Command "git" -Name "Git" -WingetId "Git.Git"
     Ensure-Command -Command "go" -Name "Go" -WingetId "GoLang.Go"
+
+    Assert-PythonVersion -PythonCommand "python"
 
     # Optional security tools
     Ensure-Command -Command "nmap" -Name "Nmap" -WingetId "Insecure.Nmap"

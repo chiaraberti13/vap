@@ -7,6 +7,8 @@ archive or repository before running the installer.
 
 To complete the manual installation:
 
+0. Use Python 3.10 - 3.12 (3.13+ is not yet supported).
+
 1. Restore the required Python files:
    - config.py
    - database.py
