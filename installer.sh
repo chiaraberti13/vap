@@ -388,12 +388,17 @@ install_python_dependencies() {
     # Ensure venv is active.
     source venv/bin/activate
 
+    # Resolve requirements path from the repository root.
+    local requirements_file="${SCRIPT_DIR}/requirements.txt"
+
     # Install dependencies.
-    if [ -f "requirements.txt" ]; then
-        pip install -r requirements.txt
+    if [ -f "$requirements_file" ]; then
+        pip install -r "$requirements_file"
         log_success "Python dependencies installed"
     else
-        log_error "requirements.txt not found"
+        log_error "requirements.txt not found at: $requirements_file"
+        log_error "Current working directory: $(pwd)"
+        log_error "Ensure you run the installer from the repository root."
         exit 1
     fi
 }
