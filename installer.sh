@@ -54,6 +54,19 @@ log_to_file() {
     echo "[$(date +%Y-%m-%dT%H:%M:%S%z)] $1" >> "$LOG_FILE"
 }
 
+# Ensure ~/.local/bin is in PATH and persisted for future shells.
+ensure_local_bin_path() {
+    if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
+        export PATH="$HOME/.local/bin:$PATH"
+        if [ -f "$HOME/.bashrc" ]; then
+            echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.bashrc"
+        fi
+        if [ -f "$HOME/.zshrc" ]; then
+            echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.zshrc"
+        fi
+    fi
+}
+
 # Check if script is run as root to avoid permission mistakes.
 check_root() {
     if [ "$EUID" -eq 0 ]; then 
@@ -285,9 +298,21 @@ install_security_tools() {
         log_info "Installing WhatWeb from GitHub..."
         git clone https://github.com/urbanadventurer/WhatWeb.git
         cd WhatWeb
-        sudo make install
+        ensure_local_bin_path
+        if make install PREFIX="$HOME/.local"; then
+            log_success "WhatWeb installed to ~/.local"
+        else
+            log_warning "WhatWeb make install failed. Falling back to local wrapper."
+            mkdir -p "$HOME/.local/bin"
+            cat << 'EOF' > "$HOME/.local/bin/whatweb"
+#!/bin/bash
+WHATWEB_HOME="$HOME/security-tools/WhatWeb"
+exec "$WHATWEB_HOME/whatweb" "$@"
+EOF
+            chmod +x "$HOME/.local/bin/whatweb"
+            log_success "WhatWeb wrapper installed to ~/.local/bin"
+        fi
         cd ..
-        log_success "WhatWeb installed"
     else
         log_success "WhatWeb already installed"
     fi
