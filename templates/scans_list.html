@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Storico scansioni</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-slate-100">
+  <main class="min-h-screen px-6 py-10">
+    <div class="max-w-6xl mx-auto">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <p class="text-sm uppercase tracking-[0.3em] text-slate-400">Dashboard</p>
+          <h1 class="text-3xl font-semibold">Storico scansioni</h1>
+        </div>
+        <a href="/" class="inline-flex items-center rounded-lg border border-slate-700 px-4 py-2 text-sm hover:border-cyan-400">Nuova scansione</a>
+      </div>
+
+      <div class="mt-8 overflow-x-auto border border-slate-800 rounded-2xl">
+        <table class="min-w-full text-left text-sm">
+          <thead class="bg-slate-900/80 text-slate-300">
+            <tr>
+              <th class="px-4 py-3">ID</th>
+              <th class="px-4 py-3">Target</th>
+              <th class="px-4 py-3">Tipo</th>
+              <th class="px-4 py-3">Stato</th>
+              <th class="px-4 py-3">Avvio</th>
+              <th class="px-4 py-3">Azioni</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for scan in scans %}
+            <tr class="border-t border-slate-800 hover:bg-slate-900/40">
+              <td class="px-4 py-3">{{ scan.id }}</td>
+              <td class="px-4 py-3">{{ scan.target }}</td>
+              <td class="px-4 py-3 uppercase">{{ scan.scan_type }}</td>
+              <td class="px-4 py-3">
+                <span class="rounded-full bg-emerald-500/20 text-emerald-200 px-2 py-1 text-xs">{{ scan.status }}</span>
+              </td>
+              <td class="px-4 py-3">{{ scan.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+              <td class="px-4 py-3">
+                <a class="text-cyan-300 hover:underline" href="/scans/{{ scan.id }}">Dettagli</a>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="6" class="px-4 py-6 text-center text-slate-400">Nessuna scansione disponibile.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

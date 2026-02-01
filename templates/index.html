@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vulnerability Assessment Platform</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-slate-100">
+  <main class="min-h-screen flex flex-col">
+    <header class="px-6 py-6 border-b border-slate-800">
+      <div class="max-w-6xl mx-auto flex flex-col gap-2">
+        <p class="text-sm uppercase tracking-[0.3em] text-slate-400">Security Operations</p>
+        <h1 class="text-3xl md:text-4xl font-semibold">Vulnerability Assessment Platform</h1>
+        <p class="text-slate-400 max-w-2xl">Esegui scan mirati o completi, genera report PDF professionali e monitora i risultati in tempo reale.</p>
+      </div>
+    </header>
+
+    <section class="flex-1 px-6 py-10">
+      <div class="max-w-6xl mx-auto grid lg:grid-cols-[1.2fr_0.8fr] gap-8">
+        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 md:p-8 shadow-xl">
+          <h2 class="text-xl font-semibold">Avvia una nuova scansione</h2>
+          <p class="text-slate-400 mt-2">Inserisci un URL o un IP autorizzato. Le scansioni live sono disabilitate di default per sicurezza.</p>
+
+          {% if error %}
+          <div class="mt-4 p-3 bg-red-500/20 border border-red-400/40 rounded-lg text-red-100">
+            {{ error }}
+          </div>
+          {% endif %}
+
+          <form class="mt-6 grid gap-5" method="post" action="/scans">
+            <label class="grid gap-2">
+              <span class="text-sm text-slate-300">Target</span>
+              <input
+                name="target"
+                type="text"
+                placeholder="https://example.com"
+                class="w-full rounded-lg border border-slate-700 bg-slate-950/70 px-4 py-3 text-slate-100 focus:border-cyan-400 focus:outline-none"
+                required
+              />
+            </label>
+            <label class="grid gap-2">
+              <span class="text-sm text-slate-300">Tipo di scansione</span>
+              <select
+                name="scan_type"
+                class="w-full rounded-lg border border-slate-700 bg-slate-950/70 px-4 py-3 text-slate-100 focus:border-cyan-400 focus:outline-none"
+              >
+                {% for scan_type in scan_types %}
+                <option value="{{ scan_type }}">{{ scan_type | upper }}</option>
+                {% endfor %}
+              </select>
+            </label>
+            <button
+              type="submit"
+              class="w-full md:w-auto inline-flex items-center justify-center rounded-lg bg-cyan-500 px-6 py-3 font-semibold text-slate-900 hover:bg-cyan-400 transition"
+            >
+              Avvia scan
+            </button>
+          </form>
+        </div>
+
+        <aside class="grid gap-4">
+          <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-6">
+            <h3 class="font-semibold">Checklist sicurezza</h3>
+            <ul class="mt-3 space-y-2 text-sm text-slate-300">
+              <li>• Sanitizzazione input</li>
+              <li>• Log di audit e tracciamento</li>
+              <li>• Report PDF firmato</li>
+              <li>• OWASP Top 10 mapping</li>
+            </ul>
+          </div>
+          <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-6">
+            <h3 class="font-semibold">Guida rapida</h3>
+            <p class="mt-2 text-sm text-slate-300">
+              Dopo la scansione, consulta lo storico in <a class="text-cyan-300 underline" href="/scans">Scans</a> e scarica il report PDF.
+            </p>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <footer class="px-6 py-6 border-t border-slate-800 text-sm text-slate-500">
+      <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between gap-2">
+        <span>© 2024 Vulnerability Assessment Platform</span>
+        <span>Ambiente: {{ request.app.title }}</span>
+      </div>
+    </footer>
+  </main>
+</body>
+</html>
