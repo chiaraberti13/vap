@@ -10,6 +10,10 @@
 set -Eeuo pipefail  # Fail fast, catch errors in pipelines, and treat unset vars as errors.
 IFS=$'\n\t'
 
+# Ensure the installer runs from the repository root.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
+
 # Output colors (ANSI). Use tput if available for better compatibility.
 RED='\033[0;31m'
 GREEN='\033[0;32m'
