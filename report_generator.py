@@ -2,13 +2,13 @@
 """PDF report generator using ReportLab."""
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List
 
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
-from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 
 from config import settings
@@ -24,11 +24,18 @@ SEVERITY_COLORS = {
 
 
 def generate_report(scan_id: int, target: str, scan_type: str, findings: List[Dict[str, Any]]) -> Path:
-    report_name = f"scan_{scan_id}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.pdf"
+    generated_at = datetime.now(timezone.utc)
+    report_name = f"scan_{scan_id}_{generated_at.strftime('%Y%m%d_%H%M%S')}.pdf"
     report_path = settings.reports_dir / report_name
 
     doc = SimpleDocTemplate(str(report_path), pagesize=A4)
     styles = getSampleStyleSheet()
+    severity_styles = {}
+    for severity, color in SEVERITY_COLORS.items():
+        style_name = f"Severity{severity.title()}"
+        if style_name not in styles:
+            styles.add(ParagraphStyle(name=style_name, parent=styles["Heading4"], textColor=color))
+        severity_styles[severity] = styles[style_name]
     story = []
 
     story.append(Paragraph("Vulnerability Assessment Report", styles["Title"]))
@@ -38,7 +45,7 @@ def generate_report(scan_id: int, target: str, scan_type: str, findings: List[Di
         [
             ["Target", target],
             ["Scan Type", scan_type],
-            ["Generated", datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")],
+            ["Generated", generated_at.strftime("%Y-%m-%d %H:%M UTC")],
             ["Findings", str(len(findings))],
         ],
         hAlign="LEFT",
@@ -67,7 +74,8 @@ def generate_report(scan_id: int, target: str, scan_type: str, findings: List[Di
             description = finding.get("description", "")
             recommendation = finding.get("recommendation", "")
 
-            story.append(Paragraph(f"<b>{title}</b> ({severity})", styles["Heading4"]))
+            severity_style = severity_styles.get(severity, styles["Heading4"])
+            story.append(Paragraph(f"<b>{title}</b> ({severity})", severity_style))
             story.append(Paragraph(description, styles["BodyText"]))
             if recommendation:
                 story.append(Paragraph(f"<b>Remediation:</b> {recommendation}", styles["BodyText"]))
