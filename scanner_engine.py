@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 import json
 import re
+import sys
 from typing import Any, Dict, List
 from urllib.parse import urlparse
 
@@ -77,7 +78,7 @@ def run_scan(target: str, scan_type: str) -> ScanResult:
     else:
         raise ScanValidationError("Tipo di scansione non supportato.")
 
-    started_at = datetime.utcnow()
+    started_at = datetime.now(timezone.utc)
     results: List[Dict[str, Any]] = []
 
     for scanner_cls in scanner_classes:
@@ -85,7 +86,7 @@ def run_scan(target: str, scan_type: str) -> ScanResult:
         results.append(scanner.run(validated_target))
 
     findings = _collect_findings(results)
-    completed_at = datetime.utcnow()
+    completed_at = datetime.now(timezone.utc)
 
     return ScanResult(
         target=validated_target,
@@ -99,3 +100,54 @@ def run_scan(target: str, scan_type: str) -> ScanResult:
 
 def serialize_findings(findings: List[Dict[str, Any]]) -> str:
     return json.dumps(findings, ensure_ascii=False, indent=2)
+
+
+def _build_cli_parser() -> "argparse.ArgumentParser":
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Esegui una scansione di sicurezza.")
+    parser.add_argument("--target", required=True, help="Target della scansione (URL o IP).")
+    parser.add_argument(
+        "--scan-type",
+        default="full",
+        choices=["full", "nuclei", "nmap", "whatweb", "subfinder", "nikto"],
+        help="Tipo di scansione da eseguire.",
+    )
+    parser.add_argument(
+        "--output",
+        help="Percorso file JSON dove salvare i risultati. Se omesso, stampa su stdout.",
+    )
+    return parser
+
+
+def main() -> int:
+    parser = _build_cli_parser()
+    args = parser.parse_args()
+
+    try:
+        scan_result = run_scan(target=args.target, scan_type=args.scan_type)
+    except ScanValidationError as exc:
+        print(f"Errore: {exc}", file=sys.stderr)
+        return 2
+
+    payload = {
+        "target": scan_result.target,
+        "scan_type": scan_result.scan_type,
+        "status": scan_result.status,
+        "started_at": scan_result.started_at.isoformat(),
+        "completed_at": scan_result.completed_at.isoformat(),
+        "findings": scan_result.findings,
+    }
+    serialized = json.dumps(payload, ensure_ascii=False, indent=2)
+
+    if args.output:
+        with open(args.output, "w", encoding="utf-8") as outfile:
+            outfile.write(serialized)
+    else:
+        print(serialized)
+
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -4,7 +4,7 @@ Database layer basata su SQLAlchemy.
 """
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Generator
 
 from sqlalchemy import create_engine, Column, DateTime, Integer, String, Text
@@ -28,7 +28,7 @@ class Scan(Base):
     target = Column(String(255), nullable=False)
     scan_type = Column(String(50), nullable=False)
     status = Column(String(30), nullable=False, default="queued")
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     completed_at = Column(DateTime, nullable=True)
     findings_json = Column(Text, nullable=True)
     report_path = Column(String(255), nullable=True)

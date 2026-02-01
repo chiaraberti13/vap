@@ -65,11 +65,6 @@ class ScanStatus(BaseModel):
     completed_at: Optional[datetime]
 
 
-class ScanDetail(ScanStatus):
-    findings: List[Dict[str, Any]]
-    report_path: Optional[str]
-
-
 
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request) -> HTMLResponse:
