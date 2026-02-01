@@ -153,7 +153,7 @@ This project is provided for educational and research purposes.
 
 ## 👨‍💻 Author
 
-Developed by DevSecOps Team
+Chiara Berti
 
 ---
 
