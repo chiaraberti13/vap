@@ -20,6 +20,7 @@ required_files = [
     "templates/index.html",
     "templates/scan_detail.html",
     "templates/scans_list.html",
+    "scanners/__init__.py",
     "scanners/nuclei_scanner.py",
     "scanners/nmap_scanner.py",
     "scanners/whatweb_scanner.py",
@@ -57,6 +58,7 @@ To complete the manual installation:
    - scanner_engine.py
    - report_generator.py
    - app.py
+   - scanners/__init__.py
    - scanners/nuclei_scanner.py
    - scanners/nmap_scanner.py
    - scanners/whatweb_scanner.py
