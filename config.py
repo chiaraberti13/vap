@@ -4,14 +4,22 @@ Configurazione centrale per Vulnerability Assessment Platform.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import os
 from pathlib import Path
+import secrets
+from typing import List
 
 from dotenv import load_dotenv
 
 
 load_dotenv()
+
+
+def _split_env_list(value: str) -> List[str]:
+    if not value:
+        return []
+    return [item.strip() for item in value.split(",") if item.strip()]
 
 
 @dataclass(frozen=True)
@@ -21,13 +29,55 @@ class Settings:
     host: str = os.getenv("VAP_HOST", "0.0.0.0")
     port: int = int(os.getenv("VAP_PORT", "8000"))
     database_url: str = os.getenv("VAP_DATABASE_URL", "sqlite:///./vap.db")
+    sqlcipher_key: str = os.getenv("VAP_SQLCIPHER_KEY", "")
     reports_dir: Path = Path(os.getenv("VAP_REPORTS_DIR", "reports"))
     scan_timeout_seconds: int = int(os.getenv("VAP_SCAN_TIMEOUT", "300"))
     enable_live_scans: bool = os.getenv("VAP_ENABLE_LIVE_SCANS", "false").lower() == "true"
     max_findings: int = int(os.getenv("VAP_MAX_FINDINGS", "200"))
     max_concurrent_scanners: int = int(os.getenv("VAP_MAX_CONCURRENT_SCANNERS", "5"))
     api_key: str = os.getenv("VAP_API_KEY", "")
+    api_key_hash: str = os.getenv("VAP_API_KEY_HASH", "")
     require_https: bool = os.getenv("VAP_REQUIRE_HTTPS", "false").lower() == "true"
+    csrf_secret: str = os.getenv("VAP_CSRF_SECRET", "") or secrets.token_urlsafe(32)
+    csrf_cookie_name: str = os.getenv("VAP_CSRF_COOKIE", "vap_csrf")
+    csrf_token_ttl_seconds: int = int(os.getenv("VAP_CSRF_TTL", "3600"))
+    jwt_secret: str = os.getenv("VAP_JWT_SECRET", "")
+    jwt_algorithm: str = os.getenv("VAP_JWT_ALGORITHM", "HS256")
+    jwt_issuer: str = os.getenv("VAP_JWT_ISSUER", "vap")
+    jwt_audience: str = os.getenv("VAP_JWT_AUDIENCE", "vap-users")
+    jwt_exp_minutes: int = int(os.getenv("VAP_JWT_EXP_MINUTES", "60"))
+    jwt_required: bool = os.getenv("VAP_JWT_REQUIRED", "false").lower() == "true"
+    jwt_demo_user: str = os.getenv("VAP_JWT_DEMO_USER", "admin")
+    jwt_demo_password: str = os.getenv("VAP_JWT_DEMO_PASSWORD", "change-me")
+    cors_allowed_origins: List[str] = field(
+        default_factory=lambda: _split_env_list(os.getenv("VAP_CORS_ALLOWED_ORIGINS", ""))
+    )
+    cors_allowed_methods: List[str] = field(
+        default_factory=lambda: _split_env_list(
+            os.getenv("VAP_CORS_ALLOWED_METHODS", "GET,POST,PUT,PATCH,DELETE,OPTIONS")
+        )
+    )
+    cors_allowed_headers: List[str] = field(
+        default_factory=lambda: _split_env_list(
+            os.getenv("VAP_CORS_ALLOWED_HEADERS", "Authorization,Content-Type,X-API-Key")
+        )
+    )
+    cors_allow_credentials: bool = os.getenv("VAP_CORS_ALLOW_CREDENTIALS", "false").lower() == "true"
+    rate_limit_default: str = os.getenv("VAP_RATE_LIMIT_DEFAULT", "120/minute")
+    rate_limit_create_scan: str = os.getenv("VAP_RATE_LIMIT_CREATE_SCAN", "10/minute")
+    rate_limit_auth: str = os.getenv("VAP_RATE_LIMIT_AUTH", "15/minute")
+    rate_limit_read: str = os.getenv("VAP_RATE_LIMIT_READ", "120/minute")
+    hsts_max_age: int = int(os.getenv("VAP_HSTS_MAX_AGE", "31536000"))
+    csp_policy: str = os.getenv(
+        "VAP_CSP_POLICY",
+        "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com; "
+        "script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com; connect-src 'self'; frame-ancestors 'none'",
+    )
+    security_headers_enabled: bool = os.getenv("VAP_SECURITY_HEADERS", "true").lower() == "true"
+    audit_logging_enabled: bool = os.getenv("VAP_AUDIT_LOGGING", "true").lower() == "true"
+    tls_certfile: str = os.getenv("VAP_TLS_CERTFILE", "")
+    tls_keyfile: str = os.getenv("VAP_TLS_KEYFILE", "")
+    tls_ca_certs: str = os.getenv("VAP_TLS_CA_CERTS", "")
     nuclei_rate_limit: int = int(os.getenv("VAP_NUCLEI_RATE_LIMIT", "150"))
     nuclei_timeout_seconds: int = int(os.getenv("VAP_NUCLEI_TIMEOUT", "10"))
     nuclei_severities: str = os.getenv(

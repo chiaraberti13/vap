@@ -30,6 +30,7 @@
           {% endif %}
 
           <form class="mt-6 grid gap-5" method="post" action="/scans">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
             <label class="grid gap-2">
               <span class="text-sm text-slate-300">Target</span>
               <input
