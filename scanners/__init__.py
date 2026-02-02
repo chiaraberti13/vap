@@ -10,6 +10,14 @@ from .whatweb_scanner import WhatWebScanner
 from .subfinder_scanner import SubfinderScanner
 from .nikto_scanner import NiktoScanner
 from .dirsearch_scanner import DirsearchScanner
+from .sqlmap_scanner import SqlmapScanner
+from .xsstrike_scanner import XsstrikeScanner
+from .zap_scanner import ZapScanner
+from .burp_scanner import BurpScanner
+from .wapiti_scanner import WapitiScanner
+from .commix_scanner import CommixScanner
+from .acunetix_scanner import AcunetixScanner
+from .nessus_scanner import NessusScanner
 
 __all__ = [
     "NucleiScanner",
@@ -18,4 +26,12 @@ __all__ = [
     "SubfinderScanner",
     "NiktoScanner",
     "DirsearchScanner",
+    "SqlmapScanner",
+    "XsstrikeScanner",
+    "ZapScanner",
+    "BurpScanner",
+    "WapitiScanner",
+    "CommixScanner",
+    "AcunetixScanner",
+    "NessusScanner",
 ]
