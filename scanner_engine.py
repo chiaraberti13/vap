@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import json
-from ipaddress import ip_address
+from ipaddress import ip_address, ip_network
 import re
 import sys
 from typing import Any, Dict, List
@@ -64,6 +64,63 @@ def validate_target(target: str) -> str:
     return target
 
 
+def validate_nmap_target(target: str) -> str:
+    if not target or len(target) > 255:
+        raise ScanValidationError("Target non valido o troppo lungo.")
+
+    target = target.strip()
+    if " " in target:
+        raise ScanValidationError("Il target Nmap non deve contenere spazi.")
+
+    if "://" in target:
+        parsed = urlparse(target)
+        if not parsed.hostname:
+            raise ScanValidationError("Hostname non valido.")
+        return parsed.hostname
+
+    if "/" in target:
+        try:
+            ip_network(target, strict=False)
+        except ValueError as exc:
+            raise ScanValidationError("CIDR non valido.") from exc
+        return target
+
+    if "-" in target:
+        start, end = target.split("-", maxsplit=1)
+        start = start.strip()
+        end = end.strip()
+        try:
+            start_ip = ip_address(start)
+        except ValueError as exc:
+            raise ScanValidationError("IP iniziale non valido.") from exc
+
+        if "." not in end:
+            start_octets = start.split(".")
+            if len(start_octets) != 4:
+                raise ScanValidationError("Formato range IP non valido.")
+            try:
+                end_octet = int(end)
+            except ValueError as exc:
+                raise ScanValidationError("Ottetto finale range non valido.") from exc
+            if not 0 <= end_octet <= 255:
+                raise ScanValidationError("Ottetto finale range non valido.")
+            end_ip = ip_address(".".join(start_octets[:3] + [str(end_octet)]))
+        else:
+            try:
+                end_ip = ip_address(end)
+            except ValueError as exc:
+                raise ScanValidationError("IP finale non valido.") from exc
+
+        if int(end_ip) < int(start_ip):
+            raise ScanValidationError("Range IP non valido: fine < inizio.")
+        return target
+
+    if not TARGET_REGEX.match(target):
+        raise ScanValidationError("Formato target non valido. Usa URL o IP.")
+
+    return target
+
+
 def _collect_findings(results: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     findings: List[Dict[str, Any]] = []
     for result in results:
@@ -89,7 +146,6 @@ def _run_scanner(scanner_cls: type, target: str) -> Dict[str, Any]:
 
 
 def run_scan(target: str, scan_type: str) -> ScanResult:
-    validated_target = validate_target(target)
     scan_type = scan_type.lower().strip()
 
     scanners_map = {
@@ -101,8 +157,13 @@ def run_scan(target: str, scan_type: str) -> ScanResult:
     }
 
     if scan_type == "full":
+        validated_target = validate_target(target)
         scanner_classes = list(scanners_map.values())
     elif scan_type in scanners_map:
+        if scan_type == "nmap":
+            validated_target = validate_nmap_target(target)
+        else:
+            validated_target = validate_target(target)
         scanner_classes = [scanners_map[scan_type]]
     else:
         raise ScanValidationError("Tipo di scansione non supportato.")

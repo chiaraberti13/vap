@@ -2,8 +2,26 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict
+from typing import Any, Dict, List
+from urllib.parse import urlparse
+import shlex
 import shutil
+import subprocess
+import xml.etree.ElementTree as ET
+
+from config import settings
+
+
+VULNERABLE_SERVICE_HINTS = {
+    "telnet": ("Servizio Telnet non cifrato esposto.", "high"),
+    "ftp": ("Servizio FTP esposto: possibile intercettazione credenziali.", "medium"),
+    "smtp": ("Servizio SMTP esposto: verificare configurazioni relaying.", "medium"),
+    "smb": ("Servizio SMB esposto: verificare patch e accessi.", "high"),
+    "rdp": ("Servizio RDP esposto: verificare MFA e policy.", "high"),
+    "vnc": ("Servizio VNC esposto: rischio accesso remoto non autorizzato.", "high"),
+    "redis": ("Servizio Redis esposto: verificare autenticazione.", "high"),
+    "mongodb": ("Servizio MongoDB esposto: verificare autenticazione.", "high"),
+}
 
 
 @dataclass
@@ -33,9 +51,178 @@ class NmapScanner:
                 "findings": [],
             }
 
+        normalized_target = self._normalize_target(target)
+        profile = settings.nmap_profile
+        command = self._build_command(normalized_target, profile)
+
+        try:
+            completed = subprocess.run(
+                command,
+                capture_output=True,
+                text=True,
+                timeout=settings.scan_timeout_seconds,
+                check=False,
+            )
+        except subprocess.TimeoutExpired:
+            return {
+                "tool": "nmap",
+                "status": "timeout",
+                "message": "Timeout durante l'esecuzione di Nmap.",
+                "findings": [],
+            }
+
+        xml_output = completed.stdout.strip()
+        if not xml_output:
+            message = completed.stderr.strip() or "Output XML Nmap vuoto."
+            return {
+                "tool": "nmap",
+                "status": "error",
+                "message": message,
+                "findings": [],
+            }
+
+        findings = self._parse_nmap_xml(xml_output)
+        status = "executed" if completed.returncode == 0 else "completed_with_warnings"
+
         return {
             "tool": "nmap",
-            "status": "executed",
-            "message": "Esecuzione live non implementata in questa versione.",
-            "findings": [],
+            "status": status,
+            "profile": profile,
+            "target": normalized_target,
+            "findings": findings,
         }
+
+    def _normalize_target(self, target: str) -> str:
+        if "://" in target:
+            parsed = urlparse(target)
+            return parsed.hostname or target
+        return target
+
+    def _build_command(self, target: str, profile: str) -> List[str]:
+        base_args = ["nmap", "-sV", "-sC", "-O"]
+        profile_args = self._profile_args(profile)
+        additional_args = shlex.split(settings.nmap_additional_args)
+        return [*base_args, *profile_args, *additional_args, "-oX", "-", target]
+
+    def _profile_args(self, profile: str) -> List[str]:
+        profiles = {
+            "quick": ["-T4", "-F"],
+            "full": ["-T4", "-p-"],
+            "stealth": ["-sS", "-T2", "-Pn"],
+        }
+        return profiles.get(profile, profiles["quick"])
+
+    def _parse_nmap_xml(self, xml_output: str) -> List[Dict[str, Any]]:
+        findings: List[Dict[str, Any]] = []
+        try:
+            root = ET.fromstring(xml_output)
+        except ET.ParseError:
+            return [
+                {
+                    "title": "Errore parsing XML Nmap",
+                    "severity": "low",
+                    "description": "Output XML non valido, impossibile analizzare i risultati.",
+                    "recommendation": "Verificare la versione di Nmap o rieseguire la scansione.",
+                }
+            ]
+
+        for host in root.findall("host"):
+            status = host.find("status")
+            if status is not None and status.get("state") == "down":
+                continue
+            addresses = [addr.get("addr") for addr in host.findall("address") if addr.get("addr")]
+            hostnames = [
+                node.get("name") for node in host.findall("hostnames/hostname") if node.get("name")
+            ]
+            os_matches = [
+                {
+                    "name": osmatch.get("name"),
+                    "accuracy": osmatch.get("accuracy"),
+                }
+                for osmatch in host.findall("os/osmatch")
+                if osmatch.get("name")
+            ]
+            if os_matches:
+                best_match = os_matches[0]
+                findings.append(
+                    {
+                        "title": "OS detection rilevata",
+                        "severity": "info",
+                        "description": (
+                            f"OS probabile: {best_match['name']} "
+                            f"(accuratezza {best_match.get('accuracy', 'n/d')}%)."
+                        ),
+                        "recommendation": "Verificare che l'OS sia aggiornato e supportato.",
+                    }
+                )
+
+            for port in host.findall("ports/port"):
+                state = port.find("state")
+                if state is None or state.get("state") != "open":
+                    continue
+
+                service = port.find("service")
+                service_name = service.get("name") if service is not None else "sconosciuto"
+                product = service.get("product") if service is not None else None
+                version = service.get("version") if service is not None else None
+                extrainfo = service.get("extrainfo") if service is not None else None
+                cpe_list = [cpe.text for cpe in port.findall("service/cpe") if cpe.text]
+                banner_parts = [part for part in [product, version, extrainfo] if part]
+                banner = " ".join(banner_parts) if banner_parts else "Banner non disponibile"
+
+                port_id = port.get("portid")
+                protocol = port.get("protocol")
+                host_label = ", ".join(hostnames or addresses) or "host sconosciuto"
+
+                findings.append(
+                    {
+                        "title": f"Porta aperta {port_id}/{protocol}",
+                        "severity": "low",
+                        "description": (
+                            f"{host_label}: servizio {service_name} ({banner}). "
+                            f"CPE: {', '.join(cpe_list) if cpe_list else 'n/d'}."
+                        ),
+                        "recommendation": "Confermare necessità del servizio e limitare l'esposizione.",
+                    }
+                )
+
+                self._append_service_risk(findings, service_name, port_id, host_label)
+                self._append_script_findings(findings, port, host_label)
+
+        return findings
+
+    def _append_service_risk(
+        self, findings: List[Dict[str, Any]], service_name: str, port_id: str | None, host_label: str
+    ) -> None:
+        hint = VULNERABLE_SERVICE_HINTS.get(service_name)
+        if not hint:
+            return
+        message, severity = hint
+        findings.append(
+            {
+                "title": f"Servizio potenzialmente vulnerabile: {service_name}",
+                "severity": severity,
+                "description": f"{host_label} (porta {port_id}): {message}",
+                "recommendation": "Applicare hardening, patch e restrizioni di accesso.",
+            }
+        )
+
+    def _append_script_findings(
+        self, findings: List[Dict[str, Any]], port: ET.Element, host_label: str
+    ) -> None:
+        for script in port.findall("script"):
+            script_id = script.get("id", "script")
+            output = script.get("output", "").strip()
+            if not output:
+                continue
+            severity = "medium" if "VULNERABLE" in output.upper() else "info"
+            if "vuln" in script_id:
+                severity = "high"
+            findings.append(
+                {
+                    "title": f"Risultato script Nmap: {script_id}",
+                    "severity": severity,
+                    "description": f"{host_label}: {output}",
+                    "recommendation": "Analizzare il risultato e applicare le mitigazioni indicate.",
+                }
+            )
