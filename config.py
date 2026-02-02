@@ -38,6 +38,8 @@ class Settings:
         os.getenv("VAP_NUCLEI_UPDATE_TEMPLATES", "true").lower() == "true"
     )
     nuclei_additional_args: str = os.getenv("VAP_NUCLEI_ADDITIONAL_ARGS", "")
+    nmap_profile: str = os.getenv("VAP_NMAP_PROFILE", "quick").lower()
+    nmap_additional_args: str = os.getenv("VAP_NMAP_ADDITIONAL_ARGS", "")
 
 
 settings = Settings()
