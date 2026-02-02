@@ -163,16 +163,48 @@
           cancelButton.disabled = true;
           cancelButton.classList.add("opacity-50", "cursor-not-allowed");
         }
+        allowReconnect = false;
+        if (socket && socket.readyState === WebSocket.OPEN) {
+          socket.close();
+        }
       }
     }
 
     const wsProtocol = window.location.protocol === "https:" ? "wss" : "ws";
     const wsUrl = `${wsProtocol}://${window.location.host}/ws?scan_id=${scanId}${apiKey ? `&api_key=${apiKey}` : ""}`;
-    const socket = new WebSocket(wsUrl);
-    socket.onmessage = (event) => {
-      const payload = JSON.parse(event.data);
-      handlePayload(payload);
-    };
+    let socket;
+    let reconnectAttempts = 0;
+    const maxReconnectAttempts = 5;
+    const baseDelayMs = 1000;
+    let allowReconnect = true;
+
+    function connectWebSocket() {
+      socket = new WebSocket(wsUrl);
+
+      socket.onmessage = (event) => {
+        const payload = JSON.parse(event.data);
+        handlePayload(payload);
+      };
+
+      socket.onopen = () => {
+        reconnectAttempts = 0;
+      };
+
+      socket.onclose = () => {
+        if (!allowReconnect || reconnectAttempts >= maxReconnectAttempts) {
+          return;
+        }
+        const delay = Math.min(baseDelayMs * 2 ** reconnectAttempts, 10000);
+        reconnectAttempts += 1;
+        setTimeout(connectWebSocket, delay);
+      };
+
+      socket.onerror = () => {
+        socket.close();
+      };
+    }
+
+    connectWebSocket();
 
     if (cancelButton) {
       cancelButton.addEventListener("click", async () => {

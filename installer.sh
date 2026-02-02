@@ -496,11 +496,35 @@ EOF
 
     # Install Dirsearch for content discovery.
     log_info "Installing Dirsearch..."
-    if [ ! -d "$tools_dir/dirsearch" ]; then
-        git clone https://github.com/maurosoria/dirsearch.git "$tools_dir/dirsearch"
-        pip3 install -r "$tools_dir/dirsearch/requirements.txt" --break-system-packages 2>/dev/null || \
-            pip3 install -r "$tools_dir/dirsearch/requirements.txt"
-        log_success "Dirsearch installed"
+    if ! command -v dirsearch &> /dev/null; then
+        local dirsearch_dir="$tools_dir/dirsearch"
+        if [ -d "$dirsearch_dir" ]; then
+            log_warning "Dirsearch directory already exists. Trying to update it..."
+            if git -C "$dirsearch_dir" rev-parse --is-inside-work-tree &> /dev/null; then
+                git -C "$dirsearch_dir" pull --ff-only || log_warning "Dirsearch update failed."
+            else
+                log_warning "Existing Dirsearch directory is not a git repo. Skipping update."
+            fi
+        else
+            if ! git clone https://github.com/maurosoria/dirsearch.git "$dirsearch_dir"; then
+                log_warning "Dirsearch clone failed. Skipping installation."
+            else
+                log_success "Dirsearch repository cloned"
+            fi
+        fi
+
+        if [ -d "$dirsearch_dir" ]; then
+            pip3 install -r "$dirsearch_dir/requirements.txt" --break-system-packages 2>/dev/null || \
+                pip3 install -r "$dirsearch_dir/requirements.txt"
+            ensure_local_bin_path
+            mkdir -p "$HOME/.local/bin"
+            cat << EOF > "$HOME/.local/bin/dirsearch"
+#!/usr/bin/env bash
+python3 "$dirsearch_dir/dirsearch.py" "\$@"
+EOF
+            chmod +x "$HOME/.local/bin/dirsearch"
+            log_success "Dirsearch installed"
+        fi
     else
         log_success "Dirsearch already installed"
     fi
