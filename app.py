@@ -31,7 +31,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 templates = Jinja2Templates(directory="templates")
 
-SCAN_TYPES = ["full", "nuclei", "nmap", "whatweb", "subfinder", "nikto"]
+SCAN_TYPES = ["full", "nuclei", "nmap", "whatweb", "subfinder", "nikto", "dirsearch"]
 
 
 class APIKeyUIError(Exception):
