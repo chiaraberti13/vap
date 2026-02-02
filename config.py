@@ -28,6 +28,16 @@ class Settings:
     max_concurrent_scanners: int = int(os.getenv("VAP_MAX_CONCURRENT_SCANNERS", "5"))
     api_key: str = os.getenv("VAP_API_KEY", "")
     require_https: bool = os.getenv("VAP_REQUIRE_HTTPS", "false").lower() == "true"
+    nuclei_rate_limit: int = int(os.getenv("VAP_NUCLEI_RATE_LIMIT", "150"))
+    nuclei_timeout_seconds: int = int(os.getenv("VAP_NUCLEI_TIMEOUT", "10"))
+    nuclei_severities: str = os.getenv(
+        "VAP_NUCLEI_SEVERITIES", "critical,high,medium,low,info"
+    )
+    nuclei_templates: str = os.getenv("VAP_NUCLEI_TEMPLATES", "")
+    nuclei_update_templates: bool = (
+        os.getenv("VAP_NUCLEI_UPDATE_TEMPLATES", "true").lower() == "true"
+    )
+    nuclei_additional_args: str = os.getenv("VAP_NUCLEI_ADDITIONAL_ARGS", "")
 
 
 settings = Settings()
