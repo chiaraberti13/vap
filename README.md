@@ -37,6 +37,20 @@ python3 app.py
 
 The server will be available at `http://localhost:8000`.
 
+### ⚙️ Avvio Celery worker (scansioni asincrone)
+
+Le scansioni parallele richiedono Redis e un worker Celery attivo.
+
+```bash
+# Avvia Redis (esempio Ubuntu/Debian)
+sudo systemctl start redis-server
+
+# Avvia il worker Celery (usa la coda configurata in VAP_CELERY_DEFAULT_QUEUE)
+celery -A celery_app.celery_app worker -l info -Q scans -c 4
+```
+
+> Suggerimento: personalizza la concorrenza con `VAP_CELERY_WORKER_CONCURRENCY`.
+
 ## 🚀 Quick Start (Windows)
 
 Open PowerShell and run:
