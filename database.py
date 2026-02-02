@@ -32,6 +32,14 @@ class Scan(Base):
     completed_at = Column(DateTime, nullable=True)
     findings_json = Column(Text, nullable=True)
     report_path = Column(String(255), nullable=True)
+    progress = Column(Integer, nullable=False, default=0)
+    priority = Column(Integer, nullable=False, default=5)
+    celery_task_id = Column(String(255), nullable=True)
+    child_task_ids_json = Column(Text, nullable=True)
+    total_scanners = Column(Integer, nullable=True)
+    completed_scanners = Column(Integer, nullable=True)
+    logs_json = Column(Text, nullable=True)
+    notifications_json = Column(Text, nullable=True)
 
 
 def init_db() -> None:
