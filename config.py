@@ -40,6 +40,17 @@ class Settings:
     nuclei_additional_args: str = os.getenv("VAP_NUCLEI_ADDITIONAL_ARGS", "")
     nmap_profile: str = os.getenv("VAP_NMAP_PROFILE", "quick").lower()
     nmap_additional_args: str = os.getenv("VAP_NMAP_ADDITIONAL_ARGS", "")
+    securitytrails_api_key: str = os.getenv("VAP_SECURITYTRAILS_API_KEY", "")
+    virustotal_api_key: str = os.getenv("VAP_VIRUSTOTAL_API_KEY", "")
+    shodan_api_key: str = os.getenv("VAP_SHODAN_API_KEY", "")
+    subfinder_sources: str = os.getenv("VAP_SUBFINDER_SOURCES", "")
+    subfinder_resolve_limit: int = int(os.getenv("VAP_SUBFINDER_RESOLVE_LIMIT", "200"))
+    dirsearch_path: str = os.getenv("VAP_DIRSEARCH_PATH", "dirsearch")
+    dirsearch_wordlist: str = os.getenv("VAP_DIRSEARCH_WORDLIST", "")
+    dirsearch_extensions: str = os.getenv(
+        "VAP_DIRSEARCH_EXTENSIONS", "php,asp,aspx,js,html,zip,tar.gz,bak,old,backup"
+    )
+    dirsearch_threads: int = int(os.getenv("VAP_DIRSEARCH_THREADS", "20"))
 
 
 settings = Settings()

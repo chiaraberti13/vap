@@ -19,6 +19,7 @@ from scanners import (
     WhatWebScanner,
     SubfinderScanner,
     NiktoScanner,
+    DirsearchScanner,
 )
 
 
@@ -154,6 +155,7 @@ def run_scan(target: str, scan_type: str) -> ScanResult:
         "whatweb": WhatWebScanner,
         "subfinder": SubfinderScanner,
         "nikto": NiktoScanner,
+        "dirsearch": DirsearchScanner,
     }
 
     if scan_type == "full":
@@ -205,7 +207,7 @@ def _build_cli_parser() -> "argparse.ArgumentParser":
     parser.add_argument(
         "--scan-type",
         default="full",
-        choices=["full", "nuclei", "nmap", "whatweb", "subfinder", "nikto"],
+        choices=["full", "nuclei", "nmap", "whatweb", "subfinder", "nikto", "dirsearch"],
         help="Tipo di scansione da eseguire.",
     )
     parser.add_argument(

@@ -9,11 +9,13 @@ from .nmap_scanner import NmapScanner
 from .whatweb_scanner import WhatWebScanner
 from .subfinder_scanner import SubfinderScanner
 from .nikto_scanner import NiktoScanner
+from .dirsearch_scanner import DirsearchScanner
 
 __all__ = [
     "NucleiScanner",
     "NmapScanner",
     "WhatWebScanner",
     "SubfinderScanner",
-    "NiktoScanner"
+    "NiktoScanner",
+    "DirsearchScanner",
 ]
