@@ -135,8 +135,7 @@ def create_scan_form(
         findings_json=serialize_findings(scan_result.findings),
     )
     db.add(scan)
-    db.commit()
-    db.refresh(scan)
+    db.flush()
 
     report_error = None
     try:
@@ -145,10 +144,10 @@ def create_scan_form(
         report_error = "Impossibile generare il report PDF. Verifica i permessi della cartella reports/."
         scan.status = "report_failed"
         scan.report_path = None
-        db.commit()
     else:
         scan.report_path = str(report_path)
-        db.commit()
+    db.commit()
+    db.refresh(scan)
 
     redirect_url = f"/scans/{scan.id}"
     if api_key:
@@ -166,7 +165,7 @@ def create_scan_form(
                 "download_url": None,
                 "api_key": api_key,
             },
-            status_code=500,
+            status_code=200,
         )
 
     return RedirectResponse(url=redirect_url, status_code=303)
@@ -196,7 +195,7 @@ def scan_detail(request: Request, scan_id: int, db: Session = Depends(get_db)) -
     api_key = request.query_params.get("api_key")
     download_url = None
     if scan.report_path:
-        download_url = f"/api/v1/scans/{scan.id}/report/download"
+        download_url = f"/scans/{scan.id}/report/download"
         if api_key:
             download_url = f"{download_url}?api_key={api_key}"
     return templates.TemplateResponse(
@@ -231,22 +230,26 @@ def create_scan(
         findings_json=serialize_findings(scan_result.findings),
     )
     db.add(scan)
-    db.commit()
-    db.refresh(scan)
+    db.flush()
 
     try:
         report_path = generate_report(scan.id, scan.target, scan.scan_type, scan_result.findings)
-    except Exception as exc:
+    except Exception:
         scan.status = "report_failed"
         scan.report_path = None
         db.commit()
-        raise HTTPException(
-            status_code=500,
-            detail="Errore durante la generazione del report.",
-        ) from exc
+        return ScanStatus(
+            id=scan.id,
+            target=scan.target,
+            scan_type=scan.scan_type,
+            status=scan.status,
+            created_at=scan.created_at,
+            completed_at=scan.completed_at,
+        )
 
     scan.report_path = str(report_path)
     db.commit()
+    db.refresh(scan)
 
     return ScanStatus(
         id=scan.id,
@@ -255,6 +258,24 @@ def create_scan(
         status=scan.status,
         created_at=scan.created_at,
         completed_at=scan.completed_at,
+    )
+
+
+@app.get("/scans/{scan_id}/report/download")
+def download_report_ui(
+    request: Request,
+    scan_id: int,
+    db: Session = Depends(get_db),
+    _: None = Depends(enforce_api_key),
+) -> FileResponse:
+    scan = db.query(Scan).filter(Scan.id == scan_id).first()
+    if not scan or not scan.report_path:
+        raise HTTPException(status_code=404, detail="Report non disponibile")
+
+    return FileResponse(
+        scan.report_path,
+        media_type="application/pdf",
+        filename=scan.report_path.split("/")[-1],
     )
 
 

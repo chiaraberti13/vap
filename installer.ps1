@@ -49,6 +49,11 @@ function Test-RequiredFiles {
         "report_generator.py",
         "requirements.txt",
         "scanners/__init__.py",
+        "scanners/nuclei_scanner.py",
+        "scanners/nmap_scanner.py",
+        "scanners/whatweb_scanner.py",
+        "scanners/subfinder_scanner.py",
+        "scanners/nikto_scanner.py",
         "templates/index.html",
         "templates/scan_detail.html",
         "templates/scans_list.html"
