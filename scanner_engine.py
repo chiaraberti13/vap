@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import json
 from ipaddress import ip_address
 import re
@@ -66,6 +67,23 @@ def _collect_findings(results: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     return findings[: settings.max_findings]
 
 
+def _scanner_label(scanner_cls: type) -> str:
+    return scanner_cls.__name__.replace("Scanner", "").lower()
+
+
+def _run_scanner(scanner_cls: type, target: str) -> Dict[str, Any]:
+    scanner = scanner_cls(enable_live_scans=settings.enable_live_scans)
+    try:
+        return scanner.run(target)
+    except Exception as exc:
+        return {
+            "tool": _scanner_label(scanner_cls),
+            "status": "error",
+            "message": str(exc),
+            "findings": [],
+        }
+
+
 def run_scan(target: str, scan_type: str) -> ScanResult:
     validated_target = validate_target(target)
     scan_type = scan_type.lower().strip()
@@ -88,9 +106,14 @@ def run_scan(target: str, scan_type: str) -> ScanResult:
     started_at = datetime.now(timezone.utc)
     results: List[Dict[str, Any]] = []
 
-    for scanner_cls in scanner_classes:
-        scanner = scanner_cls(enable_live_scans=settings.enable_live_scans)
-        results.append(scanner.run(validated_target))
+    max_workers = max(1, min(len(scanner_classes), settings.max_concurrent_scanners))
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        future_map = {
+            executor.submit(_run_scanner, scanner_cls, validated_target): scanner_cls
+            for scanner_cls in scanner_classes
+        }
+        for future in as_completed(future_map):
+            results.append(future.result())
 
     findings = _collect_findings(results)
     completed_at = datetime.now(timezone.utc)

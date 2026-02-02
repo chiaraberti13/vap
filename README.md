@@ -5,7 +5,7 @@ Professional, modular **Vulnerability Assessment** platform with advanced scanni
 ## ✨ Features
 
 - **Multi-Scanner Integration**: Nuclei, Nmap, WhatWeb, Subfinder, Nikto
-- **Scans Sequenziali**: Esecuzione controllata per compatibilità e stabilità dei tool
+- **Scans Parallele**: Esecuzione concorrente dei tool con limite configurabile
 - **Professional PDF Reports**: Executive summary, charts, OWASP Top 10 mapping
 - **Web Dashboard**: Modern UI with Tailwind CSS
 - **REST API**: Full API for automation and integrations
@@ -116,6 +116,7 @@ vulnerability-assessment-platform/
 
 Edit `config.py` to customize:
 - Scanner timeouts
+- Max scanner concurrency (`VAP_MAX_CONCURRENT_SCANNERS`)
 - External tool paths
 - PDF report settings
 - Database configuration

@@ -75,6 +75,19 @@ ensure_local_bin_path() {
     fi
 }
 
+# Ensure /usr/local/go/bin is available in PATH for Go installs from official tarballs.
+ensure_go_path() {
+    if [[ ":$PATH:" != *":/usr/local/go/bin:"* ]]; then
+        export PATH="/usr/local/go/bin:$PATH"
+        if [ -f "$HOME/.bashrc" ]; then
+            echo 'export PATH="/usr/local/go/bin:$PATH"' >> "$HOME/.bashrc"
+        fi
+        if [ -f "$HOME/.zshrc" ]; then
+            echo 'export PATH="/usr/local/go/bin:$PATH"' >> "$HOME/.zshrc"
+        fi
+    fi
+}
+
 # Check if script is run as root to avoid permission mistakes.
 check_root() {
     if [ "$EUID" -eq 0 ]; then 
@@ -279,14 +292,70 @@ install_system_dependencies() {
     log_success "System dependencies installation completed"
 }
 
+# Install or upgrade Go from the official distribution (Linux only).
+install_go_from_official() {
+    log_info "Installing Go from the official distribution..."
+
+    if [ "$PLATFORM" != "linux" ]; then
+        log_warning "Official Go installer is supported only on Linux in this script."
+        return 1
+    fi
+
+    local arch
+    case "$(uname -m)" in
+        x86_64)
+            arch="amd64"
+            ;;
+        aarch64|arm64)
+            arch="arm64"
+            ;;
+        *)
+            log_warning "Unsupported architecture for Go install: $(uname -m)"
+            return 1
+            ;;
+    esac
+
+    local go_version
+    if ! go_version=$(curl -fsSL https://go.dev/VERSION?m=text); then
+        log_warning "Unable to fetch the latest Go version."
+        return 1
+    fi
+
+    local tarball="${go_version}.linux-${arch}.tar.gz"
+    local tmp_archive="/tmp/${tarball}"
+
+    log_info "Downloading ${tarball}..."
+    if ! curl -fsSL "https://dl.google.com/go/${tarball}" -o "$tmp_archive"; then
+        log_warning "Failed to download Go archive."
+        return 1
+    fi
+
+    log_info "Installing Go to /usr/local/go..."
+    sudo rm -rf /usr/local/go
+    sudo tar -C /usr/local -xzf "$tmp_archive"
+    rm -f "$tmp_archive"
+
+    ensure_go_path
+    log_success "Go ${go_version} installed from official distribution."
+    return 0
+}
+
 # Configure Go environment variables and persist them for future shells.
 setup_go_environment() {
     log_info "Configuring Go environment..."
 
     # Ensure Go is installed and available in PATH.
     if ! command -v go &> /dev/null; then
-        log_error "Go is not installed or not available in PATH."
-        exit 1
+        if [ "$PLATFORM" = "linux" ]; then
+            log_warning "Go not found. Attempting to install Go from official distribution."
+            if ! install_go_from_official; then
+                log_error "Go is not installed or not available in PATH."
+                exit 1
+            fi
+        else
+            log_error "Go is not installed or not available in PATH."
+            exit 1
+        fi
     fi
 
     # Configure GOPATH if missing.
@@ -312,8 +381,21 @@ setup_go_environment() {
         local minor="${BASH_REMATCH[2]}"
         if (( major < 1 || (major == 1 && minor < 19) )); then
             log_warning "Go ${go_version} rilevato. Nuclei v3 richiede Go >= 1.19."
-            log_warning "Aggiorna Go (es. https://go.dev/dl/) prima di installare i tool."
-            GO_TOO_OLD=1
+            if [ "$PLATFORM" = "linux" ]; then
+                log_warning "Tentativo di aggiornamento automatico di Go."
+                if install_go_from_official; then
+                    go_version=$(go version | awk '{print $3}' | sed 's/go//')
+                    if [[ "$go_version" =~ ^([0-9]+)\.([0-9]+) ]]; then
+                        major="${BASH_REMATCH[1]}"
+                        minor="${BASH_REMATCH[2]}"
+                    fi
+                fi
+            else
+                log_warning "Aggiorna Go manualmente (es. brew upgrade go o https://go.dev/dl/)."
+            fi
+            if (( major < 1 || (major == 1 && minor < 19) )); then
+                GO_TOO_OLD=1
+            fi
         fi
     fi
 

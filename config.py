@@ -25,6 +25,7 @@ class Settings:
     scan_timeout_seconds: int = int(os.getenv("VAP_SCAN_TIMEOUT", "300"))
     enable_live_scans: bool = os.getenv("VAP_ENABLE_LIVE_SCANS", "false").lower() == "true"
     max_findings: int = int(os.getenv("VAP_MAX_FINDINGS", "200"))
+    max_concurrent_scanners: int = int(os.getenv("VAP_MAX_CONCURRENT_SCANNERS", "5"))
     api_key: str = os.getenv("VAP_API_KEY", "")
     require_https: bool = os.getenv("VAP_REQUIRE_HTTPS", "false").lower() == "true"
 
