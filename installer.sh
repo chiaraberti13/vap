@@ -131,16 +131,16 @@ check_python_version() {
 
         if version_output=$("$candidate" << 'PY'
 import sys
-min_v = (3, 10)
-max_v = (3, 12)
-current = sys.version_info[:2]
+min_v = (3, 10, 0)
+max_v = (3, 12, 99)
+current = sys.version_info[:3]
 if current < min_v or current > max_v:
     print(
-        f"Unsupported Python {current[0]}.{current[1]} detected. "
-        "Supported versions: 3.10 - 3.12."
+        f"Unsupported Python {current[0]}.{current[1]}.{current[2]} detected. "
+        "Supported versions: 3.10.x - 3.12.x."
     )
     sys.exit(1)
-print(f"Python {current[0]}.{current[1]} detected (OK).")
+print(f"Python {current[0]}.{current[1]}.{current[2]} detected (OK).")
 PY
 ); then
             PYTHON_BIN="$candidate"
@@ -323,7 +323,7 @@ install_security_tools() {
     local tools_dir="$HOME/security-tools"
     local start_dir="$PWD"
     mkdir -p "$tools_dir"
-    cd "$tools_dir"
+    pushd "$tools_dir" >/dev/null
 
     # Install Nuclei via Go if missing.
     log_info "Installing Nuclei..."
@@ -384,7 +384,7 @@ install_security_tools() {
         fi
 
         if [ -d "$whatweb_dir" ]; then
-            cd "$whatweb_dir"
+            pushd "$whatweb_dir" >/dev/null
             ensure_local_bin_path
             if make install PREFIX="$HOME/.local"; then
                 log_success "WhatWeb installed to ~/.local"
@@ -399,7 +399,7 @@ EOF
                 chmod +x "$HOME/.local/bin/whatweb"
                 log_success "WhatWeb wrapper installed to ~/.local/bin"
             fi
-            cd "$tools_dir"
+            popd >/dev/null
         else
             log_warning "WhatWeb directory not available. Continuing without WhatWeb."
         fi
@@ -418,6 +418,7 @@ EOF
         log_success "Dirsearch already installed"
     fi
 
+    popd >/dev/null
     cd "$start_dir"
     log_success "Security tools installed successfully"
 }

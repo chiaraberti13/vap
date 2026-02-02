@@ -77,16 +77,16 @@ function Assert-PythonVersion {
     Write-Log "Checking Python version..."
     $versionOutput = & $PythonCommand -c @"
 import sys
-min_v = (3, 10)
-max_v = (3, 12)
-current = sys.version_info[:2]
+min_v = (3, 10, 0)
+max_v = (3, 12, 99)
+current = sys.version_info[:3]
 if current < min_v or current > max_v:
     print(
-        f"Unsupported Python {current[0]}.{current[1]} detected. "
-        "Supported versions: 3.10 - 3.12."
+        f"Unsupported Python {current[0]}.{current[1]}.{current[2]} detected. "
+        "Supported versions: 3.10.x - 3.12.x."
     )
     raise SystemExit(1)
-print(f"Python {current[0]}.{current[1]} detected (OK).")
+print(f"Python {current[0]}.{current[1]}.{current[2]} detected (OK).")
 "@
 
     if ($LASTEXITCODE -ne 0) {
