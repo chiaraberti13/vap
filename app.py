@@ -31,6 +31,13 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 templates = Jinja2Templates(directory="templates")
 
+SCAN_TYPES = ["full", "nuclei", "nmap", "whatweb", "subfinder", "nikto"]
+
+
+class APIKeyUIError(Exception):
+    def __init__(self, detail: str) -> None:
+        self.detail = detail
+
 
 def _resolve_api_key(request: Request, submitted_key: Optional[str] = None) -> Optional[str]:
     return submitted_key or request.headers.get("x-api-key") or request.query_params.get("api_key")
@@ -49,7 +56,29 @@ def enforce_api_key_from_form(request: Request, submitted_key: Optional[str]) ->
         return
     api_key = _resolve_api_key(request, submitted_key)
     if api_key != settings.api_key:
-        raise HTTPException(status_code=401, detail="API key non valida")
+        raise APIKeyUIError("API key non valida o mancante.")
+
+
+def enforce_api_key_form_dependency(
+    request: Request,
+    api_key: Optional[str] = Form(None),
+) -> Optional[str]:
+    enforce_api_key_from_form(request, api_key)
+    return api_key
+
+
+@app.exception_handler(APIKeyUIError)
+def api_key_ui_exception_handler(request: Request, exc: APIKeyUIError) -> HTMLResponse:
+    return templates.TemplateResponse(
+        "index.html",
+        {
+            "request": request,
+            "scan_types": SCAN_TYPES,
+            "api_key_required": bool(settings.api_key),
+            "error": exc.detail,
+        },
+        status_code=401,
+    )
 
 
 @app.middleware("http")
@@ -84,7 +113,7 @@ def index(request: Request) -> HTMLResponse:
         "index.html",
         {
             "request": request,
-            "scan_types": ["full", "nuclei", "nmap", "whatweb", "subfinder", "nikto"],
+            "scan_types": SCAN_TYPES,
             "api_key_required": bool(settings.api_key),
         },
     )
@@ -95,23 +124,9 @@ def create_scan_form(
     request: Request,
     target: str = Form(...),
     scan_type: str = Form("full"),
-    api_key: Optional[str] = Form(None),
+    api_key: Optional[str] = Depends(enforce_api_key_form_dependency),
     db: Session = Depends(get_db),
 ) -> HTMLResponse:
-    try:
-        enforce_api_key_from_form(request, api_key)
-    except HTTPException:
-        return templates.TemplateResponse(
-            "index.html",
-            {
-                "request": request,
-                "scan_types": ["full", "nuclei", "nmap", "whatweb", "subfinder", "nikto"],
-                "api_key_required": bool(settings.api_key),
-                "error": "API key non valida o mancante.",
-            },
-            status_code=401,
-        )
-
     try:
         scan_result = run_scan(target=target, scan_type=scan_type)
     except ScanValidationError as exc:
@@ -119,7 +134,7 @@ def create_scan_form(
             "index.html",
             {
                 "request": request,
-                "scan_types": ["full", "nuclei", "nmap", "whatweb", "subfinder", "nikto"],
+                "scan_types": SCAN_TYPES,
                 "api_key_required": bool(settings.api_key),
                 "error": str(exc),
             },

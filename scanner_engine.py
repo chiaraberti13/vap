@@ -22,7 +22,11 @@ from scanners import (
 )
 
 
-TARGET_REGEX = re.compile(r"^(https?://)?([a-zA-Z0-9.-]+|\d{1,3}(?:\.\d{1,3}){3})(:\d{1,5})?(/.*)?$")
+IPV4_OCTET_REGEX = r"(?:25[0-5]|2[0-4]\d|1?\d{1,2})"
+IPV4_ADDRESS_REGEX = rf"{IPV4_OCTET_REGEX}(?:\.{IPV4_OCTET_REGEX}){{3}}"
+TARGET_REGEX = re.compile(
+    rf"^(https?://)?([a-zA-Z0-9.-]+|{IPV4_ADDRESS_REGEX})(:\d{{1,5}})?(/.*)?$"
+)
 
 
 @dataclass
