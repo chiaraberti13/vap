@@ -11,6 +11,7 @@ from celery import chord
 
 from celery_app import celery_app
 from database import SessionLocal, Scan
+from enrichment_engine import enrich_findings
 from report_generator import generate_report
 from scanner_engine import (
     ScanValidationError,
@@ -120,6 +121,7 @@ def finalize_scan(self, results: List[Dict[str, Any]], scan_id: int, target: str
     findings: List[Dict[str, Any]] = []
     for result in results:
         findings.extend(result.get("findings", []))
+    findings = enrich_findings(findings)
 
     with SessionLocal() as db:
         scan = db.query(Scan).filter(Scan.id == scan_id).first()

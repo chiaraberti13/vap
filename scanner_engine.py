@@ -16,6 +16,7 @@ import bleach
 import validators
 
 from config import settings
+from enrichment_engine import enrich_findings
 from scanners import (
     NucleiScanner,
     NmapScanner,
@@ -23,6 +24,14 @@ from scanners import (
     SubfinderScanner,
     NiktoScanner,
     DirsearchScanner,
+    SqlmapScanner,
+    XsstrikeScanner,
+    ZapScanner,
+    BurpScanner,
+    WapitiScanner,
+    CommixScanner,
+    AcunetixScanner,
+    NessusScanner,
 )
 
 
@@ -162,6 +171,14 @@ def get_scanner_classes(scan_type: str) -> List[type]:
         "subfinder": SubfinderScanner,
         "nikto": NiktoScanner,
         "dirsearch": DirsearchScanner,
+        "sqlmap": SqlmapScanner,
+        "xsstrike": XsstrikeScanner,
+        "zap": ZapScanner,
+        "burp": BurpScanner,
+        "wapiti": WapitiScanner,
+        "commix": CommixScanner,
+        "acunetix": AcunetixScanner,
+        "nessus": NessusScanner,
     }
     if scan_type == "full":
         return list(scanners_map.values())
@@ -178,6 +195,14 @@ def run_single_scanner(scanner_name: str, target: str) -> Dict[str, Any]:
         "subfinder": SubfinderScanner,
         "nikto": NiktoScanner,
         "dirsearch": DirsearchScanner,
+        "sqlmap": SqlmapScanner,
+        "xsstrike": XsstrikeScanner,
+        "zap": ZapScanner,
+        "burp": BurpScanner,
+        "wapiti": WapitiScanner,
+        "commix": CommixScanner,
+        "acunetix": AcunetixScanner,
+        "nessus": NessusScanner,
     }
     scanner_cls = scanners_map.get(scanner_name.lower().strip())
     if not scanner_cls:
@@ -207,6 +232,7 @@ def run_scan(target: str, scan_type: str) -> ScanResult:
             results.append(future.result())
 
     findings = _collect_findings(results)
+    findings = enrich_findings(findings)
     completed_at = datetime.now(timezone.utc)
 
     return ScanResult(
@@ -231,7 +257,23 @@ def _build_cli_parser() -> "argparse.ArgumentParser":
     parser.add_argument(
         "--scan-type",
         default="full",
-        choices=["full", "nuclei", "nmap", "whatweb", "subfinder", "nikto", "dirsearch"],
+        choices=[
+            "full",
+            "nuclei",
+            "nmap",
+            "whatweb",
+            "subfinder",
+            "nikto",
+            "dirsearch",
+            "sqlmap",
+            "xsstrike",
+            "zap",
+            "burp",
+            "wapiti",
+            "commix",
+            "acunetix",
+            "nessus",
+        ],
         help="Tipo di scansione da eseguire.",
     )
     parser.add_argument(

@@ -173,7 +173,22 @@ def _build_charts(counts: Counter) -> Drawing:
 
 def _scan_coverage(scan_type: str) -> List[Tuple[str, str]]:
     scan_type = scan_type.lower()
-    all_scanners = ["nuclei", "nmap", "whatweb", "subfinder", "nikto", "dirsearch"]
+    all_scanners = [
+        "nuclei",
+        "nmap",
+        "whatweb",
+        "subfinder",
+        "nikto",
+        "dirsearch",
+        "sqlmap",
+        "xsstrike",
+        "zap",
+        "burp",
+        "wapiti",
+        "commix",
+        "acunetix",
+        "nessus",
+    ]
     included = set(all_scanners if scan_type == "full" else [scan_type])
     return [(scanner, "Incluso" if scanner in included else "Escluso") for scanner in all_scanners]
 

@@ -101,6 +101,50 @@ class Settings:
         "VAP_DIRSEARCH_EXTENSIONS", "php,asp,aspx,js,html,zip,tar.gz,bak,old,backup"
     )
     dirsearch_threads: int = int(os.getenv("VAP_DIRSEARCH_THREADS", "20"))
+    sqlmap_path: str = os.getenv("VAP_SQLMAP_PATH", "sqlmap")
+    sqlmap_level: int = int(os.getenv("VAP_SQLMAP_LEVEL", "2"))
+    sqlmap_risk: int = int(os.getenv("VAP_SQLMAP_RISK", "1"))
+    sqlmap_crawl_depth: int = int(os.getenv("VAP_SQLMAP_CRAWL_DEPTH", "1"))
+    sqlmap_forms: bool = os.getenv("VAP_SQLMAP_FORMS", "true").lower() == "true"
+    sqlmap_additional_args: str = os.getenv("VAP_SQLMAP_ADDITIONAL_ARGS", "")
+    xsstrike_path: str = os.getenv("VAP_XSSTRIKE_PATH", "xsstrike")
+    xsstrike_crawl: bool = os.getenv("VAP_XSSTRIKE_CRAWL", "true").lower() == "true"
+    xsstrike_additional_args: str = os.getenv("VAP_XSSTRIKE_ADDITIONAL_ARGS", "")
+    zap_api_base_url: str = os.getenv("VAP_ZAP_API_BASE_URL", "")
+    zap_api_key: str = os.getenv("VAP_ZAP_API_KEY", "")
+    zap_max_alerts: int = int(os.getenv("VAP_ZAP_MAX_ALERTS", "200"))
+    zap_timeout_seconds: int = int(os.getenv("VAP_ZAP_TIMEOUT", "20"))
+    burp_api_base_url: str = os.getenv("VAP_BURP_API_BASE_URL", "")
+    burp_api_key: str = os.getenv("VAP_BURP_API_KEY", "")
+    burp_api_scan_endpoint: str = os.getenv("VAP_BURP_API_SCAN_ENDPOINT", "/v0.1/scan")
+    burp_api_issues_endpoint: str = os.getenv(
+        "VAP_BURP_API_ISSUES_ENDPOINT", "/v0.1/scan/{scan_id}/issues"
+    )
+    burp_timeout_seconds: int = int(os.getenv("VAP_BURP_TIMEOUT", "20"))
+    wapiti_path: str = os.getenv("VAP_WAPITI_PATH", "wapiti")
+    commix_path: str = os.getenv("VAP_COMMIX_PATH", "commix")
+    commix_additional_args: str = os.getenv("VAP_COMMIX_ADDITIONAL_ARGS", "")
+    acunetix_api_base_url: str = os.getenv("VAP_ACUNETIX_API_BASE_URL", "")
+    acunetix_api_key: str = os.getenv("VAP_ACUNETIX_API_KEY", "")
+    acunetix_vulnerabilities_endpoint: str = os.getenv(
+        "VAP_ACUNETIX_VULNERABILITIES_ENDPOINT", "/api/v1/vulnerabilities"
+    )
+    acunetix_timeout_seconds: int = int(os.getenv("VAP_ACUNETIX_TIMEOUT", "20"))
+    nessus_api_base_url: str = os.getenv("VAP_NESSUS_API_BASE_URL", "")
+    nessus_api_key: str = os.getenv("VAP_NESSUS_API_KEY", "")
+    nessus_vulnerabilities_endpoint: str = os.getenv(
+        "VAP_NESSUS_VULNERABILITIES_ENDPOINT", "/vulnerabilities"
+    )
+    nessus_timeout_seconds: int = int(os.getenv("VAP_NESSUS_TIMEOUT", "20"))
+    nvd_api_base_url: str = os.getenv("VAP_NVD_API_BASE_URL", "https://services.nvd.nist.gov/rest/json/cves/2.0")
+    nvd_api_key: str = os.getenv("VAP_NVD_API_KEY", "")
+    nvd_timeout_seconds: int = int(os.getenv("VAP_NVD_TIMEOUT", "10"))
+    nvd_max_cves: int = int(os.getenv("VAP_NVD_MAX_CVES", "20"))
+    exploitdb_searchsploit_path: str = os.getenv("VAP_EXPLOITDB_SEARCHSPLOIT_PATH", "searchsploit")
+    exploitdb_timeout_seconds: int = int(os.getenv("VAP_EXPLOITDB_TIMEOUT", "10"))
+    exploitdb_max_cves: int = int(os.getenv("VAP_EXPLOITDB_MAX_CVES", "20"))
+    false_positive_medium_threshold: float = float(os.getenv("VAP_FP_MEDIUM_THRESHOLD", "0.4"))
+    false_positive_high_threshold: float = float(os.getenv("VAP_FP_HIGH_THRESHOLD", "0.7"))
     celery_broker_url: str = os.getenv("VAP_CELERY_BROKER_URL", "redis://localhost:6379/0")
     celery_result_backend: str = os.getenv("VAP_CELERY_RESULT_BACKEND", "redis://localhost:6379/1")
     celery_default_queue: str = os.getenv("VAP_CELERY_DEFAULT_QUEUE", "scans")

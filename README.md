@@ -4,7 +4,12 @@ Professional, modular **Vulnerability Assessment** platform with advanced scanni
 
 ## ✨ Features
 
-- **Multi-Scanner Integration**: Nuclei, Nmap, WhatWeb, Subfinder, Nikto
+- **Multi-Scanner Integration**: Nuclei, Nmap, WhatWeb, Subfinder, Nikto, Dirsearch, SQLMap, XSStrike, ZAP, Burp, Wapiti, Commix
+- **Scanner Enterprise (opzionali)**: Acunetix, Nessus via API
+- **Vulnerability Correlation Engine**: deduplica e collega i findings multi-tool
+- **False Positive ML Scoring**: scoring euristico per priorità remediation
+- **CVE Enrichment**: integrazione NVD + ExploitDB per verifica CVE
+- **MITRE ATT&CK Mapping**: mappatura automatica tecnica/tattica
 - **Scans Parallele**: Esecuzione concorrente dei tool con limite configurabile
 - **Professional PDF Reports**: Executive summary, charts, OWASP Top 10 mapping
 - **Web Dashboard**: Modern UI with Tailwind CSS
@@ -121,7 +126,16 @@ vulnerability-assessment-platform/
 │   ├── nmap_scanner.py
 │   ├── whatweb_scanner.py
 │   ├── subfinder_scanner.py
-│   └── nikto_scanner.py
+│   ├── nikto_scanner.py
+│   ├── dirsearch_scanner.py
+│   ├── sqlmap_scanner.py
+│   ├── xsstrike_scanner.py
+│   ├── zap_scanner.py
+│   ├── burp_scanner.py
+│   ├── wapiti_scanner.py
+│   ├── commix_scanner.py
+│   ├── acunetix_scanner.py
+│   └── nessus_scanner.py
 ├── templates/                  # HTML templates
 └── reports/                    # Generated PDF reports
 ```
@@ -161,6 +175,15 @@ Unauthorized use may violate local and international laws. You are responsible f
 - **SQLAlchemy**: https://docs.sqlalchemy.org/
 - **ReportLab**: https://www.reportlab.com/documentation/
 - **Tailwind CSS**: https://tailwindcss.com/docs
+- **SQLMap**: http://sqlmap.org/
+- **XSStrike**: https://github.com/s0md3v/XSStrike
+- **OWASP ZAP**: https://www.zaproxy.org/docs/
+- **Burp Suite**: https://portswigger.net/burp/documentation
+- **Wapiti**: https://wapiti-scanner.github.io/
+- **Commix**: https://github.com/commixproject/commix
+- **NVD API**: https://nvd.nist.gov/developers/vulnerabilities
+- **MITRE ATT&CK**: https://attack.mitre.org/
+- **ExploitDB / Searchsploit**: https://www.exploit-db.com/searchsploit
 
 ## 📝 License
 

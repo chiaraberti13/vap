@@ -74,7 +74,23 @@ if settings.cors_allowed_origins:
 
 templates = Jinja2Templates(directory="templates")
 
-SCAN_TYPES = ["full", "nuclei", "nmap", "whatweb", "subfinder", "nikto", "dirsearch"]
+SCAN_TYPES = [
+    "full",
+    "nuclei",
+    "nmap",
+    "whatweb",
+    "subfinder",
+    "nikto",
+    "dirsearch",
+    "sqlmap",
+    "xsstrike",
+    "zap",
+    "burp",
+    "wapiti",
+    "commix",
+    "acunetix",
+    "nessus",
+]
 
 
 class APIKeyUIError(Exception):
