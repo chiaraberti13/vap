@@ -146,9 +146,8 @@ def _run_scanner(scanner_cls: type, target: str) -> Dict[str, Any]:
         }
 
 
-def run_scan(target: str, scan_type: str) -> ScanResult:
+def get_scanner_classes(scan_type: str) -> List[type]:
     scan_type = scan_type.lower().strip()
-
     scanners_map = {
         "nuclei": NucleiScanner,
         "nmap": NmapScanner,
@@ -157,18 +156,36 @@ def run_scan(target: str, scan_type: str) -> ScanResult:
         "nikto": NiktoScanner,
         "dirsearch": DirsearchScanner,
     }
-
     if scan_type == "full":
-        validated_target = validate_target(target)
-        scanner_classes = list(scanners_map.values())
-    elif scan_type in scanners_map:
-        if scan_type == "nmap":
-            validated_target = validate_nmap_target(target)
-        else:
-            validated_target = validate_target(target)
-        scanner_classes = [scanners_map[scan_type]]
+        return list(scanners_map.values())
+    if scan_type in scanners_map:
+        return [scanners_map[scan_type]]
+    raise ScanValidationError("Tipo di scansione non supportato.")
+
+
+def run_single_scanner(scanner_name: str, target: str) -> Dict[str, Any]:
+    scanners_map = {
+        "nuclei": NucleiScanner,
+        "nmap": NmapScanner,
+        "whatweb": WhatWebScanner,
+        "subfinder": SubfinderScanner,
+        "nikto": NiktoScanner,
+        "dirsearch": DirsearchScanner,
+    }
+    scanner_cls = scanners_map.get(scanner_name.lower().strip())
+    if not scanner_cls:
+        raise ScanValidationError("Scanner non supportato.")
+    return _run_scanner(scanner_cls, target)
+
+
+def run_scan(target: str, scan_type: str) -> ScanResult:
+    scan_type = scan_type.lower().strip()
+    scanner_classes = get_scanner_classes(scan_type)
+
+    if scan_type == "nmap":
+        validated_target = validate_nmap_target(target)
     else:
-        raise ScanValidationError("Tipo di scansione non supportato.")
+        validated_target = validate_target(target)
 
     started_at = datetime.now(timezone.utc)
     results: List[Dict[str, Any]] = []

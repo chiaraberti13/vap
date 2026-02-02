@@ -51,6 +51,17 @@ class Settings:
         "VAP_DIRSEARCH_EXTENSIONS", "php,asp,aspx,js,html,zip,tar.gz,bak,old,backup"
     )
     dirsearch_threads: int = int(os.getenv("VAP_DIRSEARCH_THREADS", "20"))
+    celery_broker_url: str = os.getenv("VAP_CELERY_BROKER_URL", "redis://localhost:6379/0")
+    celery_result_backend: str = os.getenv("VAP_CELERY_RESULT_BACKEND", "redis://localhost:6379/1")
+    celery_default_queue: str = os.getenv("VAP_CELERY_DEFAULT_QUEUE", "scans")
+    celery_worker_concurrency: int = int(os.getenv("VAP_CELERY_WORKER_CONCURRENCY", "4"))
+    celery_task_time_limit: int = int(os.getenv("VAP_CELERY_TASK_TIME_LIMIT", "900"))
+    celery_task_soft_time_limit: int = int(os.getenv("VAP_CELERY_TASK_SOFT_TIME_LIMIT", "840"))
+    celery_result_expires_seconds: int = int(os.getenv("VAP_CELERY_RESULT_EXPIRES", "3600"))
+    scan_retention_days: int = int(os.getenv("VAP_SCAN_RETENTION_DAYS", "30"))
+    scan_archive_after_days: int = int(os.getenv("VAP_SCAN_ARCHIVE_AFTER_DAYS", "7"))
+    scheduled_scans: str = os.getenv("VAP_SCHEDULED_SCANS", "[]")
+    websocket_poll_seconds: float = float(os.getenv("VAP_WEBSOCKET_POLL_SECONDS", "2.0"))
 
 
 settings = Settings()

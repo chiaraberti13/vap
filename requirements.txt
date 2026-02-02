@@ -22,6 +22,9 @@ python-dateutil==2.8.2
 # === UTILITIES ===
 pydantic==2.5.3
 python-dotenv==1.0.1
+celery==5.3.6
+redis==5.0.1
+apscheduler==3.10.4
 
 # === TESTING (opzionale) ===
 pytest==7.4.4

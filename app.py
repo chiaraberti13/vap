@@ -3,27 +3,36 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
-from datetime import datetime
+from datetime import datetime, timezone
+import asyncio
 import json
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Set
 
-from fastapi import Depends, FastAPI, Form, HTTPException, Request
+from fastapi import Depends, FastAPI, Form, HTTPException, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
+from background_jobs import start_background_jobs
+from celery_app import celery_app
 from config import settings
-from database import Scan, get_db, init_db
-from report_generator import generate_report
-from scanner_engine import ScanValidationError, run_scan, serialize_findings
+from database import Scan, SessionLocal, get_db, init_db
+from scanner_engine import (
+    ScanValidationError,
+    validate_nmap_target,
+    validate_target,
+)
+from tasks import orchestrate_scan
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     init_db()
+    scheduler = start_background_jobs()
     yield
+    scheduler.shutdown(wait=False)
 
 
 app = FastAPI(title=settings.app_name, lifespan=lifespan)
@@ -95,6 +104,7 @@ async def enforce_https(request: Request, call_next):
 class ScanCreate(BaseModel):
     target: str = Field(..., max_length=255)
     scan_type: str = Field("full")
+    priority: int = Field(5, ge=0, le=9)
 
 
 class ScanStatus(BaseModel):
@@ -104,7 +114,51 @@ class ScanStatus(BaseModel):
     status: str
     created_at: datetime
     completed_at: Optional[datetime]
+    progress: int
+    priority: int
 
+
+class ConnectionManager:
+    def __init__(self) -> None:
+        self.active_connections: Dict[int, Set[WebSocket]] = {}
+
+    async def connect(self, scan_id: int, websocket: WebSocket) -> None:
+        await websocket.accept()
+        self.active_connections.setdefault(scan_id, set()).add(websocket)
+
+    def disconnect(self, scan_id: int, websocket: WebSocket) -> None:
+        if scan_id in self.active_connections:
+            self.active_connections[scan_id].discard(websocket)
+            if not self.active_connections[scan_id]:
+                self.active_connections.pop(scan_id, None)
+
+    async def broadcast(self, scan_id: int, payload: Dict[str, Any]) -> None:
+        for connection in list(self.active_connections.get(scan_id, set())):
+            await connection.send_json(payload)
+
+
+manager = ConnectionManager()
+
+
+def _load_json_list(value: Optional[str]) -> List[Any]:
+    if not value:
+        return []
+    try:
+        payload = json.loads(value)
+    except json.JSONDecodeError:
+        return []
+    return payload if isinstance(payload, list) else []
+
+
+def _build_scan_payload(scan: Scan) -> Dict[str, Any]:
+    return {
+        "id": scan.id,
+        "status": scan.status,
+        "progress": scan.progress,
+        "completed_at": scan.completed_at.isoformat() if scan.completed_at else None,
+        "logs": _load_json_list(scan.logs_json)[-50:],
+        "notifications": _load_json_list(scan.notifications_json)[-10:],
+    }
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -124,11 +178,16 @@ def create_scan_form(
     request: Request,
     target: str = Form(...),
     scan_type: str = Form("full"),
+    priority: int = Form(5),
     api_key: Optional[str] = Depends(enforce_api_key_form_dependency),
     db: Session = Depends(get_db),
 ) -> HTMLResponse:
     try:
-        scan_result = run_scan(target=target, scan_type=scan_type)
+        scan_type = scan_type.lower().strip()
+        if scan_type == "nmap":
+            validate_nmap_target(target)
+        else:
+            validate_target(target)
     except ScanValidationError as exc:
         return templates.TemplateResponse(
             "index.html",
@@ -142,46 +201,27 @@ def create_scan_form(
         )
 
     scan = Scan(
-        target=scan_result.target,
-        scan_type=scan_result.scan_type,
-        status=scan_result.status,
-        created_at=scan_result.started_at,
-        completed_at=scan_result.completed_at,
-        findings_json=serialize_findings(scan_result.findings),
+        target=target,
+        scan_type=scan_type,
+        status="queued",
+        created_at=datetime.now(timezone.utc),
+        progress=0,
+        priority=priority,
     )
     db.add(scan)
-    db.flush()
-
-    report_error = None
-    try:
-        report_path = generate_report(scan.id, scan.target, scan.scan_type, scan_result.findings)
-    except Exception:
-        report_error = "Impossibile generare il report PDF. Verifica i permessi della cartella reports/."
-        scan.status = "report_failed"
-        scan.report_path = None
-    else:
-        scan.report_path = str(report_path)
     db.commit()
     db.refresh(scan)
+
+    task_result = orchestrate_scan.apply_async(
+        args=[scan.id, scan.scan_type, scan.target],
+        priority=priority,
+    )
+    scan.celery_task_id = task_result.id
+    db.commit()
 
     redirect_url = f"/scans/{scan.id}"
     if api_key:
         redirect_url = f"{redirect_url}?api_key={api_key}"
-
-    if report_error:
-        findings = json.loads(scan.findings_json or "[]")
-        return templates.TemplateResponse(
-            "scan_detail.html",
-            {
-                "request": request,
-                "scan": scan,
-                "findings": findings,
-                "report_error": report_error,
-                "download_url": None,
-                "api_key": api_key,
-            },
-            status_code=200,
-        )
 
     return RedirectResponse(url=redirect_url, status_code=303)
 
@@ -207,6 +247,7 @@ def scan_detail(request: Request, scan_id: int, db: Session = Depends(get_db)) -
         raise HTTPException(status_code=404, detail="Scan non trovata")
 
     findings = json.loads(scan.findings_json or "[]")
+    logs = _load_json_list(scan.logs_json)
     api_key = request.query_params.get("api_key")
     download_url = None
     if scan.report_path:
@@ -219,6 +260,7 @@ def scan_detail(request: Request, scan_id: int, db: Session = Depends(get_db)) -
             "request": request,
             "scan": scan,
             "findings": findings,
+            "logs": logs,
             "download_url": download_url,
             "api_key": api_key,
         },
@@ -232,39 +274,32 @@ def create_scan(
     _: None = Depends(enforce_api_key),
 ) -> ScanStatus:
     try:
-        scan_result = run_scan(target=payload.target, scan_type=payload.scan_type)
+        scan_type = payload.scan_type.lower().strip()
+        if scan_type == "nmap":
+            validate_nmap_target(payload.target)
+        else:
+            validate_target(payload.target)
     except ScanValidationError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     scan = Scan(
-        target=scan_result.target,
-        scan_type=scan_result.scan_type,
-        status=scan_result.status,
-        created_at=scan_result.started_at,
-        completed_at=scan_result.completed_at,
-        findings_json=serialize_findings(scan_result.findings),
+        target=payload.target,
+        scan_type=scan_type,
+        status="queued",
+        created_at=datetime.now(timezone.utc),
+        progress=0,
+        priority=payload.priority,
     )
     db.add(scan)
-    db.flush()
-
-    try:
-        report_path = generate_report(scan.id, scan.target, scan.scan_type, scan_result.findings)
-    except Exception:
-        scan.status = "report_failed"
-        scan.report_path = None
-        db.commit()
-        return ScanStatus(
-            id=scan.id,
-            target=scan.target,
-            scan_type=scan.scan_type,
-            status=scan.status,
-            created_at=scan.created_at,
-            completed_at=scan.completed_at,
-        )
-
-    scan.report_path = str(report_path)
     db.commit()
     db.refresh(scan)
+
+    task_result = orchestrate_scan.apply_async(
+        args=[scan.id, scan.scan_type, scan.target],
+        priority=payload.priority,
+    )
+    scan.celery_task_id = task_result.id
+    db.commit()
 
     return ScanStatus(
         id=scan.id,
@@ -273,6 +308,8 @@ def create_scan(
         status=scan.status,
         created_at=scan.created_at,
         completed_at=scan.completed_at,
+        progress=scan.progress,
+        priority=scan.priority,
     )
 
 
@@ -308,6 +345,8 @@ def list_scans(
             status=scan.status,
             created_at=scan.created_at,
             completed_at=scan.completed_at,
+            progress=scan.progress,
+            priority=scan.priority,
         )
         for scan in scans
     ]
@@ -330,6 +369,8 @@ def scan_status(
         status=scan.status,
         created_at=scan.created_at,
         completed_at=scan.completed_at,
+        progress=scan.progress,
+        priority=scan.priority,
     )
 
 
@@ -348,6 +389,79 @@ def download_report(
         media_type="application/pdf",
         filename=scan.report_path.split("/")[-1],
     )
+
+
+@app.get("/api/v1/scans/{scan_id}/task")
+def scan_task_status(
+    scan_id: int,
+    db: Session = Depends(get_db),
+    _: None = Depends(enforce_api_key),
+) -> Dict[str, Any]:
+    scan = db.query(Scan).filter(Scan.id == scan_id).first()
+    if not scan:
+        raise HTTPException(status_code=404, detail="Scan non trovata")
+    status = None
+    if scan.celery_task_id:
+        result = celery_app.AsyncResult(scan.celery_task_id)
+        status = result.status
+    return {
+        "scan_id": scan.id,
+        "celery_task_id": scan.celery_task_id,
+        "status": status,
+    }
+
+
+@app.post("/api/v1/scans/{scan_id}/cancel")
+def cancel_scan(
+    scan_id: int,
+    db: Session = Depends(get_db),
+    _: None = Depends(enforce_api_key),
+) -> Dict[str, Any]:
+    scan = db.query(Scan).filter(Scan.id == scan_id).first()
+    if not scan:
+        raise HTTPException(status_code=404, detail="Scan non trovata")
+    if scan.status in {"completed", "report_failed"}:
+        raise HTTPException(status_code=400, detail="Scansione già completata.")
+    scan.status = "canceled"
+    scan.progress = 0
+    db.commit()
+
+    if scan.celery_task_id:
+        celery_app.control.revoke(scan.celery_task_id, terminate=True)
+
+    child_tasks = _load_json_list(scan.child_task_ids_json)
+    for task_id in child_tasks:
+        if isinstance(task_id, str):
+            celery_app.control.revoke(task_id, terminate=True)
+
+    return {"scan_id": scan.id, "status": scan.status}
+
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket) -> None:
+    scan_id_param = websocket.query_params.get("scan_id")
+    api_key = websocket.query_params.get("api_key")
+    if settings.api_key and api_key != settings.api_key:
+        await websocket.close(code=1008)
+        return
+    if not scan_id_param or not scan_id_param.isdigit():
+        await websocket.close(code=1003)
+        return
+    scan_id = int(scan_id_param)
+
+    await manager.connect(scan_id, websocket)
+    try:
+        while True:
+            await asyncio.sleep(settings.websocket_poll_seconds)
+            with SessionLocal() as db:
+                scan = db.query(Scan).filter(Scan.id == scan_id).first()
+                if not scan:
+                    await websocket.send_json({"error": "Scan non trovata"})
+                    continue
+                payload = _build_scan_payload(scan)
+                await manager.broadcast(scan_id, payload)
+    except WebSocketDisconnect:
+        manager.disconnect(scan_id, websocket)
 
 
 if __name__ == "__main__":

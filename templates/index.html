@@ -63,6 +63,19 @@
                 {% endfor %}
               </select>
             </label>
+            <label class="grid gap-2">
+              <span class="text-sm text-slate-300">Priorità scansione</span>
+              <select
+                name="priority"
+                class="w-full rounded-lg border border-slate-700 bg-slate-950/70 px-4 py-3 text-slate-100 focus:border-cyan-400 focus:outline-none"
+              >
+                <option value="9">Critica</option>
+                <option value="7">Alta</option>
+                <option value="5" selected>Media</option>
+                <option value="3">Bassa</option>
+                <option value="1">Minima</option>
+              </select>
+            </label>
             <button
               type="submit"
               class="w-full md:w-auto inline-flex items-center justify-center rounded-lg bg-cyan-500 px-6 py-3 font-semibold text-slate-900 hover:bg-cyan-400 transition"
