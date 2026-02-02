@@ -15,6 +15,15 @@ reportlab==4.0.9
 
 # === SECURITY TOOLS ===
 requests==2.31.0
+slowapi==0.1.9
+passlib[bcrypt]==1.7.4
+argon2-cffi==23.1.0
+python-jose==3.3.0
+structlog==24.1.0
+bleach==6.1.0
+validators==0.22.0
+itsdangerous==2.1.2
+pysqlcipher3-binary==0.5.2
 
 # === DATA PROCESSING ===
 python-dateutil==2.8.2

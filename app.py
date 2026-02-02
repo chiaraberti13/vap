@@ -14,6 +14,11 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.sessions import SessionMiddleware
 
 from background_jobs import start_background_jobs
 from celery_app import celery_app
@@ -24,19 +29,48 @@ from scanner_engine import (
     validate_nmap_target,
     validate_target,
 )
+from security import (
+    configure_structlog,
+    create_access_token,
+    generate_csrf_token,
+    log_audit_event,
+    redact_api_key,
+    require_jwt_configuration,
+    validate_csrf_request,
+    verify_api_key,
+    verify_jwt_token,
+)
 from tasks import orchestrate_scan
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     init_db()
+    configure_structlog()
+    require_jwt_configuration()
     scheduler = start_background_jobs()
     yield
     scheduler.shutdown(wait=False)
 
 
+limiter = Limiter(key_func=get_remote_address, default_limits=[settings.rate_limit_default])
+
 app = FastAPI(title=settings.app_name, lifespan=lifespan)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.mount("/static", StaticFiles(directory="static"), name="static")
+app.add_middleware(SessionMiddleware, secret_key=settings.csrf_secret)
+
+if settings.cors_allowed_origins:
+    from fastapi.middleware.cors import CORSMiddleware
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.cors_allowed_origins,
+        allow_credentials=settings.cors_allow_credentials,
+        allow_methods=settings.cors_allowed_methods,
+        allow_headers=settings.cors_allowed_headers,
+    )
 
 templates = Jinja2Templates(directory="templates")
 
@@ -53,18 +87,28 @@ def _resolve_api_key(request: Request, submitted_key: Optional[str] = None) -> O
 
 
 def enforce_api_key(request: Request) -> None:
-    if not settings.api_key:
+    if not settings.api_key and not settings.api_key_hash:
         return
     api_key = _resolve_api_key(request)
-    if api_key != settings.api_key:
+    if not api_key or not verify_api_key(api_key):
+        log_audit_event(
+            "api_key_invalid",
+            request=request,
+            api_key=redact_api_key(api_key),
+        )
         raise HTTPException(status_code=401, detail="API key non valida")
 
 
 def enforce_api_key_from_form(request: Request, submitted_key: Optional[str]) -> None:
-    if not settings.api_key:
+    if not settings.api_key and not settings.api_key_hash:
         return
     api_key = _resolve_api_key(request, submitted_key)
-    if api_key != settings.api_key:
+    if not api_key or not verify_api_key(api_key):
+        log_audit_event(
+            "api_key_invalid",
+            request=request,
+            api_key=redact_api_key(api_key),
+        )
         raise APIKeyUIError("API key non valida o mancante.")
 
 
@@ -78,16 +122,26 @@ def enforce_api_key_form_dependency(
 
 @app.exception_handler(APIKeyUIError)
 def api_key_ui_exception_handler(request: Request, exc: APIKeyUIError) -> HTMLResponse:
-    return templates.TemplateResponse(
+    csrf_token = generate_csrf_token()
+    response = templates.TemplateResponse(
         "index.html",
         {
             "request": request,
             "scan_types": SCAN_TYPES,
-            "api_key_required": bool(settings.api_key),
+            "api_key_required": bool(settings.api_key or settings.api_key_hash),
             "error": exc.detail,
+            "csrf_token": csrf_token,
         },
         status_code=401,
     )
+    response.set_cookie(
+        settings.csrf_cookie_name,
+        csrf_token,
+        httponly=True,
+        secure=settings.require_https,
+        samesite="lax",
+    )
+    return response
 
 
 @app.middleware("http")
@@ -99,6 +153,56 @@ async def enforce_https(request: Request, call_next):
             https_url = request.url.replace(scheme="https")
             return RedirectResponse(str(https_url), status_code=308)
     return await call_next(request)
+
+
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    response = await call_next(request)
+    if settings.security_headers_enabled:
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+        response.headers["Content-Security-Policy"] = settings.csp_policy
+        response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
+        response.headers["Cross-Origin-Resource-Policy"] = "same-origin"
+        if settings.require_https:
+            response.headers["Strict-Transport-Security"] = f"max-age={settings.hsts_max_age}"
+    return response
+
+
+class AuditLoggingMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        if settings.audit_logging_enabled:
+            log_audit_event(
+                "http_request",
+                request=request,
+                status_code=response.status_code,
+            )
+        return response
+
+
+app.add_middleware(AuditLoggingMiddleware)
+
+
+def enforce_jwt(request: Request) -> None:
+    if not settings.jwt_required:
+        return
+    token = request.headers.get("Authorization", "")
+    if not token.lower().startswith("bearer "):
+        raise HTTPException(status_code=401, detail="JWT mancante")
+    try:
+        verify_jwt_token(token.split(" ", 1)[1].strip())
+    except ValueError as exc:
+        log_audit_event("jwt_invalid", request=request)
+        raise HTTPException(status_code=401, detail="JWT non valido") from exc
+
+
+def enforce_csrf(request: Request, token: str) -> None:
+    if request.method in {"GET", "HEAD", "OPTIONS"}:
+        return
+    validate_csrf_request(request, token)
 
 
 class ScanCreate(BaseModel):
@@ -163,42 +267,103 @@ def _build_scan_payload(scan: Scan) -> Dict[str, Any]:
 
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request) -> HTMLResponse:
-    return templates.TemplateResponse(
+    csrf_token = generate_csrf_token()
+    response = templates.TemplateResponse(
         "index.html",
         {
             "request": request,
             "scan_types": SCAN_TYPES,
-            "api_key_required": bool(settings.api_key),
+            "api_key_required": bool(settings.api_key or settings.api_key_hash),
+            "csrf_token": csrf_token,
         },
     )
+    response.set_cookie(
+        settings.csrf_cookie_name,
+        csrf_token,
+        httponly=True,
+        secure=settings.require_https,
+        samesite="lax",
+    )
+    return response
+
+
+@app.post("/auth/token")
+@limiter.limit(settings.rate_limit_auth)
+def issue_token(
+    request: Request,
+    username: str = Form(...),
+    password: str = Form(...),
+) -> Dict[str, str]:
+    if not settings.jwt_secret:
+        raise HTTPException(status_code=503, detail="JWT non configurato")
+    if not (username == settings.jwt_demo_user and password == settings.jwt_demo_password):
+        log_audit_event("auth_failed", request=request, username=username)
+        raise HTTPException(status_code=401, detail="Credenziali non valide")
+    token = create_access_token(username)
+    log_audit_event("auth_success", request=request, username=username)
+    return {"access_token": token, "token_type": "bearer"}
 
 
 @app.post("/scans", response_class=HTMLResponse)
+@limiter.limit(settings.rate_limit_create_scan)
 def create_scan_form(
     request: Request,
     target: str = Form(...),
     scan_type: str = Form("full"),
     priority: int = Form(5),
+    csrf_token: str = Form(""),
     api_key: Optional[str] = Depends(enforce_api_key_form_dependency),
     db: Session = Depends(get_db),
 ) -> HTMLResponse:
     try:
+        enforce_csrf(request, csrf_token)
         scan_type = scan_type.lower().strip()
         if scan_type == "nmap":
             validate_nmap_target(target)
         else:
             validate_target(target)
-    except ScanValidationError as exc:
-        return templates.TemplateResponse(
+    except ValueError:
+        csrf_token = generate_csrf_token()
+        response = templates.TemplateResponse(
             "index.html",
             {
                 "request": request,
                 "scan_types": SCAN_TYPES,
-                "api_key_required": bool(settings.api_key),
-                "error": str(exc),
+                "api_key_required": bool(settings.api_key or settings.api_key_hash),
+                "error": "Token CSRF non valido o scaduto.",
+                "csrf_token": csrf_token,
             },
             status_code=400,
         )
+        response.set_cookie(
+            settings.csrf_cookie_name,
+            csrf_token,
+            httponly=True,
+            secure=settings.require_https,
+            samesite="lax",
+        )
+        return response
+    except ScanValidationError as exc:
+        csrf_token = generate_csrf_token()
+        response = templates.TemplateResponse(
+            "index.html",
+            {
+                "request": request,
+                "scan_types": SCAN_TYPES,
+                "api_key_required": bool(settings.api_key or settings.api_key_hash),
+                "error": str(exc),
+                "csrf_token": csrf_token,
+            },
+            status_code=400,
+        )
+        response.set_cookie(
+            settings.csrf_cookie_name,
+            csrf_token,
+            httponly=True,
+            secure=settings.require_https,
+            samesite="lax",
+        )
+        return response
 
     scan = Scan(
         target=target,
@@ -222,6 +387,13 @@ def create_scan_form(
     redirect_url = f"/scans/{scan.id}"
     if api_key:
         redirect_url = f"{redirect_url}?api_key={api_key}"
+
+    log_audit_event(
+        "scan_created",
+        request=request,
+        scan_id=scan.id,
+        scan_type=scan.scan_type,
+    )
 
     return RedirectResponse(url=redirect_url, status_code=303)
 
@@ -268,10 +440,12 @@ def scan_detail(request: Request, scan_id: int, db: Session = Depends(get_db)) -
 
 
 @app.post("/api/v1/scans", response_model=ScanStatus)
+@limiter.limit(settings.rate_limit_create_scan)
 def create_scan(
     payload: ScanCreate,
     db: Session = Depends(get_db),
     _: None = Depends(enforce_api_key),
+    __: None = Depends(enforce_jwt),
 ) -> ScanStatus:
     try:
         scan_type = payload.scan_type.lower().strip()
@@ -301,6 +475,12 @@ def create_scan(
     scan.celery_task_id = task_result.id
     db.commit()
 
+    log_audit_event(
+        "scan_created",
+        scan_id=scan.id,
+        scan_type=scan.scan_type,
+    )
+
     return ScanStatus(
         id=scan.id,
         target=scan.target,
@@ -319,6 +499,7 @@ def download_report_ui(
     scan_id: int,
     db: Session = Depends(get_db),
     _: None = Depends(enforce_api_key),
+    __: None = Depends(enforce_jwt),
 ) -> FileResponse:
     scan = db.query(Scan).filter(Scan.id == scan_id).first()
     if not scan or not scan.report_path:
@@ -332,9 +513,11 @@ def download_report_ui(
 
 
 @app.get("/api/v1/scans", response_model=List[ScanStatus])
+@limiter.limit(settings.rate_limit_read)
 def list_scans(
     db: Session = Depends(get_db),
     _: None = Depends(enforce_api_key),
+    __: None = Depends(enforce_jwt),
 ) -> List[ScanStatus]:
     scans = db.query(Scan).order_by(Scan.created_at.desc()).all()
     return [
@@ -353,10 +536,12 @@ def list_scans(
 
 
 @app.get("/api/v1/scans/{scan_id}/status", response_model=ScanStatus)
+@limiter.limit(settings.rate_limit_read)
 def scan_status(
     scan_id: int,
     db: Session = Depends(get_db),
     _: None = Depends(enforce_api_key),
+    __: None = Depends(enforce_jwt),
 ) -> ScanStatus:
     scan = db.query(Scan).filter(Scan.id == scan_id).first()
     if not scan:
@@ -379,6 +564,7 @@ def download_report(
     scan_id: int,
     db: Session = Depends(get_db),
     _: None = Depends(enforce_api_key),
+    __: None = Depends(enforce_jwt),
 ) -> FileResponse:
     scan = db.query(Scan).filter(Scan.id == scan_id).first()
     if not scan or not scan.report_path:
@@ -392,10 +578,12 @@ def download_report(
 
 
 @app.get("/api/v1/scans/{scan_id}/task")
+@limiter.limit(settings.rate_limit_read)
 def scan_task_status(
     scan_id: int,
     db: Session = Depends(get_db),
     _: None = Depends(enforce_api_key),
+    __: None = Depends(enforce_jwt),
 ) -> Dict[str, Any]:
     scan = db.query(Scan).filter(Scan.id == scan_id).first()
     if not scan:
@@ -412,10 +600,12 @@ def scan_task_status(
 
 
 @app.post("/api/v1/scans/{scan_id}/cancel")
+@limiter.limit(settings.rate_limit_create_scan)
 def cancel_scan(
     scan_id: int,
     db: Session = Depends(get_db),
     _: None = Depends(enforce_api_key),
+    __: None = Depends(enforce_jwt),
 ) -> Dict[str, Any]:
     scan = db.query(Scan).filter(Scan.id == scan_id).first()
     if not scan:
@@ -441,7 +631,7 @@ def cancel_scan(
 async def websocket_endpoint(websocket: WebSocket) -> None:
     scan_id_param = websocket.query_params.get("scan_id")
     api_key = websocket.query_params.get("api_key")
-    if settings.api_key and api_key != settings.api_key:
+    if (settings.api_key or settings.api_key_hash) and not verify_api_key(api_key or ""):
         await websocket.close(code=1008)
         return
     if not scan_id_param or not scan_id_param.isdigit():
@@ -467,4 +657,12 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run("app:app", host=settings.host, port=settings.port, reload=False)
+    uvicorn.run(
+        "app:app",
+        host=settings.host,
+        port=settings.port,
+        reload=False,
+        ssl_certfile=settings.tls_certfile or None,
+        ssl_keyfile=settings.tls_keyfile or None,
+        ssl_ca_certs=settings.tls_ca_certs or None,
+    )
