@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Termini di Servizio</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body class="bg-slate-950 text-slate-100">
+  <main class="min-h-screen px-6 py-10">
+    <div class="max-w-4xl mx-auto space-y-6">
+      <header>
+        <p class="text-sm uppercase tracking-[0.3em] text-slate-400">Compliance</p>
+        <h1 class="text-3xl font-semibold">Termini di Servizio</h1>
+        <p class="text-slate-400 mt-2">Versione {{ terms_version }} · Ultimo aggiornamento: {{ terms_version }}</p>
+      </header>
+
+      <section class="space-y-4 text-slate-300 text-sm leading-relaxed">
+        <p>L'utilizzo di VAP è consentito esclusivamente per target autorizzati dal proprietario.</p>
+        <ul class="list-disc pl-6 space-y-2">
+          <li><strong>Uso consentito:</strong> attività di security assessment con autorizzazione scritta.</li>
+          <li><strong>Responsabilità:</strong> l'utente garantisce la legittimità dei target forniti.</li>
+          <li><strong>Sicurezza:</strong> VAP applica controlli di accesso, audit e rate limiting.</li>
+          <li><strong>Limitazioni:</strong> vietato l'uso per fini illegali o senza consenso.</li>
+          <li><strong>Modifiche:</strong> le versioni vengono comunicate tramite questo documento.</li>
+        </ul>
+      </section>
+
+      <footer class="text-xs text-slate-500">
+        Continuando a usare la piattaforma accetti questi termini.
+      </footer>
+    </div>
+  </main>
+</body>
+</html>

@@ -12,7 +12,7 @@ from apscheduler.triggers.cron import CronTrigger
 import requests
 
 from config import settings
-from database import SessionLocal, Scan
+from database import AuditEvent, ConsentRecord, SessionLocal, Scan
 from tasks import orchestrate_scan
 
 
@@ -55,6 +55,8 @@ def enqueue_scheduled_scan(target: str, scan_type: str) -> None:
 
 def cleanup_old_reports() -> None:
     cutoff = datetime.now(timezone.utc) - timedelta(days=settings.scan_retention_days)
+    audit_cutoff = datetime.now(timezone.utc) - timedelta(days=settings.audit_retention_days)
+    consent_cutoff = datetime.now(timezone.utc) - timedelta(days=settings.consent_retention_days)
     with SessionLocal() as db:
         scans = (
             db.query(Scan)
@@ -68,6 +70,8 @@ def cleanup_old_reports() -> None:
                 except OSError:
                     pass
             scan.status = "archived"
+        db.query(AuditEvent).filter(AuditEvent.created_at < audit_cutoff).delete()
+        db.query(ConsentRecord).filter(ConsentRecord.accepted_at < consent_cutoff).delete()
         db.commit()
 
 
