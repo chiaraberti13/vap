@@ -42,6 +42,17 @@ python3 app.py
 
 The server will be available at `http://localhost:8000`.
 
+### 📖 Documentazione (MkDocs)
+
+```bash
+pip install mkdocs-material
+mkdocs serve
+```
+
+Documentazione locale: `http://127.0.0.1:8000/`
+Spec OpenAPI: `http://localhost:8000/openapi.json`
+Swagger UI: `http://localhost:8000/docs`
+
 ### ⚙️ Avvio Celery worker (scansioni asincrone)
 
 Le scansioni parallele richiedono Redis e un worker Celery attivo.
@@ -186,6 +197,12 @@ Unauthorized use may violate local and international laws. You are responsible f
 - **NVD API**: https://nvd.nist.gov/developers/vulnerabilities
 - **MITRE ATT&CK**: https://attack.mitre.org/
 - **ExploitDB / Searchsploit**: https://www.exploit-db.com/searchsploit
+
+## 🧰 OpenAPI generation
+
+```bash
+python scripts/generate_openapi.py
+```
 
 ## 📝 License
 
