@@ -112,6 +112,33 @@ nmap --version
 
 ## 🐛 Troubleshooting
 
+### macOS 12 (Monterey) + Homebrew install failures
+Homebrew no longer supports macOS 12, so package installs (including Python)
+may fail. Use one of the following supported paths:
+
+**Option A: Upgrade macOS**  
+Upgrade to macOS 13+ and re-run `installer.sh`.
+
+**Option B: Use MacPorts (macOS 12 supported)**  
+Install MacPorts and use it to install Python 3.12 and required tools, then
+run `installer.sh`.
+
+**Option C: Install Python 3.12 from python.org**  
+Download Python 3.12 for macOS from the official website, ensure `pip`
+is available, then run:
+```bash
+python3 -m ensurepip --upgrade
+python3 -m pip install -r requirements.txt
+```
+
+### Error: "No module named pip.__main__"
+This means `pip` is missing from the selected Python interpreter.
+Run:
+```bash
+python3 -m ensurepip --upgrade
+```
+Then retry the install steps.
+
 ### Error: "Module not found"
 ```bash
 source venv/bin/activate
