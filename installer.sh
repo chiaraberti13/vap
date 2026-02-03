@@ -129,6 +129,35 @@ detect_platform() {
     esac
 }
 
+# Validate minimum macOS version for Homebrew support.
+check_macos_version_support() {
+    if [ "$PLATFORM" != "macos" ]; then
+        return 0
+    fi
+
+    if ! command -v sw_vers &> /dev/null; then
+        log_warning "Unable to determine macOS version (sw_vers missing)."
+        log_warning "Proceeding without macOS version validation."
+        return 0
+    fi
+
+    local version
+    version="$(sw_vers -productVersion)"
+    local major="${version%%.*}"
+
+    if ! [[ "$major" =~ ^[0-9]+$ ]]; then
+        log_warning "Unexpected macOS version format: ${version}. Proceeding anyway."
+        return 0
+    fi
+
+    if (( major < 13 )); then
+        log_error "macOS ${version} detected. Homebrew no longer supports macOS 12."
+        log_error "Use MacPorts (https://www.macports.org) or upgrade macOS to 13+."
+        log_error "Installer aborted to avoid partial installs on unsupported macOS."
+        exit 1
+    fi
+}
+
 # Validate Python runtime version to prevent unsupported builds (e.g., pydantic-core).
 check_python_version() {
     log_info "Checking Python version..."
@@ -257,6 +286,7 @@ install_system_dependencies() {
             esac
             ;;
         macos)
+            check_macos_version_support
             if ! command -v brew &> /dev/null; then
                 log_error "Homebrew is required but not installed."
                 log_error "Install Homebrew from https://brew.sh and re-run the installer."
@@ -266,7 +296,7 @@ install_system_dependencies() {
             log_info "Installing packages with Homebrew..."
             brew update
             brew install \
-                python \
+                python@3.12 \
                 git \
                 wget \
                 curl \
