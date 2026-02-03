@@ -29,7 +29,7 @@
       </div>
       {% endif %}
 
-      <section class="grid gap-4 md:grid-cols-3">
+      <section class="grid gap-4 md:grid-cols-4">
         <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5">
           <p class="text-xs uppercase text-slate-400">Target</p>
           <p class="text-lg font-semibold mt-1">{{ scan.target }}</p>
@@ -37,6 +37,10 @@
         <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5">
           <p class="text-xs uppercase text-slate-400">Tipo</p>
           <p class="text-lg font-semibold mt-1">{{ scan.scan_type | upper }}</p>
+        </div>
+        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5">
+          <p class="text-xs uppercase text-slate-400">Classificazione</p>
+          <p class="text-lg font-semibold mt-1">{{ scan.data_classification | upper }}</p>
         </div>
         <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5">
           <p class="text-xs uppercase text-slate-400">Stato</p>

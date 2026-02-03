@@ -75,6 +75,10 @@ class Settings:
     )
     security_headers_enabled: bool = os.getenv("VAP_SECURITY_HEADERS", "true").lower() == "true"
     audit_logging_enabled: bool = os.getenv("VAP_AUDIT_LOGGING", "true").lower() == "true"
+    privacy_policy_version: str = os.getenv("VAP_PRIVACY_POLICY_VERSION", "2024-01")
+    terms_of_service_version: str = os.getenv("VAP_TERMS_VERSION", "2024-01")
+    consent_retention_days: int = int(os.getenv("VAP_CONSENT_RETENTION_DAYS", "365"))
+    audit_retention_days: int = int(os.getenv("VAP_AUDIT_RETENTION_DAYS", "365"))
     tls_certfile: str = os.getenv("VAP_TLS_CERTFILE", "")
     tls_keyfile: str = os.getenv("VAP_TLS_KEYFILE", "")
     tls_ca_certs: str = os.getenv("VAP_TLS_CA_CERTS", "")
