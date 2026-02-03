@@ -22,6 +22,7 @@ nav:
       - API Client Examples: api-clients.md
   - Manuale Utente: user-manual.md
   - Architettura: architecture.md
+  - Configurazione: configuration.md
   - Deployment: deployment.md
   - Security: security.md
   - Privacy & GDPR: privacy.md

@@ -156,6 +156,8 @@ vulnerability-assessment-platform/
 Per un setup completo **copia `.env.example` in `.env`**: include tutte le variabili lette da `config.py` (JWT, CORS, rate limit, header di sicurezza, integrazioni API, Celery/Redis, NVD/ExploitDB, ecc.).  
 Se preferisci, puoi continuare a modificare direttamente `config.py`.
 
+📌 **Mappa completa variabili (.env ↔ config.py)**: vedi `docs/configuration.md` per la tabella con *tutte* le variabili, i default e l’hardening minimo.
+
 Edit `config.py` to customize:
 - Scanner timeouts
 - Max scanner concurrency (`VAP_MAX_CONCURRENT_SCANNERS`)
@@ -186,6 +188,8 @@ pytest
 pytest tests/test_api.py -k "scan"
 ```
 
+> Consiglio: esegui i test in un virtualenv pulito e con Redis attivo se vuoi validare anche la parte Celery/async.
+
 ## 🛡️ Checklist hardening produzione
 
 Per un deploy sicuro in produzione, imposta almeno:
@@ -199,6 +203,8 @@ Per un deploy sicuro in produzione, imposta almeno:
 7. **Audit & retention**: configura `VAP_AUDIT_LOGGING`, `VAP_AUDIT_RETENTION_DAYS` e `VAP_CONSENT_RETENTION_DAYS`.
 
 > Nota: in produzione evita credenziali di demo (`VAP_JWT_DEMO_PASSWORD`) e ruota periodicamente le chiavi.
+
+Per dettagli operativi e ulteriori best practice di sicurezza: `docs/security.md`.
 
 ## 📊 Report Features
 
