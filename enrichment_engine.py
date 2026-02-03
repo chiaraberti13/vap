@@ -12,6 +12,7 @@ from typing import Any, Dict, Iterable, List, Tuple
 import requests
 
 from config import settings
+from false_positive_model import FalsePositiveModel, build_features
 
 
 MITRE_CWE_MAPPING: Dict[str, List[Dict[str, Any]]] = {
@@ -240,24 +241,10 @@ def _apply_mitre_mapping(findings: List[Dict[str, Any]]) -> None:
 
 
 def _apply_false_positive_model(findings: List[Dict[str, Any]]) -> None:
+    model = FalsePositiveModel()
     for finding in findings:
-        score = 0.2
-        severity = str(finding.get("severity", "")).lower()
-        if severity in {"info", "low"}:
-            score += 0.2
-        if severity in {"critical", "high"}:
-            score -= 0.1
-
-        description = str(finding.get("description", "")).lower()
-        if "simulazione" in description or "placeholder" in description:
-            score += 0.4
-
-        if finding.get("evidence"):
-            score -= 0.1
-        if finding.get("cve"):
-            score -= 0.2
-
-        score = min(1.0, max(0.0, score))
+        features = build_features(finding)
+        score = model.predict_proba(features)
         label = "basso" if score < settings.false_positive_medium_threshold else "medio"
         if score >= settings.false_positive_high_threshold:
             label = "alto"
@@ -265,6 +252,10 @@ def _apply_false_positive_model(findings: List[Dict[str, Any]]) -> None:
         finding["false_positive_score"] = round(score, 2)
         finding["false_positive_label"] = label
         finding["confidence"] = round(1 - score, 2)
+        finding["false_positive_model"] = {
+            "version": model.version,
+            "top_factors": model.top_factors(features),
+        }
 
 
 def _apply_correlation(findings: List[Dict[str, Any]]) -> None:
