@@ -13,6 +13,8 @@ from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
+from redis import Redis
+from redis.exceptions import RedisError
 from sqlalchemy.orm import Query, Session
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -91,6 +93,57 @@ SCAN_TYPES = [
     "acunetix",
     "nessus",
 ]
+
+
+def _init_api_cache() -> Optional[Redis]:
+    if not settings.api_cache_enabled or not settings.api_cache_redis_url:
+        return None
+    try:
+        client = Redis.from_url(settings.api_cache_redis_url, decode_responses=True)
+        client.ping()
+    except RedisError:
+        return None
+    return client
+
+
+api_cache = _init_api_cache()
+
+
+def _cache_key(*parts: str) -> str:
+    return ":".join([settings.api_cache_prefix, *parts])
+
+
+def _get_cached_json(key: str) -> Optional[Any]:
+    if not api_cache:
+        return None
+    try:
+        cached = api_cache.get(key)
+    except RedisError:
+        return None
+    if not cached:
+        return None
+    try:
+        return json.loads(cached)
+    except json.JSONDecodeError:
+        return None
+
+
+def _set_cached_json(key: str, payload: Any) -> None:
+    if not api_cache:
+        return
+    try:
+        api_cache.setex(key, settings.api_cache_ttl_seconds, json.dumps(payload))
+    except RedisError:
+        return
+
+
+def _invalidate_cache_keys(*keys: str) -> None:
+    if not api_cache or not keys:
+        return
+    try:
+        api_cache.delete(*keys)
+    except RedisError:
+        return
 
 
 class APIKeyUIError(Exception):
@@ -565,6 +618,8 @@ def create_scan(
     scan.celery_task_id = task_result.id
     db.commit()
 
+    _invalidate_cache_keys(_cache_key("scans:list"))
+
     log_audit_event(
         "scan_created",
         scan_id=scan.id,
@@ -609,8 +664,12 @@ def list_scans(
     _: None = Depends(enforce_api_key),
     __: None = Depends(enforce_jwt),
 ) -> List[ScanStatus]:
+    cache_key = _cache_key("scans:list")
+    cached_payload = _get_cached_json(cache_key)
+    if cached_payload:
+        return [ScanStatus.model_validate(item) for item in cached_payload]
     scans = _active_scan_query(db).order_by(Scan.created_at.desc()).all()
-    return [
+    response_payload = [
         ScanStatus(
             id=scan.id,
             target=scan.target,
@@ -623,6 +682,11 @@ def list_scans(
         )
         for scan in scans
     ]
+    _set_cached_json(
+        cache_key,
+        [item.model_dump(mode="json") for item in response_payload],
+    )
+    return response_payload
 
 
 @app.get("/api/v1/scans/{scan_id}/status", response_model=ScanStatus)
@@ -633,11 +697,15 @@ def scan_status(
     _: None = Depends(enforce_api_key),
     __: None = Depends(enforce_jwt),
 ) -> ScanStatus:
+    cache_key = _cache_key("scans", str(scan_id), "status")
+    cached_payload = _get_cached_json(cache_key)
+    if cached_payload:
+        return ScanStatus.model_validate(cached_payload)
     scan = _active_scan_query(db).filter(Scan.id == scan_id).first()
     if not scan:
         raise HTTPException(status_code=404, detail="Scan non trovata")
 
-    return ScanStatus(
+    response_payload = ScanStatus(
         id=scan.id,
         target=scan.target,
         scan_type=scan.scan_type,
@@ -647,6 +715,8 @@ def scan_status(
         progress=scan.progress,
         priority=scan.priority,
     )
+    _set_cached_json(cache_key, response_payload.model_dump(mode="json"))
+    return response_payload
 
 
 @app.get("/api/v1/scans/{scan_id}/report/download")
@@ -714,6 +784,10 @@ def cancel_scan(
         if isinstance(task_id, str):
             celery_app.control.revoke(task_id, terminate=True)
 
+    _invalidate_cache_keys(
+        _cache_key("scans:list"),
+        _cache_key("scans", str(scan_id), "status"),
+    )
     return {"scan_id": scan.id, "status": scan.status}
 
 
@@ -740,6 +814,10 @@ def soft_delete_scan(
         reason=payload.reason,
     )
 
+    _invalidate_cache_keys(
+        _cache_key("scans:list"),
+        _cache_key("scans", str(scan_id), "status"),
+    )
     return ScanStatus(
         id=scan.id,
         target=scan.target,
