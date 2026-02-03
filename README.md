@@ -180,6 +180,31 @@ This tool is intended **ONLY** for:
 
 Unauthorized use may violate local and international laws. You are responsible for appropriate usage.
 
+## ✅ CI/CD e Qualità
+
+La pipeline CI esegue:
+- Linting con **Ruff**
+- Formattazione con **Black**
+- Test automatici con **Pytest**
+
+## 🛡️ Security Policy
+
+Per segnalare vulnerabilità o consultare le linee guida di sicurezza, leggi `SECURITY.md`.
+
+## 🤝 Code of Conduct
+
+Consulta `CODE_OF_CONDUCT.md` per le regole di comportamento e collaborazione.
+
+## 🧰 Hardening (Produzione)
+
+Checklist consigliata:
+- Abilitare HTTPS (`VAP_REQUIRE_HTTPS=true`) e configurare i certificati TLS.
+- Impostare segreti robusti per JWT e CSRF in variabili d’ambiente.
+- Limitare CORS ai soli domini autorizzati.
+- Abilitare audit logging e inoltrare i log a un SIEM/aggregatore.
+- Ruotare periodicamente API key e credenziali.
+- Eseguire backup regolari del database e dei report.
+
 ## 📚 Official Documentation
 
 - **FastAPI**: https://fastapi.tiangolo.com/
@@ -188,6 +213,8 @@ Unauthorized use may violate local and international laws. You are responsible f
 - **ReportLab**: https://www.reportlab.com/documentation/
 - **Tailwind CSS**: https://tailwindcss.com/docs
 - **Redis (redis-py)**: https://redis-py.readthedocs.io/
+- **Ruff**: https://docs.astral.sh/ruff/
+- **Black**: https://black.readthedocs.io/
 - **SQLMap**: http://sqlmap.org/
 - **XSStrike**: https://github.com/s0md3v/XSStrike
 - **OWASP ZAP**: https://www.zaproxy.org/docs/
