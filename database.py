@@ -50,6 +50,7 @@ class Scan(Base):
         Index("ix_scans_created_at", "created_at"),
         Index("ix_scans_status", "status"),
         Index("ix_scans_deleted_at", "deleted_at"),
+        Index("ix_scans_subject_id", "data_subject_id"),
     )
 
     id = Column(Integer, primary_key=True, index=True)
@@ -69,6 +70,42 @@ class Scan(Base):
     completed_scanners = Column(Integer, nullable=True)
     logs_json = Column(Text, nullable=True)
     notifications_json = Column(Text, nullable=True)
+    data_subject_id = Column(String(64), nullable=True)
+    data_classification = Column(String(40), nullable=False, default="internal")
+
+
+class ConsentRecord(Base):
+    __tablename__ = "consent_records"
+    __table_args__ = (
+        Index("ix_consent_subject_type", "subject_id", "consent_type"),
+        Index("ix_consent_accepted_at", "accepted_at"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    subject_id = Column(String(64), nullable=False)
+    consent_type = Column(String(40), nullable=False)
+    version = Column(String(40), nullable=False)
+    accepted_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    ip_address = Column(String(45), nullable=True)
+    user_agent = Column(String(255), nullable=True)
+
+
+class AuditEvent(Base):
+    __tablename__ = "audit_events"
+    __table_args__ = (
+        Index("ix_audit_event", "event"),
+        Index("ix_audit_subject", "subject_id"),
+        Index("ix_audit_created_at", "created_at"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    event = Column(String(80), nullable=False)
+    subject_id = Column(String(64), nullable=True)
+    actor = Column(String(120), nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    ip_address = Column(String(45), nullable=True)
+    user_agent = Column(String(255), nullable=True)
+    metadata_json = Column(Text, nullable=True)
 
 
 def init_db() -> None:

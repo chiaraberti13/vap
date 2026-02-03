@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 import asyncio
 import json
+from pathlib import Path
 from time import perf_counter
 from typing import Any, Dict, List, Optional, Set
 from uuid import uuid4
@@ -29,8 +30,17 @@ import structlog
 
 from background_jobs import start_background_jobs
 from celery_app import celery_app
+from compliance import (
+    DATA_CLASSIFICATIONS,
+    CONSENT_TYPES,
+    anonymize_scan_for_export,
+    get_subject_id,
+    has_required_consents,
+    record_audit_event,
+    record_consent,
+)
 from config import settings
-from database import Scan, SessionLocal, get_db, init_db
+from database import ConsentRecord, Scan, SessionLocal, get_db, init_db
 from scanner_engine import (
     ScanValidationError,
     validate_nmap_target,
@@ -170,6 +180,17 @@ def _invalidate_cache_keys(*keys: str) -> None:
         return
 
 
+def _record_audit(
+    db: Session,
+    request: Request,
+    event: str,
+    subject_id: Optional[str] = None,
+    **metadata: Any,
+) -> None:
+    log_audit_event(event, request=request, **metadata)
+    record_audit_event(db, request=request, event=event, subject_id=subject_id, metadata=metadata)
+
+
 class APIKeyUIError(Exception):
     def __init__(self, detail: str) -> None:
         self.detail = detail
@@ -227,6 +248,9 @@ def api_key_ui_exception_handler(request: Request, exc: APIKeyUIError) -> HTMLRe
             "api_key_required": bool(settings.api_key or settings.api_key_hash),
             "error": exc.detail,
             "csrf_token": csrf_token,
+            "data_classifications": DATA_CLASSIFICATIONS,
+            "privacy_policy_version": settings.privacy_policy_version,
+            "terms_version": settings.terms_of_service_version,
             "kpi_metrics": kpi_metrics,
             "dashboard_timestamp": dashboard_timestamp,
         },
@@ -395,6 +419,9 @@ class ScanCreate(BaseModel):
     target: str = Field(..., max_length=255)
     scan_type: str = Field("full")
     priority: int = Field(5, ge=0, le=9)
+    data_classification: str = Field("internal", max_length=40)
+    accept_privacy: bool = Field(False)
+    accept_terms: bool = Field(False)
 
 
 class ScanStatus(BaseModel):
@@ -406,10 +433,23 @@ class ScanStatus(BaseModel):
     completed_at: Optional[datetime]
     progress: int
     priority: int
+    data_classification: str
 
 
 class ScanDelete(BaseModel):
     reason: Optional[str] = Field(None, max_length=255)
+
+
+class ConsentRequest(BaseModel):
+    consent_type: str = Field(..., max_length=40)
+    version: Optional[str] = Field(None, max_length=40)
+
+
+class ConsentStatus(BaseModel):
+    subject_id: str
+    consent_type: str
+    version: str
+    accepted_at: datetime
 
 
 class ConnectionManager:
@@ -520,6 +560,9 @@ def index(request: Request, db: Session = Depends(get_db)) -> HTMLResponse:
             "scan_types": SCAN_TYPES,
             "api_key_required": bool(settings.api_key or settings.api_key_hash),
             "csrf_token": csrf_token,
+            "data_classifications": DATA_CLASSIFICATIONS,
+            "privacy_policy_version": settings.privacy_policy_version,
+            "terms_version": settings.terms_of_service_version,
             "kpi_metrics": kpi_metrics,
             "dashboard_timestamp": dashboard_timestamp,
         },
@@ -534,20 +577,55 @@ def index(request: Request, db: Session = Depends(get_db)) -> HTMLResponse:
     return response
 
 
+@app.get("/privacy-policy", response_class=HTMLResponse)
+def privacy_policy(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse(
+        "privacy_policy.html",
+        {
+            "request": request,
+            "privacy_policy_version": settings.privacy_policy_version,
+        },
+    )
+
+
+@app.get("/terms-of-service", response_class=HTMLResponse)
+def terms_of_service(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse(
+        "terms_of_service.html",
+        {
+            "request": request,
+            "terms_version": settings.terms_of_service_version,
+        },
+    )
+
+
 @app.post("/auth/token")
 @limiter.limit(settings.rate_limit_auth)
 def issue_token(
     request: Request,
     username: str = Form(...),
     password: str = Form(...),
+    db: Session = Depends(get_db),
 ) -> Dict[str, str]:
     if not settings.jwt_secret:
         raise HTTPException(status_code=503, detail="JWT non configurato")
     if not (username == settings.jwt_demo_user and password == settings.jwt_demo_password):
-        log_audit_event("auth_failed", request=request, username=username)
+        _record_audit(
+            db,
+            request,
+            "auth_failed",
+            subject_id=get_subject_id(request),
+            username=username,
+        )
         raise HTTPException(status_code=401, detail="Credenziali non valide")
     token = create_access_token(username)
-    log_audit_event("auth_success", request=request, username=username)
+    _record_audit(
+        db,
+        request,
+        "auth_success",
+        subject_id=get_subject_id(request),
+        username=username,
+    )
     return {"access_token": token, "token_type": "bearer"}
 
 
@@ -558,6 +636,9 @@ def create_scan_form(
     target: str = Form(...),
     scan_type: str = Form("full"),
     priority: int = Form(5),
+    data_classification: str = Form("internal"),
+    accept_privacy: Optional[str] = Form(None),
+    accept_terms: Optional[str] = Form(None),
     csrf_token: str = Form(""),
     api_key: Optional[str] = Depends(enforce_api_key_form_dependency),
     db: Session = Depends(get_db),
@@ -565,6 +646,9 @@ def create_scan_form(
     try:
         enforce_csrf(request, csrf_token)
         scan_type = scan_type.lower().strip()
+        data_classification = data_classification.lower().strip()
+        if data_classification not in DATA_CLASSIFICATIONS:
+            raise ScanValidationError("Classificazione dati non valida.")
         if scan_type == "nmap":
             validate_nmap_target(target)
         else:
@@ -581,6 +665,9 @@ def create_scan_form(
                 "api_key_required": bool(settings.api_key or settings.api_key_hash),
                 "error": "Token CSRF non valido o scaduto.",
                 "csrf_token": csrf_token,
+                "data_classifications": DATA_CLASSIFICATIONS,
+                "privacy_policy_version": settings.privacy_policy_version,
+                "terms_version": settings.terms_of_service_version,
                 "kpi_metrics": kpi_metrics,
                 "dashboard_timestamp": dashboard_timestamp,
             },
@@ -606,6 +693,9 @@ def create_scan_form(
                 "api_key_required": bool(settings.api_key or settings.api_key_hash),
                 "error": str(exc),
                 "csrf_token": csrf_token,
+                "data_classifications": DATA_CLASSIFICATIONS,
+                "privacy_policy_version": settings.privacy_policy_version,
+                "terms_version": settings.terms_of_service_version,
                 "kpi_metrics": kpi_metrics,
                 "dashboard_timestamp": dashboard_timestamp,
             },
@@ -620,6 +710,64 @@ def create_scan_form(
         )
         return response
 
+    subject_id = get_subject_id(request)
+    privacy_ok = bool(accept_privacy)
+    terms_ok = bool(accept_terms)
+    if not has_required_consents(db, subject_id):
+        if not (privacy_ok and terms_ok):
+            csrf_token = generate_csrf_token()
+            kpi_metrics = _build_kpi_metrics(db)
+            dashboard_timestamp = datetime.now(timezone.utc)
+            response = templates.TemplateResponse(
+                "index.html",
+                {
+                    "request": request,
+                    "scan_types": SCAN_TYPES,
+                    "api_key_required": bool(settings.api_key or settings.api_key_hash),
+                    "error": "Accetta privacy policy e termini di servizio per procedere.",
+                    "csrf_token": csrf_token,
+                    "data_classifications": DATA_CLASSIFICATIONS,
+                    "privacy_policy_version": settings.privacy_policy_version,
+                    "terms_version": settings.terms_of_service_version,
+                    "kpi_metrics": kpi_metrics,
+                    "dashboard_timestamp": dashboard_timestamp,
+                },
+                status_code=403,
+            )
+            response.set_cookie(
+                settings.csrf_cookie_name,
+                csrf_token,
+                httponly=True,
+                secure=settings.require_https,
+                samesite="lax",
+            )
+            return response
+        for consent_type in CONSENT_TYPES:
+            version = (
+                settings.privacy_policy_version
+                if consent_type == "privacy_policy"
+                else settings.terms_of_service_version
+            )
+            existing = (
+                db.query(ConsentRecord)
+                .filter(
+                    ConsentRecord.subject_id == subject_id,
+                    ConsentRecord.consent_type == consent_type,
+                    ConsentRecord.version == version,
+                )
+                .first()
+            )
+            if not existing:
+                record_consent(db, request, subject_id, consent_type, version)
+                _record_audit(
+                    db,
+                    request,
+                    "consent_recorded",
+                    subject_id=subject_id,
+                    consent_type=consent_type,
+                    version=version,
+                )
+
     scan = Scan(
         target=target,
         scan_type=scan_type,
@@ -627,6 +775,8 @@ def create_scan_form(
         created_at=datetime.now(timezone.utc),
         progress=0,
         priority=priority,
+        data_subject_id=subject_id,
+        data_classification=data_classification,
     )
     db.add(scan)
     db.commit()
@@ -643,11 +793,14 @@ def create_scan_form(
     if api_key:
         redirect_url = f"{redirect_url}?api_key={api_key}"
 
-    log_audit_event(
+    _record_audit(
+        db,
+        request,
         "scan_created",
-        request=request,
+        subject_id=subject_id,
         scan_id=scan.id,
         scan_type=scan.scan_type,
+        data_classification=scan.data_classification,
     )
 
     return RedirectResponse(url=redirect_url, status_code=303)
@@ -697,6 +850,7 @@ def scan_detail(request: Request, scan_id: int, db: Session = Depends(get_db)) -
 @app.post("/api/v1/scans", response_model=ScanStatus)
 @limiter.limit(settings.rate_limit_create_scan)
 def create_scan(
+    request: Request,
     payload: ScanCreate,
     db: Session = Depends(get_db),
     _: None = Depends(enforce_api_key),
@@ -704,12 +858,48 @@ def create_scan(
 ) -> ScanStatus:
     try:
         scan_type = payload.scan_type.lower().strip()
+        data_classification = payload.data_classification.lower().strip()
+        if data_classification not in DATA_CLASSIFICATIONS:
+            raise ScanValidationError("Classificazione dati non valida.")
         if scan_type == "nmap":
             validate_nmap_target(payload.target)
         else:
             validate_target(payload.target)
     except ScanValidationError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    subject_id = get_subject_id(request)
+    if not has_required_consents(db, subject_id):
+        if not (payload.accept_privacy and payload.accept_terms):
+            raise HTTPException(
+                status_code=403,
+                detail="Consenso privacy policy e termini richiesto.",
+            )
+        for consent_type in CONSENT_TYPES:
+            version = (
+                settings.privacy_policy_version
+                if consent_type == "privacy_policy"
+                else settings.terms_of_service_version
+            )
+            existing = (
+                db.query(ConsentRecord)
+                .filter(
+                    ConsentRecord.subject_id == subject_id,
+                    ConsentRecord.consent_type == consent_type,
+                    ConsentRecord.version == version,
+                )
+                .first()
+            )
+            if not existing:
+                record_consent(db, request, subject_id, consent_type, version)
+                _record_audit(
+                    db,
+                    request,
+                    "consent_recorded",
+                    subject_id=subject_id,
+                    consent_type=consent_type,
+                    version=version,
+                )
 
     scan = Scan(
         target=payload.target,
@@ -718,6 +908,8 @@ def create_scan(
         created_at=datetime.now(timezone.utc),
         progress=0,
         priority=payload.priority,
+        data_subject_id=subject_id,
+        data_classification=data_classification,
     )
     db.add(scan)
     db.commit()
@@ -732,10 +924,14 @@ def create_scan(
 
     _invalidate_cache_keys(_cache_key("scans:list"))
 
-    log_audit_event(
+    _record_audit(
+        db,
+        request,
         "scan_created",
+        subject_id=subject_id,
         scan_id=scan.id,
         scan_type=scan.scan_type,
+        data_classification=scan.data_classification,
     )
 
     return ScanStatus(
@@ -747,7 +943,100 @@ def create_scan(
         completed_at=scan.completed_at,
         progress=scan.progress,
         priority=scan.priority,
+        data_classification=scan.data_classification,
     )
+
+
+@app.post("/api/v1/consents", response_model=ConsentStatus)
+def record_consent_api(
+    request: Request,
+    payload: ConsentRequest,
+    db: Session = Depends(get_db),
+    _: None = Depends(enforce_api_key),
+    __: None = Depends(enforce_jwt),
+) -> ConsentStatus:
+    consent_type = payload.consent_type.lower().strip()
+    if consent_type not in CONSENT_TYPES:
+        raise HTTPException(status_code=400, detail="Tipo consenso non valido.")
+    version = payload.version
+    if not version:
+        version = (
+            settings.privacy_policy_version
+            if consent_type == "privacy_policy"
+            else settings.terms_of_service_version
+        )
+    subject_id = get_subject_id(request)
+    consent = record_consent(db, request, subject_id, consent_type, version)
+    _record_audit(
+        db,
+        request,
+        "consent_recorded",
+        subject_id=subject_id,
+        consent_type=consent_type,
+        version=version,
+    )
+    return ConsentStatus(
+        subject_id=consent.subject_id,
+        consent_type=consent.consent_type,
+        version=consent.version,
+        accepted_at=consent.accepted_at,
+    )
+
+
+@app.get("/api/v1/gdpr/export")
+def export_gdpr_data(
+    request: Request,
+    db: Session = Depends(get_db),
+    _: None = Depends(enforce_api_key),
+    __: None = Depends(enforce_jwt),
+) -> Dict[str, Any]:
+    subject_id = get_subject_id(request)
+    scans = db.query(Scan).filter(Scan.data_subject_id == subject_id).all()
+    payload = [anonymize_scan_for_export(scan) for scan in scans]
+    _record_audit(
+        db,
+        request,
+        "gdpr_export",
+        subject_id=subject_id,
+        exported_scans=len(payload),
+    )
+    return {"subject_id": subject_id, "exported_at": datetime.now(timezone.utc).isoformat(), "scans": payload}
+
+
+@app.delete("/api/v1/gdpr/delete")
+def delete_gdpr_data(
+    request: Request,
+    db: Session = Depends(get_db),
+    _: None = Depends(enforce_api_key),
+    __: None = Depends(enforce_jwt),
+) -> Dict[str, Any]:
+    subject_id = get_subject_id(request)
+    scans = db.query(Scan).filter(Scan.data_subject_id == subject_id).all()
+    deleted_reports = 0
+    for scan in scans:
+        if scan.report_path:
+            try:
+                Path(scan.report_path).unlink(missing_ok=True)
+            except OSError:
+                pass
+            deleted_reports += 1
+        db.delete(scan)
+    db.query(ConsentRecord).filter(ConsentRecord.subject_id == subject_id).delete()
+    db.commit()
+    _record_audit(
+        db,
+        request,
+        "gdpr_deletion",
+        subject_id=subject_id,
+        deleted_scans=len(scans),
+        deleted_reports=deleted_reports,
+    )
+    return {
+        "subject_id": subject_id,
+        "deleted_scans": len(scans),
+        "deleted_reports": deleted_reports,
+        "deleted_at": datetime.now(timezone.utc).isoformat(),
+    }
 
 
 @app.get("/scans/{scan_id}/report/download")
@@ -761,6 +1050,15 @@ def download_report_ui(
     scan = _active_scan_query(db).filter(Scan.id == scan_id).first()
     if not scan or not scan.report_path:
         raise HTTPException(status_code=404, detail="Report non disponibile")
+
+    _record_audit(
+        db,
+        request,
+        "report_downloaded",
+        subject_id=scan.data_subject_id,
+        scan_id=scan.id,
+        data_classification=scan.data_classification,
+    )
 
     return FileResponse(
         scan.report_path,
@@ -791,6 +1089,7 @@ def list_scans(
             completed_at=scan.completed_at,
             progress=scan.progress,
             priority=scan.priority,
+            data_classification=scan.data_classification,
         )
         for scan in scans
     ]
@@ -826,6 +1125,7 @@ def scan_status(
         completed_at=scan.completed_at,
         progress=scan.progress,
         priority=scan.priority,
+        data_classification=scan.data_classification,
     )
     _set_cached_json(cache_key, response_payload.model_dump(mode="json"))
     return response_payload
@@ -833,6 +1133,7 @@ def scan_status(
 
 @app.get("/api/v1/scans/{scan_id}/report/download")
 def download_report(
+    request: Request,
     scan_id: int,
     db: Session = Depends(get_db),
     _: None = Depends(enforce_api_key),
@@ -841,6 +1142,15 @@ def download_report(
     scan = _active_scan_query(db).filter(Scan.id == scan_id).first()
     if not scan or not scan.report_path:
         raise HTTPException(status_code=404, detail="Report non disponibile")
+
+    _record_audit(
+        db,
+        request,
+        "report_downloaded",
+        subject_id=scan.data_subject_id,
+        scan_id=scan.id,
+        data_classification=scan.data_classification,
+    )
 
     return FileResponse(
         scan.report_path,
@@ -874,6 +1184,7 @@ def scan_task_status(
 @app.post("/api/v1/scans/{scan_id}/cancel")
 @limiter.limit(settings.rate_limit_create_scan)
 def cancel_scan(
+    request: Request,
     scan_id: int,
     db: Session = Depends(get_db),
     _: None = Depends(enforce_api_key),
@@ -900,12 +1211,21 @@ def cancel_scan(
         _cache_key("scans:list"),
         _cache_key("scans", str(scan_id), "status"),
     )
+    _record_audit(
+        db,
+        request,
+        "scan_canceled",
+        subject_id=scan.data_subject_id,
+        scan_id=scan.id,
+        data_classification=scan.data_classification,
+    )
     return {"scan_id": scan.id, "status": scan.status}
 
 
 @app.delete("/api/v1/scans/{scan_id}", response_model=ScanStatus)
 @limiter.limit(settings.rate_limit_create_scan)
 def soft_delete_scan(
+    request: Request,
     scan_id: int,
     payload: ScanDelete = Body(default=ScanDelete()),
     db: Session = Depends(get_db),
@@ -919,11 +1239,15 @@ def soft_delete_scan(
     scan.status = "deleted"
     db.commit()
 
-    log_audit_event(
+    _record_audit(
+        db,
+        request,
         "scan_deleted",
+        subject_id=scan.data_subject_id,
         scan_id=scan.id,
         scan_type=scan.scan_type,
         reason=payload.reason,
+        data_classification=scan.data_classification,
     )
 
     _invalidate_cache_keys(
@@ -939,6 +1263,7 @@ def soft_delete_scan(
         completed_at=scan.completed_at,
         progress=scan.progress,
         priority=scan.priority,
+        data_classification=scan.data_classification,
     )
 
 

@@ -24,6 +24,11 @@ nav:
   - Architettura: architecture.md
   - Deployment: deployment.md
   - Security: security.md
+  - Privacy & GDPR: privacy.md
+  - Termini di Servizio: terms.md
+  - SOC 2 Controls: soc2-controls.md
+  - Incident Response: incident-response.md
+  - Vulnerability Disclosure: vulnerability-disclosure.md
   - Troubleshooting: troubleshooting.md
   - Contributing: contributing.md
   - Video Tutorials: video-tutorials.md
