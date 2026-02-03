@@ -6,6 +6,7 @@ from dataclasses import asdict
 from datetime import datetime, timedelta, timezone
 import hashlib
 import hmac
+import logging
 import secrets
 from typing import Any, Dict, Optional
 
@@ -26,11 +27,16 @@ audit_logger = structlog.get_logger("vap.audit")
 def configure_structlog() -> None:
     structlog.configure(
         processors=[
+            structlog.contextvars.merge_contextvars,
+            structlog.processors.add_log_level,
             structlog.processors.TimeStamper(fmt="iso"),
-            structlog.stdlib.add_log_level,
+            structlog.processors.StackInfoRenderer(),
             structlog.processors.dict_tracebacks,
             structlog.processors.JSONRenderer(),
         ],
+        wrapper_class=structlog.make_filtering_bound_logger(logging.INFO),
+        logger_factory=structlog.stdlib.LoggerFactory(),
+        cache_logger_on_first_use=True,
     )
 
 
