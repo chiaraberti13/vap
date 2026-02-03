@@ -139,6 +139,9 @@ def enforce_api_key_form_dependency(
 @app.exception_handler(APIKeyUIError)
 def api_key_ui_exception_handler(request: Request, exc: APIKeyUIError) -> HTMLResponse:
     csrf_token = generate_csrf_token()
+    with SessionLocal() as db:
+        kpi_metrics = _build_kpi_metrics(db)
+    dashboard_timestamp = datetime.now(timezone.utc)
     response = templates.TemplateResponse(
         "index.html",
         {
@@ -147,6 +150,8 @@ def api_key_ui_exception_handler(request: Request, exc: APIKeyUIError) -> HTMLRe
             "api_key_required": bool(settings.api_key or settings.api_key_hash),
             "error": exc.detail,
             "csrf_token": csrf_token,
+            "kpi_metrics": kpi_metrics,
+            "dashboard_timestamp": dashboard_timestamp,
         },
         status_code=401,
     )
@@ -289,9 +294,60 @@ def _active_scan_query(db: Session) -> Query:
     return db.query(Scan).filter(Scan.deleted_at.is_(None))
 
 
+def _count_findings(records: List[Optional[str]]) -> int:
+    total = 0
+    for record in records:
+        if not record:
+            continue
+        try:
+            payload = json.loads(record)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(payload, list):
+            total += len(payload)
+    return total
+
+
+def _build_kpi_metrics(db: Session) -> Dict[str, Any]:
+    base_query = _active_scan_query(db)
+    total_scans = base_query.count()
+    active_scans = base_query.filter(Scan.status.in_(["queued", "running"])).count()
+    completed_scans = base_query.filter(Scan.status == "completed").count()
+    failed_scans = base_query.filter(Scan.status == "report_failed").count()
+    avg_duration_minutes = 0.0
+    completed_rows = (
+        base_query.filter(Scan.completed_at.isnot(None))
+        .with_entities(Scan.created_at, Scan.completed_at)
+        .all()
+    )
+    if completed_rows:
+        total_seconds = sum(
+            (completed_at - created_at).total_seconds()
+            for created_at, completed_at in completed_rows
+            if completed_at and created_at
+        )
+        avg_duration_minutes = round(total_seconds / max(len(completed_rows), 1) / 60, 1)
+    findings_records = (
+        base_query.filter(Scan.findings_json.isnot(None))
+        .with_entities(Scan.findings_json)
+        .all()
+    )
+    total_findings = _count_findings([record[0] for record in findings_records])
+    return {
+        "total_scans": total_scans,
+        "active_scans": active_scans,
+        "completed_scans": completed_scans,
+        "failed_scans": failed_scans,
+        "avg_duration_minutes": avg_duration_minutes,
+        "total_findings": total_findings,
+    }
+
+
 @app.get("/", response_class=HTMLResponse)
-def index(request: Request) -> HTMLResponse:
+def index(request: Request, db: Session = Depends(get_db)) -> HTMLResponse:
     csrf_token = generate_csrf_token()
+    kpi_metrics = _build_kpi_metrics(db)
+    dashboard_timestamp = datetime.now(timezone.utc)
     response = templates.TemplateResponse(
         "index.html",
         {
@@ -299,6 +355,8 @@ def index(request: Request) -> HTMLResponse:
             "scan_types": SCAN_TYPES,
             "api_key_required": bool(settings.api_key or settings.api_key_hash),
             "csrf_token": csrf_token,
+            "kpi_metrics": kpi_metrics,
+            "dashboard_timestamp": dashboard_timestamp,
         },
     )
     response.set_cookie(
@@ -348,6 +406,8 @@ def create_scan_form(
             validate_target(target)
     except ValueError:
         csrf_token = generate_csrf_token()
+        kpi_metrics = _build_kpi_metrics(db)
+        dashboard_timestamp = datetime.now(timezone.utc)
         response = templates.TemplateResponse(
             "index.html",
             {
@@ -356,6 +416,8 @@ def create_scan_form(
                 "api_key_required": bool(settings.api_key or settings.api_key_hash),
                 "error": "Token CSRF non valido o scaduto.",
                 "csrf_token": csrf_token,
+                "kpi_metrics": kpi_metrics,
+                "dashboard_timestamp": dashboard_timestamp,
             },
             status_code=400,
         )
@@ -369,6 +431,8 @@ def create_scan_form(
         return response
     except ScanValidationError as exc:
         csrf_token = generate_csrf_token()
+        kpi_metrics = _build_kpi_metrics(db)
+        dashboard_timestamp = datetime.now(timezone.utc)
         response = templates.TemplateResponse(
             "index.html",
             {
@@ -377,6 +441,8 @@ def create_scan_form(
                 "api_key_required": bool(settings.api_key or settings.api_key_hash),
                 "error": str(exc),
                 "csrf_token": csrf_token,
+                "kpi_metrics": kpi_metrics,
+                "dashboard_timestamp": dashboard_timestamp,
             },
             status_code=400,
         )
