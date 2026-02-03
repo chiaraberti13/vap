@@ -7,7 +7,7 @@ Professional, modular **Vulnerability Assessment** platform with advanced scanni
 - **Multi-Scanner Integration**: Nuclei, Nmap, WhatWeb, Subfinder, Nikto, Dirsearch, SQLMap, XSStrike, ZAP, Burp, Wapiti, Commix
 - **Scanner Enterprise (opzionali)**: Acunetix, Nessus via API
 - **Vulnerability Correlation Engine**: deduplica e collega i findings multi-tool
-- **False Positive ML Scoring**: scoring euristico per priorità remediation
+- **False Positive ML Model**: modello logistico per stimare falsi positivi
 - **CVE Enrichment**: integrazione NVD + ExploitDB per verifica CVE
 - **MITRE ATT&CK Mapping**: mappatura automatica tecnica/tattica
 - **Scans Parallele**: Esecuzione concorrente dei tool con limite configurabile
