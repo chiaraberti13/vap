@@ -6,21 +6,26 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 import asyncio
 import json
+from time import perf_counter
 from typing import Any, Dict, List, Optional, Set
+from uuid import uuid4
 
 from fastapi import Body, Depends, FastAPI, Form, HTTPException, Request, WebSocket, WebSocketDisconnect
-from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_latest
 from pydantic import BaseModel, Field
 from redis import Redis
 from redis.exceptions import RedisError
+from sqlalchemy import text
 from sqlalchemy.orm import Query, Session
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.sessions import SessionMiddleware
+import structlog
 
 from background_jobs import start_background_jobs
 from celery_app import celery_app
@@ -56,6 +61,18 @@ async def lifespan(_: FastAPI):
 
 
 limiter = Limiter(key_func=get_remote_address, default_limits=[settings.rate_limit_default])
+http_logger = structlog.get_logger("vap.http")
+
+REQUEST_COUNT = Counter(
+    "vap_http_requests_total",
+    "Numero totale di richieste HTTP",
+    ["method", "path", "status_code"],
+)
+REQUEST_LATENCY = Histogram(
+    "vap_http_request_duration_seconds",
+    "Durata delle richieste HTTP in secondi",
+    ["method", "path"],
+)
 
 app = FastAPI(title=settings.app_name, lifespan=lifespan)
 app.state.limiter = limiter
@@ -245,6 +262,43 @@ async def add_security_headers(request: Request, call_next):
     return response
 
 
+@app.middleware("http")
+async def metrics_and_logging(request: Request, call_next):
+    request_id = request.headers.get("x-request-id") or str(uuid4())
+    structlog.contextvars.bind_contextvars(request_id=request_id)
+    start_time = perf_counter()
+    try:
+        response = await call_next(request)
+    except Exception:
+        duration = perf_counter() - start_time
+        REQUEST_COUNT.labels(request.method, request.url.path, "500").inc()
+        REQUEST_LATENCY.labels(request.method, request.url.path).observe(duration)
+        http_logger.exception(
+            "http_request_failed",
+            method=request.method,
+            path=request.url.path,
+            duration_ms=round(duration * 1000, 2),
+            client_ip=request.client.host if request.client else "unknown",
+        )
+        structlog.contextvars.clear_contextvars()
+        raise
+    duration = perf_counter() - start_time
+    status_code = response.status_code
+    REQUEST_COUNT.labels(request.method, request.url.path, str(status_code)).inc()
+    REQUEST_LATENCY.labels(request.method, request.url.path).observe(duration)
+    response.headers["X-Request-ID"] = request_id
+    http_logger.info(
+        "http_request",
+        method=request.method,
+        path=request.url.path,
+        status_code=status_code,
+        duration_ms=round(duration * 1000, 2),
+        client_ip=request.client.host if request.client else "unknown",
+    )
+    structlog.contextvars.clear_contextvars()
+    return response
+
+
 class AuditLoggingMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         response = await call_next(request)
@@ -258,6 +312,57 @@ class AuditLoggingMiddleware(BaseHTTPMiddleware):
 
 
 app.add_middleware(AuditLoggingMiddleware)
+
+
+def _check_database() -> bool:
+    try:
+        with SessionLocal() as db:
+            db.execute(text("SELECT 1"))
+        return True
+    except Exception:
+        return False
+
+
+def _check_api_cache() -> bool:
+    if not settings.api_cache_enabled:
+        return True
+    if not api_cache:
+        return False
+    try:
+        api_cache.ping()
+    except RedisError:
+        return False
+    return True
+
+
+@app.get("/metrics")
+def metrics() -> Response:
+    return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
+
+
+@app.get("/health")
+def health_check() -> Dict[str, Any]:
+    return {
+        "status": "ok",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "environment": settings.app_env,
+    }
+
+
+@app.get("/ready")
+def readiness_check() -> JSONResponse:
+    checks = {
+        "database": _check_database(),
+        "api_cache": _check_api_cache(),
+    }
+    overall_ok = all(checks.values())
+    payload = {
+        "status": "ok" if overall_ok else "degraded",
+        "checks": checks,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+    status_code = 200 if overall_ok else 503
+    return JSONResponse(content=payload, status_code=status_code)
 
 
 def enforce_jwt(request: Request) -> None:
