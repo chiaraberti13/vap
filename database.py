@@ -21,6 +21,14 @@ def _build_engine():
         "check_same_thread": False
     } if database_url.startswith("sqlite") else {}
     if settings.sqlcipher_key:
+        try:
+            import pysqlcipher3  # noqa: F401
+        except ImportError as exc:
+            raise RuntimeError(
+                "SQLCipher support requires the optional dependency "
+                "`pysqlcipher3-binary`. Install it when setting "
+                "VAP_SQLCIPHER_KEY."
+            ) from exc
         if database_url.startswith("sqlite:///"):
             database_url = database_url.replace("sqlite:///", "sqlite+pysqlcipher:///")
         elif database_url.startswith("sqlite://"):

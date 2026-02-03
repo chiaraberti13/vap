@@ -23,7 +23,8 @@ structlog==24.1.0
 bleach==6.1.0
 validators==0.22.0
 itsdangerous==2.1.2
-pysqlcipher3-binary==0.5.2
+# NOTE: SQLCipher support (optional) requires pysqlcipher3-binary.
+# Install separately if VAP_SQLCIPHER_KEY is set in production.
 
 # === DATA PROCESSING ===
 python-dateutil==2.8.2
