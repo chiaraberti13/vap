@@ -100,6 +100,102 @@ def _risk_label(counts: Counter) -> str:
     return "INFO"
 
 
+def _parse_cvss_score(value: Any) -> float | None:
+    if value is None:
+        return None
+    try:
+        score = float(value)
+    except (TypeError, ValueError):
+        return None
+    if score < 0 or score > 10:
+        return None
+    return score
+
+
+def _cvss_rating(score: float) -> str:
+    if score == 0.0:
+        return "NONE"
+    if score <= 3.9:
+        return "LOW"
+    if score <= 6.9:
+        return "MEDIUM"
+    if score <= 8.9:
+        return "HIGH"
+    return "CRITICAL"
+
+
+def _cvss_stats(findings: List[Dict[str, Any]]) -> Dict[str, Any]:
+    scores = []
+    for finding in findings:
+        score = _parse_cvss_score(finding.get("cvss_score"))
+        if score is not None:
+            scores.append(score)
+    total = len(findings)
+    scored = len(scores)
+    if not scores:
+        return {
+            "average": None,
+            "maximum": None,
+            "overall_label": "N/D",
+            "total": total,
+            "scored": scored,
+            "distribution": Counter(),
+        }
+    distribution = Counter(_cvss_rating(score) for score in scores)
+    maximum = max(scores)
+    return {
+        "average": round(sum(scores) / scored, 1),
+        "maximum": round(maximum, 1),
+        "overall_label": _cvss_rating(maximum),
+        "total": total,
+        "scored": scored,
+        "distribution": distribution,
+    }
+
+
+def _build_cvss_summary_table(stats: Dict[str, Any]) -> Table:
+    average = stats.get("average")
+    maximum = stats.get("maximum")
+    data = [
+        ["CVSS v3.1", "Valore"],
+        ["Punteggio medio", f"{average:.1f}" if average is not None else "n/d"],
+        ["Punteggio massimo", f"{maximum:.1f}" if maximum is not None else "n/d"],
+        ["Findings con score", f"{stats.get('scored', 0)}/{stats.get('total', 0)}"],
+        ["Livello CVSS complessivo", stats.get("overall_label", "N/D")],
+    ]
+    table = Table(data, hAlign="LEFT")
+    table.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, 0), colors.whitesmoke),
+                ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+                ("FONTNAME", (0, 0), (-1, -1), "Helvetica"),
+                ("FONTSIZE", (0, 0), (-1, -1), 9),
+            ]
+        )
+    )
+    return table
+
+
+def _build_cvss_distribution_table(stats: Dict[str, Any]) -> Table:
+    distribution = stats.get("distribution", Counter())
+    data = [["Severità CVSS v3.1", "Count"]]
+    for label in ("CRITICAL", "HIGH", "MEDIUM", "LOW", "NONE"):
+        data.append([label.title(), str(distribution.get(label, 0))])
+    table = Table(data, hAlign="LEFT")
+    table.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, 0), colors.whitesmoke),
+                ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+                ("FONTNAME", (0, 0), (-1, -1), "Helvetica"),
+                ("FONTSIZE", (0, 0), (-1, -1), 9),
+            ]
+        )
+    )
+    return table
+
+
 def _build_logo_placeholder() -> Drawing:
     drawing = Drawing(120, 40)
     drawing.add(Rect(0, 0, 120, 40, strokeColor=colors.grey, fillColor=colors.whitesmoke))
@@ -289,9 +385,19 @@ def generate_report(scan_id: int, target: str, scan_type: str, findings: List[Di
 
     counts = _severity_counts(findings)
     risk_level = _risk_label(counts)
+    cvss_stats = _cvss_stats(findings)
+    if cvss_stats.get("scored"):
+        cvss_summary = (
+            f"Punteggio CVSS v3.1 medio {cvss_stats['average']:.1f} "
+            f"(massimo {cvss_stats['maximum']:.1f}), "
+            f"livello complessivo {cvss_stats['overall_label']}."
+        )
+    else:
+        cvss_summary = "Punteggi CVSS v3.1 non disponibili per i finding rilevati."
     summary_text = (
         f"Il report sintetizza {len(findings)} finding sul target {target}. "
         f"Il livello di rischio complessivo è {risk_level}. "
+        f"{cvss_summary} "
         "Gli indicatori principali includono esposizioni di servizi, "
         "configurazioni non sicure e potenziali vulnerabilità applicative."
     )
@@ -299,6 +405,10 @@ def generate_report(scan_id: int, target: str, scan_type: str, findings: List[Di
     story.append(Paragraph(summary_text, styles["BodyText"]))
     story.append(Spacer(1, 8))
     story.append(_build_severity_table(counts))
+    story.append(Spacer(1, 12))
+    story.append(_build_cvss_summary_table(cvss_stats))
+    story.append(Spacer(1, 8))
+    story.append(_build_cvss_distribution_table(cvss_stats))
     story.append(Spacer(1, 12))
 
     scan_params = Table(
