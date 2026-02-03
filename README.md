@@ -153,6 +153,9 @@ vulnerability-assessment-platform/
 
 ## 🔧 Configuration
 
+Per un setup completo **copia `.env.example` in `.env`**: include tutte le variabili lette da `config.py` (JWT, CORS, rate limit, header di sicurezza, integrazioni API, Celery/Redis, NVD/ExploitDB, ecc.).  
+Se preferisci, puoi continuare a modificare direttamente `config.py`.
+
 Edit `config.py` to customize:
 - Scanner timeouts
 - Max scanner concurrency (`VAP_MAX_CONCURRENT_SCANNERS`)
@@ -160,6 +163,42 @@ Edit `config.py` to customize:
 - PDF report settings
 - Database configuration
 - Redis API response caching (`VAP_API_CACHE_ENABLED`, `VAP_API_CACHE_REDIS_URL`, `VAP_API_CACHE_TTL`, `VAP_API_CACHE_PREFIX`)
+
+### ✅ Configurazione completa (.env)
+
+```bash
+# 1) Duplica il file di esempio completo
+cp .env.example .env
+
+# 2) Modifica le variabili necessarie
+nano .env
+```
+
+> Suggerimento: lascia vuote le API key che non usi (es. Acunetix/Nessus) e abilita solo i tool realmente installati.
+
+## 🧪 Testing
+
+```bash
+# Esegue tutti i test automatici
+pytest
+
+# (Opzionale) test singolo modulo
+pytest tests/test_api.py -k "scan"
+```
+
+## 🛡️ Checklist hardening produzione
+
+Per un deploy sicuro in produzione, imposta almeno:
+
+1. **Autenticazione**: imposta `VAP_API_KEY` (o `VAP_API_KEY_HASH`) e abilita JWT con `VAP_JWT_REQUIRED=true`.
+2. **Segreti**: imposta `VAP_JWT_SECRET` e `VAP_CSRF_SECRET` con valori strong/rotabili.
+3. **HTTPS**: abilita `VAP_REQUIRE_HTTPS=true` e configura `VAP_TLS_CERTFILE`/`VAP_TLS_KEYFILE`.
+4. **CORS**: limita `VAP_CORS_ALLOWED_ORIGINS` ai soli domini consentiti.
+5. **Rate limiting**: rivedi `VAP_RATE_LIMIT_*` per proteggere endpoint critici.
+6. **Security headers**: lascia `VAP_SECURITY_HEADERS=true` e verifica `VAP_CSP_POLICY`.
+7. **Audit & retention**: configura `VAP_AUDIT_LOGGING`, `VAP_AUDIT_RETENTION_DAYS` e `VAP_CONSENT_RETENTION_DAYS`.
+
+> Nota: in produzione evita credenziali di demo (`VAP_JWT_DEMO_PASSWORD`) e ruota periodicamente le chiavi.
 
 ## 📊 Report Features
 
