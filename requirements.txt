@@ -23,7 +23,7 @@ structlog==24.1.0
 bleach==6.1.0
 validators==0.22.0
 itsdangerous==2.1.2
-pysqlcipher3-binary==0.5.2
+pysqlcipher3-binary==1.0.4.0
 
 # === DATA PROCESSING ===
 python-dateutil==2.8.2
@@ -41,3 +41,7 @@ pytest==7.4.4
 pytest-asyncio==0.23.3
 httpx==0.26.0
 pytest-cov==4.1.0
+
+# === LINTING / FORMATTING (opzionale) ===
+ruff==0.3.4
+black==24.2.0
