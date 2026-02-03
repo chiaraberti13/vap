@@ -7,7 +7,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Generator
 
-from sqlalchemy import Column, DateTime, Integer, String, Text, create_engine, event
+from sqlalchemy import Column, DateTime, Index, Integer, String, Text, create_engine, event
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
 
 from config import settings
@@ -46,6 +46,11 @@ SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
 class Scan(Base):
     __tablename__ = "scans"
+    __table_args__ = (
+        Index("ix_scans_created_at", "created_at"),
+        Index("ix_scans_status", "status"),
+        Index("ix_scans_deleted_at", "deleted_at"),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     target = Column(String(255), nullable=False)
@@ -53,6 +58,7 @@ class Scan(Base):
     status = Column(String(30), nullable=False, default="queued")
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     completed_at = Column(DateTime, nullable=True)
+    deleted_at = Column(DateTime, nullable=True)
     findings_json = Column(Text, nullable=True)
     report_path = Column(String(255), nullable=True)
     progress = Column(Integer, nullable=False, default=0)

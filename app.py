@@ -8,12 +8,12 @@ import asyncio
 import json
 from typing import Any, Dict, List, Optional, Set
 
-from fastapi import Depends, FastAPI, Form, HTTPException, Request, WebSocket, WebSocketDisconnect
+from fastapi import Body, Depends, FastAPI, Form, HTTPException, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Query, Session
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
@@ -238,6 +238,10 @@ class ScanStatus(BaseModel):
     priority: int
 
 
+class ScanDelete(BaseModel):
+    reason: Optional[str] = Field(None, max_length=255)
+
+
 class ConnectionManager:
     def __init__(self) -> None:
         self.active_connections: Dict[int, Set[WebSocket]] = {}
@@ -279,6 +283,10 @@ def _build_scan_payload(scan: Scan) -> Dict[str, Any]:
         "logs": _load_json_list(scan.logs_json)[-50:],
         "notifications": _load_json_list(scan.notifications_json)[-10:],
     }
+
+
+def _active_scan_query(db: Session) -> Query:
+    return db.query(Scan).filter(Scan.deleted_at.is_(None))
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -416,7 +424,7 @@ def create_scan_form(
 
 @app.get("/scans", response_class=HTMLResponse)
 def scans_list(request: Request, db: Session = Depends(get_db)) -> HTMLResponse:
-    scans = db.query(Scan).order_by(Scan.created_at.desc()).all()
+    scans = _active_scan_query(db).order_by(Scan.created_at.desc()).all()
     api_key = request.query_params.get("api_key")
     return templates.TemplateResponse(
         "scans_list.html",
@@ -430,7 +438,7 @@ def scans_list(request: Request, db: Session = Depends(get_db)) -> HTMLResponse:
 
 @app.get("/scans/{scan_id}", response_class=HTMLResponse)
 def scan_detail(request: Request, scan_id: int, db: Session = Depends(get_db)) -> HTMLResponse:
-    scan = db.query(Scan).filter(Scan.id == scan_id).first()
+    scan = _active_scan_query(db).filter(Scan.id == scan_id).first()
     if not scan:
         raise HTTPException(status_code=404, detail="Scan non trovata")
 
@@ -517,7 +525,7 @@ def download_report_ui(
     _: None = Depends(enforce_api_key),
     __: None = Depends(enforce_jwt),
 ) -> FileResponse:
-    scan = db.query(Scan).filter(Scan.id == scan_id).first()
+    scan = _active_scan_query(db).filter(Scan.id == scan_id).first()
     if not scan or not scan.report_path:
         raise HTTPException(status_code=404, detail="Report non disponibile")
 
@@ -535,7 +543,7 @@ def list_scans(
     _: None = Depends(enforce_api_key),
     __: None = Depends(enforce_jwt),
 ) -> List[ScanStatus]:
-    scans = db.query(Scan).order_by(Scan.created_at.desc()).all()
+    scans = _active_scan_query(db).order_by(Scan.created_at.desc()).all()
     return [
         ScanStatus(
             id=scan.id,
@@ -559,7 +567,7 @@ def scan_status(
     _: None = Depends(enforce_api_key),
     __: None = Depends(enforce_jwt),
 ) -> ScanStatus:
-    scan = db.query(Scan).filter(Scan.id == scan_id).first()
+    scan = _active_scan_query(db).filter(Scan.id == scan_id).first()
     if not scan:
         raise HTTPException(status_code=404, detail="Scan non trovata")
 
@@ -582,7 +590,7 @@ def download_report(
     _: None = Depends(enforce_api_key),
     __: None = Depends(enforce_jwt),
 ) -> FileResponse:
-    scan = db.query(Scan).filter(Scan.id == scan_id).first()
+    scan = _active_scan_query(db).filter(Scan.id == scan_id).first()
     if not scan or not scan.report_path:
         raise HTTPException(status_code=404, detail="Report non disponibile")
 
@@ -601,7 +609,7 @@ def scan_task_status(
     _: None = Depends(enforce_api_key),
     __: None = Depends(enforce_jwt),
 ) -> Dict[str, Any]:
-    scan = db.query(Scan).filter(Scan.id == scan_id).first()
+    scan = _active_scan_query(db).filter(Scan.id == scan_id).first()
     if not scan:
         raise HTTPException(status_code=404, detail="Scan non trovata")
     status = None
@@ -623,7 +631,7 @@ def cancel_scan(
     _: None = Depends(enforce_api_key),
     __: None = Depends(enforce_jwt),
 ) -> Dict[str, Any]:
-    scan = db.query(Scan).filter(Scan.id == scan_id).first()
+    scan = _active_scan_query(db).filter(Scan.id == scan_id).first()
     if not scan:
         raise HTTPException(status_code=404, detail="Scan non trovata")
     if scan.status in {"completed", "report_failed"}:
@@ -643,6 +651,41 @@ def cancel_scan(
     return {"scan_id": scan.id, "status": scan.status}
 
 
+@app.delete("/api/v1/scans/{scan_id}", response_model=ScanStatus)
+@limiter.limit(settings.rate_limit_create_scan)
+def soft_delete_scan(
+    scan_id: int,
+    payload: ScanDelete = Body(default=ScanDelete()),
+    db: Session = Depends(get_db),
+    _: None = Depends(enforce_api_key),
+    __: None = Depends(enforce_jwt),
+) -> ScanStatus:
+    scan = _active_scan_query(db).filter(Scan.id == scan_id).first()
+    if not scan:
+        raise HTTPException(status_code=404, detail="Scan non trovata")
+    scan.deleted_at = datetime.now(timezone.utc)
+    scan.status = "deleted"
+    db.commit()
+
+    log_audit_event(
+        "scan_deleted",
+        scan_id=scan.id,
+        scan_type=scan.scan_type,
+        reason=payload.reason,
+    )
+
+    return ScanStatus(
+        id=scan.id,
+        target=scan.target,
+        scan_type=scan.scan_type,
+        status=scan.status,
+        created_at=scan.created_at,
+        completed_at=scan.completed_at,
+        progress=scan.progress,
+        priority=scan.priority,
+    )
+
+
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket) -> None:
     scan_id_param = websocket.query_params.get("scan_id")
@@ -660,7 +703,7 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
         while True:
             await asyncio.sleep(settings.websocket_poll_seconds)
             with SessionLocal() as db:
-                scan = db.query(Scan).filter(Scan.id == scan_id).first()
+                scan = _active_scan_query(db).filter(Scan.id == scan_id).first()
                 if not scan:
                     await websocket.send_json({"error": "Scan non trovata"})
                     continue

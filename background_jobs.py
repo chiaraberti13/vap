@@ -56,7 +56,11 @@ def enqueue_scheduled_scan(target: str, scan_type: str) -> None:
 def cleanup_old_reports() -> None:
     cutoff = datetime.now(timezone.utc) - timedelta(days=settings.scan_retention_days)
     with SessionLocal() as db:
-        scans = db.query(Scan).filter(Scan.created_at < cutoff).all()
+        scans = (
+            db.query(Scan)
+            .filter(Scan.created_at < cutoff, Scan.deleted_at.is_(None))
+            .all()
+        )
         for scan in scans:
             if scan.report_path:
                 try:
@@ -72,7 +76,15 @@ def compress_old_reports() -> None:
     archive_dir = settings.reports_dir / "archive"
     archive_dir.mkdir(parents=True, exist_ok=True)
     with SessionLocal() as db:
-        scans = db.query(Scan).filter(Scan.created_at < cutoff, Scan.report_path.isnot(None)).all()
+        scans = (
+            db.query(Scan)
+            .filter(
+                Scan.created_at < cutoff,
+                Scan.report_path.isnot(None),
+                Scan.deleted_at.is_(None),
+            )
+            .all()
+        )
         for scan in scans:
             report_path = Path(scan.report_path)
             if not report_path.exists():
