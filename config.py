@@ -152,6 +152,10 @@ class Settings:
     celery_task_time_limit: int = int(os.getenv("VAP_CELERY_TASK_TIME_LIMIT", "900"))
     celery_task_soft_time_limit: int = int(os.getenv("VAP_CELERY_TASK_SOFT_TIME_LIMIT", "840"))
     celery_result_expires_seconds: int = int(os.getenv("VAP_CELERY_RESULT_EXPIRES", "3600"))
+    api_cache_enabled: bool = os.getenv("VAP_API_CACHE_ENABLED", "true").lower() == "true"
+    api_cache_redis_url: str = os.getenv("VAP_API_CACHE_REDIS_URL", "redis://localhost:6379/2")
+    api_cache_ttl_seconds: int = int(os.getenv("VAP_API_CACHE_TTL", "30"))
+    api_cache_prefix: str = os.getenv("VAP_API_CACHE_PREFIX", "vap:api")
     scan_retention_days: int = int(os.getenv("VAP_SCAN_RETENTION_DAYS", "30"))
     scan_archive_after_days: int = int(os.getenv("VAP_SCAN_ARCHIVE_AFTER_DAYS", "7"))
     scheduled_scans: str = os.getenv("VAP_SCHEDULED_SCANS", "[]")

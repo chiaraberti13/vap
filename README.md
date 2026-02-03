@@ -148,6 +148,7 @@ Edit `config.py` to customize:
 - External tool paths
 - PDF report settings
 - Database configuration
+- Redis API response caching (`VAP_API_CACHE_ENABLED`, `VAP_API_CACHE_REDIS_URL`, `VAP_API_CACHE_TTL`, `VAP_API_CACHE_PREFIX`)
 
 ## 📊 Report Features
 
@@ -175,6 +176,7 @@ Unauthorized use may violate local and international laws. You are responsible f
 - **SQLAlchemy**: https://docs.sqlalchemy.org/
 - **ReportLab**: https://www.reportlab.com/documentation/
 - **Tailwind CSS**: https://tailwindcss.com/docs
+- **Redis (redis-py)**: https://redis-py.readthedocs.io/
 - **SQLMap**: http://sqlmap.org/
 - **XSStrike**: https://github.com/s0md3v/XSStrike
 - **OWASP ZAP**: https://www.zaproxy.org/docs/
