@@ -235,7 +235,7 @@ def enforce_api_key_form_dependency(
 
 
 @app.exception_handler(APIKeyUIError)
-def api_key_ui_exception_handler(request: Request, exc: APIKeyUIError) -> HTMLResponse:
+def api_key_ui_exception_handler(request: Request, exc: APIKeyUIError) -> Response:
     csrf_token = generate_csrf_token()
     with SessionLocal() as db:
         kpi_metrics = _build_kpi_metrics(db)
@@ -549,7 +549,7 @@ def _build_kpi_metrics(db: Session) -> Dict[str, Any]:
 
 
 @app.get("/", response_class=HTMLResponse)
-def index(request: Request, db: Session = Depends(get_db)) -> HTMLResponse:
+def index(request: Request, db: Session = Depends(get_db)) -> Response:
     csrf_token = generate_csrf_token()
     kpi_metrics = _build_kpi_metrics(db)
     dashboard_timestamp = datetime.now(timezone.utc)
@@ -578,7 +578,7 @@ def index(request: Request, db: Session = Depends(get_db)) -> HTMLResponse:
 
 
 @app.get("/privacy-policy", response_class=HTMLResponse)
-def privacy_policy(request: Request) -> HTMLResponse:
+def privacy_policy(request: Request) -> Response:
     return templates.TemplateResponse(
         "privacy_policy.html",
         {
@@ -589,7 +589,7 @@ def privacy_policy(request: Request) -> HTMLResponse:
 
 
 @app.get("/terms-of-service", response_class=HTMLResponse)
-def terms_of_service(request: Request) -> HTMLResponse:
+def terms_of_service(request: Request) -> Response:
     return templates.TemplateResponse(
         "terms_of_service.html",
         {
@@ -642,7 +642,7 @@ def create_scan_form(
     csrf_token: str = Form(""),
     api_key: Optional[str] = Depends(enforce_api_key_form_dependency),
     db: Session = Depends(get_db),
-) -> HTMLResponse:
+) -> Response:
     try:
         enforce_csrf(request, csrf_token)
         scan_type = scan_type.lower().strip()
@@ -807,7 +807,7 @@ def create_scan_form(
 
 
 @app.get("/scans", response_class=HTMLResponse)
-def scans_list(request: Request, db: Session = Depends(get_db)) -> HTMLResponse:
+def scans_list(request: Request, db: Session = Depends(get_db)) -> Response:
     scans = _active_scan_query(db).order_by(Scan.created_at.desc()).all()
     api_key = request.query_params.get("api_key")
     return templates.TemplateResponse(
@@ -821,7 +821,7 @@ def scans_list(request: Request, db: Session = Depends(get_db)) -> HTMLResponse:
 
 
 @app.get("/scans/{scan_id}", response_class=HTMLResponse)
-def scan_detail(request: Request, scan_id: int, db: Session = Depends(get_db)) -> HTMLResponse:
+def scan_detail(request: Request, scan_id: int, db: Session = Depends(get_db)) -> Response:
     scan = _active_scan_query(db).filter(Scan.id == scan_id).first()
     if not scan:
         raise HTTPException(status_code=404, detail="Scan non trovata")
