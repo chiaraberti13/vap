@@ -19,7 +19,7 @@ Professional, modular **Vulnerability Assessment** platform with advanced scanni
 ## ✅ Supported Platforms
 
 - **Linux**: Ubuntu/Debian (fully supported by `installer.sh`)
-- **macOS**: Supported via Homebrew (`installer.sh`)
+- **macOS**: Supported on macOS 11+ via Homebrew or MacPorts (`installer.sh`)
 - **Windows**: Supported via PowerShell (`installer.ps1`)
 
 ## 🚀 Quick Start (Linux/macOS)

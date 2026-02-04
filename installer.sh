@@ -24,6 +24,10 @@ NC='\033[0m' # No Color
 # Selected Python binary for the installer.
 PYTHON_BIN=""
 GO_TOO_OLD=0
+MACOS_LEGACY=0
+MACOS_VERSION=""
+MACOS_MAJOR=""
+MACOS_MINOR=""
 
 # ASCII logo for the installer UI.
 print_logo() {
@@ -141,20 +145,33 @@ check_macos_version_support() {
         return 0
     fi
 
-    local version
-    version="$(sw_vers -productVersion)"
-    local major="${version%%.*}"
+    MACOS_VERSION="$(sw_vers -productVersion)"
+    local major="${MACOS_VERSION%%.*}"
+    local rest="${MACOS_VERSION#*.}"
+    local minor="${rest%%.*}"
 
     if ! [[ "$major" =~ ^[0-9]+$ ]]; then
-        log_warning "Unexpected macOS version format: ${version}. Proceeding anyway."
+        log_warning "Unexpected macOS version format: ${MACOS_VERSION}. Proceeding anyway."
         return 0
     fi
 
-    if (( major < 13 )); then
-        log_error "macOS ${version} detected. Homebrew no longer supports macOS 12."
-        log_error "Use MacPorts (https://www.macports.org) or upgrade macOS to 13+."
-        log_error "Installer aborted to avoid partial installs on unsupported macOS."
+    if ! [[ "$minor" =~ ^[0-9]+$ ]]; then
+        minor="0"
+    fi
+
+    MACOS_MAJOR="$major"
+    MACOS_MINOR="$minor"
+
+    if (( major < 11 )); then
+        log_error "macOS ${MACOS_VERSION} detected. This installer supports macOS 11+."
+        log_error "Upgrade macOS or use a supported environment."
         exit 1
+    fi
+
+    if (( major < 13 )); then
+        MACOS_LEGACY=1
+        log_warning "macOS ${MACOS_VERSION} detected. Homebrew support may be limited."
+        log_warning "If Homebrew fails, the installer will attempt to use MacPorts."
     fi
 }
 
@@ -287,26 +304,63 @@ install_system_dependencies() {
             ;;
         macos)
             check_macos_version_support
-            if ! command -v brew &> /dev/null; then
-                log_error "Homebrew is required but not installed."
-                log_error "Install Homebrew from https://brew.sh and re-run the installer."
-                exit 1
+            local brew_ok=0
+            if command -v brew &> /dev/null; then
+                if [ "${MACOS_LEGACY:-0}" -eq 1 ]; then
+                    log_warning "Using Homebrew on macOS ${MACOS_VERSION}. If it fails, MacPorts will be used."
+                fi
+
+                log_info "Installing packages with Homebrew..."
+                brew update || log_warning "Homebrew update failed. Continuing with install attempt."
+                if ! brew install \
+                    python@3.12 \
+                    git \
+                    wget \
+                    curl \
+                    nmap \
+                    nikto \
+                    go \
+                    cairo \
+                    gdk-pixbuf \
+                    pango \
+                    sqlite; then
+                    log_warning "Homebrew installation failed."
+                    if command -v port &> /dev/null; then
+                        log_warning "Falling back to MacPorts."
+                    else
+                        log_error "MacPorts not found. Install MacPorts from https://www.macports.org and retry."
+                        exit 1
+                    fi
+                else
+                    log_success "Homebrew packages installed."
+                    brew_ok=1
+                fi
             fi
 
-            log_info "Installing packages with Homebrew..."
-            brew update
-            brew install \
-                python@3.12 \
-                git \
-                wget \
-                curl \
-                nmap \
-                nikto \
-                go \
-                cairo \
-                gdk-pixbuf \
-                pango \
-                sqlite
+            if [ "$brew_ok" -eq 0 ] && command -v port &> /dev/null; then
+                log_info "Installing packages with MacPorts..."
+                sudo port -N selfupdate
+                sudo port -N install \
+                    python312 \
+                    py312-pip \
+                    git \
+                    wget \
+                    curl \
+                    nmap \
+                    nikto \
+                    go \
+                    cairo \
+                    gdk-pixbuf2 \
+                    pango \
+                    sqlite3
+
+                sudo port -N select --set python3 python312 || true
+                sudo port -N select --set pip pip312 || true
+            elif [ "$brew_ok" -eq 0 ]; then
+                log_error "Neither Homebrew nor MacPorts is available."
+                log_error "Install Homebrew (https://brew.sh) or MacPorts (https://www.macports.org) and retry."
+                exit 1
+            fi
 
             ;;
         windows)

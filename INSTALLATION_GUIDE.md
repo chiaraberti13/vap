@@ -112,14 +112,14 @@ nmap --version
 
 ## 🐛 Troubleshooting
 
-### macOS 12 (Monterey) + Homebrew install failures
-Homebrew no longer supports macOS 12, so package installs (including Python)
-may fail. Use one of the following supported paths:
+### macOS 11/12 (Big Sur/Monterey) + Homebrew install failures
+Homebrew support for macOS 11/12 can be limited, so package installs
+(including Python) may fail. Use one of the following supported paths:
 
 **Option A: Upgrade macOS**  
 Upgrade to macOS 13+ and re-run `installer.sh`.
 
-**Option B: Use MacPorts (macOS 12 supported)**  
+**Option B: Use MacPorts (macOS 11/12 supported)**  
 Install MacPorts and use it to install Python 3.12 and required tools, then
 run `installer.sh`.
 
