@@ -19,9 +19,9 @@ from reportlab.platypus import (
     Paragraph,
     Spacer,
     Table,
-    TableOfContents,
     TableStyle,
 )
+from reportlab.platypus.tableofcontents import TableOfContents
 from reportlab.graphics.charts.barcharts import VerticalBarChart
 from reportlab.graphics.charts.legends import Legend
 from reportlab.graphics.charts.piecharts import Pie
