@@ -93,6 +93,11 @@ def validate_nmap_target(target: str) -> str:
             raise ScanValidationError("Hostname non valido.")
         if not (validators.domain(parsed.hostname) or validators.ipv4(parsed.hostname)):
             raise ScanValidationError("Hostname non valido.")
+        if re.fullmatch(r"\d+(?:\.\d+){3}", parsed.hostname):
+            try:
+                ip_address(parsed.hostname)
+            except ValueError as exc:
+                raise ScanValidationError("IP non valido.") from exc
         return parsed.hostname
 
     if "/" in target:
@@ -134,6 +139,18 @@ def validate_nmap_target(target: str) -> str:
 
     if not TARGET_REGEX.match(target):
         raise ScanValidationError("Formato target non valido. Usa URL o IP.")
+
+    parsed = urlparse(f"http://{target}")
+    if not parsed.hostname:
+        raise ScanValidationError("Hostname non valido.")
+    hostname = parsed.hostname
+    if not (validators.domain(hostname) or validators.ipv4(hostname)):
+        raise ScanValidationError("Hostname non valido.")
+    if re.fullmatch(r"\d+(?:\.\d+){3}", hostname):
+        try:
+            ip_address(hostname)
+        except ValueError as exc:
+            raise ScanValidationError("IP non valido.") from exc
 
     return target
 
