@@ -42,6 +42,23 @@ TARGET_REGEX = re.compile(
 )
 
 
+
+SCANNERS_MAP = {
+    "nuclei": NucleiScanner,
+    "nmap": NmapScanner,
+    "whatweb": WhatWebScanner,
+    "subfinder": SubfinderScanner,
+    "nikto": NiktoScanner,
+    "dirsearch": DirsearchScanner,
+    "sqlmap": SqlmapScanner,
+    "xsstrike": XsstrikeScanner,
+    "zap": ZapScanner,
+    "burp": BurpScanner,
+    "wapiti": WapitiScanner,
+    "commix": CommixScanner,
+    "acunetix": AcunetixScanner,
+    "nessus": NessusScanner,
+}
 @dataclass
 class ScanResult:
     target: str
@@ -170,58 +187,43 @@ def _run_scanner(scanner_cls: type, target: str) -> Dict[str, Any]:
     scanner = scanner_cls(enable_live_scans=settings.enable_live_scans)
     try:
         return scanner.run(target)
-    except Exception as exc:
+    except TimeoutError as exc:
         return {
             "tool": _scanner_label(scanner_cls),
             "status": "error",
+            "error_type": "timeout",
             "message": str(exc),
+            "findings": [],
+        }
+    except ValueError as exc:
+        return {
+            "tool": _scanner_label(scanner_cls),
+            "status": "error",
+            "error_type": "validation",
+            "message": str(exc),
+            "findings": [],
+        }
+    except Exception:
+        return {
+            "tool": _scanner_label(scanner_cls),
+            "status": "error",
+            "error_type": "unexpected",
+            "message": "scanner runtime error",
             "findings": [],
         }
 
 
 def get_scanner_classes(scan_type: str) -> List[type]:
     scan_type = scan_type.lower().strip()
-    scanners_map = {
-        "nuclei": NucleiScanner,
-        "nmap": NmapScanner,
-        "whatweb": WhatWebScanner,
-        "subfinder": SubfinderScanner,
-        "nikto": NiktoScanner,
-        "dirsearch": DirsearchScanner,
-        "sqlmap": SqlmapScanner,
-        "xsstrike": XsstrikeScanner,
-        "zap": ZapScanner,
-        "burp": BurpScanner,
-        "wapiti": WapitiScanner,
-        "commix": CommixScanner,
-        "acunetix": AcunetixScanner,
-        "nessus": NessusScanner,
-    }
     if scan_type == "full":
-        return list(scanners_map.values())
-    if scan_type in scanners_map:
-        return [scanners_map[scan_type]]
+        return list(SCANNERS_MAP.values())
+    if scan_type in SCANNERS_MAP:
+        return [SCANNERS_MAP[scan_type]]
     raise ScanValidationError("Tipo di scansione non supportato.")
 
 
 def run_single_scanner(scanner_name: str, target: str) -> Dict[str, Any]:
-    scanners_map = {
-        "nuclei": NucleiScanner,
-        "nmap": NmapScanner,
-        "whatweb": WhatWebScanner,
-        "subfinder": SubfinderScanner,
-        "nikto": NiktoScanner,
-        "dirsearch": DirsearchScanner,
-        "sqlmap": SqlmapScanner,
-        "xsstrike": XsstrikeScanner,
-        "zap": ZapScanner,
-        "burp": BurpScanner,
-        "wapiti": WapitiScanner,
-        "commix": CommixScanner,
-        "acunetix": AcunetixScanner,
-        "nessus": NessusScanner,
-    }
-    scanner_cls = scanners_map.get(scanner_name.lower().strip())
+    scanner_cls = SCANNERS_MAP.get(scanner_name.lower().strip())
     if not scanner_cls:
         raise ScanValidationError("Scanner non supportato.")
     return _run_scanner(scanner_cls, target)
@@ -274,23 +276,7 @@ def _build_cli_parser() -> "argparse.ArgumentParser":
     parser.add_argument(
         "--scan-type",
         default="full",
-        choices=[
-            "full",
-            "nuclei",
-            "nmap",
-            "whatweb",
-            "subfinder",
-            "nikto",
-            "dirsearch",
-            "sqlmap",
-            "xsstrike",
-            "zap",
-            "burp",
-            "wapiti",
-            "commix",
-            "acunetix",
-            "nessus",
-        ],
+        choices=["full", *SCANNERS_MAP.keys()],
         help="Tipo di scansione da eseguire.",
     )
     parser.add_argument(

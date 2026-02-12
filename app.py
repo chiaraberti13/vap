@@ -607,6 +607,8 @@ def issue_token(
 ) -> Dict[str, str]:
     if not settings.jwt_secret:
         raise HTTPException(status_code=503, detail="JWT non configurato")
+    if not settings.jwt_demo_user or not settings.jwt_demo_password:
+        raise HTTPException(status_code=503, detail="Credenziali JWT non configurate")
     if not (username == settings.jwt_demo_user and password == settings.jwt_demo_password):
         _record_audit(
             db,

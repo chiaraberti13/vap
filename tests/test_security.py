@@ -67,3 +67,128 @@ def test_access_token_roundtrip(monkeypatch):
     decoded = security.decode_access_token(token)
 
     assert decoded["sub"] == "tester"
+
+
+def test_get_request_ip_uses_client_ip_without_trusted_proxy(monkeypatch):
+    request = SimpleNamespace(
+        headers={"x-forwarded-for": "203.0.113.10"},
+        client=SimpleNamespace(host="10.0.0.2"),
+    )
+    monkeypatch.setattr(security, "settings", SimpleNamespace(trusted_proxy_ip=""))
+    assert security.get_request_ip(request) == "10.0.0.2"
+
+
+def test_get_request_ip_uses_forwarded_for_from_trusted_proxy(monkeypatch):
+    request = SimpleNamespace(
+        headers={"x-forwarded-for": "203.0.113.10, 10.0.0.2"},
+        client=SimpleNamespace(host="10.0.0.1"),
+    )
+    monkeypatch.setattr(security, "settings", SimpleNamespace(trusted_proxy_ip="10.0.0.1"))
+    assert security.get_request_ip(request) == "203.0.113.10"
+
+
+def test_extract_bearer_token():
+    request = SimpleNamespace(headers={"Authorization": "Bearer token-123"})
+    assert security.extract_bearer_token(request) == "token-123"
+
+
+def test_extract_bearer_token_returns_none_without_bearer_prefix():
+    request = SimpleNamespace(headers={"Authorization": "Basic abc"})
+    assert security.extract_bearer_token(request) is None
+
+
+def test_require_jwt_configuration_raises(monkeypatch):
+    monkeypatch.setattr(security, "settings", SimpleNamespace(jwt_required=True, jwt_secret=""))
+    with pytest.raises(RuntimeError):
+        security.require_jwt_configuration()
+
+
+def test_current_security_settings_redacts_secrets(monkeypatch):
+    monkeypatch.setattr(
+        security,
+        "asdict",
+        lambda _settings: {
+            "api_key": "x",
+            "api_key_hash": "y",
+            "csrf_secret": "z",
+            "jwt_secret": "j",
+            "sqlcipher_key": "k",
+            "other_field": "ok",
+        },
+    )
+    data = security.current_security_settings()
+    assert "api_key" not in data
+    assert "jwt_secret" not in data
+    assert data["other_field"] == "ok"
+
+
+def test_verify_jwt_token_invalid(monkeypatch):
+    monkeypatch.setattr(security, "decode_access_token", lambda _token: (_ for _ in ()).throw(ValueError("bad")))
+    with pytest.raises(ValueError):
+        security.verify_jwt_token("bad-token")
+
+
+def test_validate_csrf_request_ok(monkeypatch):
+    monkeypatch.setattr(security, "settings", SimpleNamespace(csrf_cookie_name="vap_csrf"))
+    monkeypatch.setattr(security, "validate_csrf_token", lambda token, cookie: None)
+    request = SimpleNamespace(cookies={"vap_csrf": "t"})
+    security.validate_csrf_request(request, "t")
+
+
+def test_validate_csrf_request_raises(monkeypatch):
+    monkeypatch.setattr(security, "settings", SimpleNamespace(csrf_cookie_name="vap_csrf"))
+
+    def _raise(*_args, **_kwargs):
+        raise ValueError("bad")
+
+    monkeypatch.setattr(security, "validate_csrf_token", _raise)
+    request = SimpleNamespace(cookies={"vap_csrf": "t"})
+    with pytest.raises(ValueError):
+        security.validate_csrf_request(request, "t")
+
+
+def test_log_audit_event_includes_request_metadata(monkeypatch):
+    events = []
+
+    class Logger:
+        def info(self, **payload):
+            events.append(payload)
+
+    request = SimpleNamespace(
+        headers={"user-agent": "pytest-agent"},
+        url=SimpleNamespace(path="/api/v1/scans"),
+        method="POST",
+        client=SimpleNamespace(host="127.0.0.1"),
+    )
+    monkeypatch.setattr(
+        security,
+        "settings",
+        SimpleNamespace(audit_logging_enabled=True, app_env="test", trusted_proxy_ip=""),
+    )
+    monkeypatch.setattr(security, "audit_logger", Logger())
+
+    security.log_audit_event("scan_created", request=request, scan_id="abc")
+
+    assert len(events) == 1
+    payload = events[0]
+    assert payload["event"] == "scan_created"
+    assert payload["environment"] == "test"
+    assert payload["scan_id"] == "abc"
+    assert payload["path"] == "/api/v1/scans"
+    assert payload["method"] == "POST"
+    assert payload["ip"] == "127.0.0.1"
+
+
+def test_log_audit_event_disabled(monkeypatch):
+    calls = []
+
+    class Logger:
+        def info(self, **payload):
+            calls.append(payload)
+
+    monkeypatch.setattr(security, "settings", SimpleNamespace(audit_logging_enabled=False))
+    monkeypatch.setattr(security, "audit_logger", Logger())
+
+    security.log_audit_event("ignored")
+
+    assert calls == []

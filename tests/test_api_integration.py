@@ -49,3 +49,18 @@ def test_create_scan(monkeypatch):
     assert payload["scan_type"] == "full"
     assert payload["priority"] == 3
     app.app.dependency_overrides.clear()
+
+
+def test_issue_token_returns_503_if_demo_credentials_not_configured(monkeypatch):
+    app.app.dependency_overrides[app.get_db] = lambda: iter([SessionLocal()])
+    monkeypatch.setattr(
+        app,
+        "settings",
+        type("S", (), {**app.settings.__dict__, "jwt_secret": "secret", "jwt_demo_user": "", "jwt_demo_password": ""})(),
+    )
+
+    with TestClient(app.app) as client:
+        response = client.post("/auth/token", data={"username": "admin", "password": "change-me"})
+
+    assert response.status_code == 503
+    app.app.dependency_overrides.clear()
