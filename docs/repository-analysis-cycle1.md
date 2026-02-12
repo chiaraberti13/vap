@@ -1,121 +1,86 @@
 ## CICLO #1
 
-### PROBLEMI TROVATI: 6
+### PROBLEMI TROVATI: 5
 
-#### 🔴 CRITICI (1)
-1. Endpoint autenticazione con credenziali demo statiche e previsibili.
-   - File: `config.py:50-51`, `app.py:600-611`
-   - Impatto: se `VAP_JWT_SECRET` viene configurato ma non vengono sovrascritte le demo credentials, l'endpoint `/auth/token` resta attaccabile con credenziali note (`admin` / `change-me`). Questo espone l'intera API protetta da JWT a compromissione account.
-   - Soluzione (codice prima/dopo):
+#### 🔴 CRITICI (0)
+Nessuno.
 
-```python
-# VECCHIO (config.py)
-jwt_demo_user: str = os.getenv("VAP_JWT_DEMO_USER", "admin")
-jwt_demo_password: str = os.getenv("VAP_JWT_DEMO_PASSWORD", "change-me")
-```
-
-```python
-# NUOVO (proposto)
-jwt_demo_user: str = os.getenv("VAP_JWT_DEMO_USER", "")
-jwt_demo_password: str = os.getenv("VAP_JWT_DEMO_PASSWORD", "")
-```
-
-```python
-# VECCHIO (app.py)
-if not (username == settings.jwt_demo_user and password == settings.jwt_demo_password):
-    raise HTTPException(status_code=401, detail="Credenziali non valide")
-```
-
-```python
-# NUOVO (proposto)
-if not settings.jwt_demo_user or not settings.jwt_demo_password:
-    raise HTTPException(status_code=503, detail="Credenziali JWT non configurate")
-if not (username == settings.jwt_demo_user and password == settings.jwt_demo_password):
-    raise HTTPException(status_code=401, detail="Credenziali non valide")
-```
-
-#### 🟠 ALTA PRIORITÀ (2)
-1. Coverage quality gate non rispettato (`--cov-fail-under=80`).
-   - File: `pytest.ini:1-4`, `scanner_engine.py`
-   - Impatto: pipeline CI fallisce e parti critiche (orchestrazione scanner/errore scanner) non sono coperte adeguatamente; maggiore rischio regressioni.
-   - Soluzione (codice prima/dopo):
-
-```ini
-# VECCHIO (pytest.ini)
-addopts = --cov=scanner_engine --cov=security --cov-report=term-missing --cov-fail-under=80
-```
-
-```ini
-# NUOVO (proposto)
-# mantenere soglia 80, aggiungere test mirati:
-# - test run_scan() con scanner finti
-# - test _run_scanner() su eccezione
-# - test validate_target()/validate_nmap_target() edge cases
-```
-
-2. Trust non validato di `X-Forwarded-For` nei log/audit.
-   - File: `security.py:103-107`
-   - Impatto: spoofing IP nei log e audit trail; indebolimento investigazioni incident response e possibili bypass di controlli dipendenti da IP.
+#### 🟠 ALTA PRIORITÀ (1)
+1. Content Security Policy permissiva con `unsafe-inline` su script e stili.
+   - File: `config.py:76-79`
+   - Impatto: aumenta in modo significativo la superficie XSS lato browser, perché consente esecuzione di JavaScript inline.
    - Soluzione (codice prima/dopo):
 
 ```python
 # VECCHIO
-forwarded = request.headers.get("x-forwarded-for")
-if forwarded:
-    return forwarded.split(",")[0].strip()
+csp_policy: str = os.getenv(
+    "VAP_CSP_POLICY",
+    "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com; "
+    "script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com; connect-src 'self'; frame-ancestors 'none'",
+)
 ```
 
 ```python
 # NUOVO (proposto)
-trusted_proxy = settings.trusted_proxy_ip
-if request.client and request.client.host == trusted_proxy:
-    forwarded = request.headers.get("x-forwarded-for")
-    if forwarded:
-        return forwarded.split(",")[0].strip()
+csp_policy: str = os.getenv(
+    "VAP_CSP_POLICY",
+    "default-src 'self'; img-src 'self' data:; style-src 'self' https://cdn.tailwindcss.com; "
+    "script-src 'self' https://cdn.tailwindcss.com; connect-src 'self'; frame-ancestors 'none'",
+)
+# + migrazione script inline verso file statici e, se necessario, nonce-based CSP.
 ```
 
 #### 🟡 MEDIA PRIORITÀ (2)
-1. Mappa scanner duplicata in due punti (`get_scanner_classes`, `run_single_scanner`).
-   - File: `scanner_engine.py:177-195`, `scanner_engine.py:204-219`
-   - Impatto: rischio incoerenza futura quando viene aggiunto/rimosso uno scanner (violazione DRY).
+1. Mancanza di pipeline CI/CD versionata nel repository.
+   - File: root repository (`.github/workflows` assente)
+   - Impatto: nessuna garanzia automatica su linting, test, security scan e compatibilità Linux/Windows/macOS ad ogni commit.
    - Soluzione (codice prima/dopo):
 
-```python
+```yaml
 # VECCHIO
-scanners_map = {...}  # ripetuto in due funzioni
+# (assente)
 ```
 
-```python
-# NUOVO (proposto)
-SCANNERS_MAP = {...}  # costante modulo unica
-# funzioni che usano SCANNERS_MAP
+```yaml
+# NUOVO (proposto) - .github/workflows/ci.yml
+name: CI
+on: [push, pull_request]
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ["3.11", "3.12"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: pip install -r requirements.txt
+      - run: pytest -q
 ```
 
-2. Error handling troppo generico in `_run_scanner` con perdita di contesto strutturato.
-   - File: `scanner_engine.py:167-175`
-   - Impatto: troubleshooting lento; difficile distinguere errori di rete, timeout, validazione o bug.
+2. Security dependency scanning non integrato nel progetto.
+   - File: `requirements.txt` (presenza dipendenze, ma assenza tooling SCA nel repo)
+   - Impatto: vulnerabilità note su dipendenze possono arrivare in produzione senza blocco preventivo.
    - Soluzione (codice prima/dopo):
 
-```python
+```yaml
 # VECCHIO
-except Exception as exc:
-    return {"status": "error", "message": str(exc)}
+# Nessun job SCA automatizzato
 ```
 
-```python
-# NUOVO (proposto)
-except TimeoutError as exc:
-    return {..., "error_type": "timeout", "message": str(exc)}
-except ValueError as exc:
-    return {..., "error_type": "validation", "message": str(exc)}
-except Exception as exc:
-    return {..., "error_type": "unexpected", "message": "scanner runtime error"}
+```yaml
+# NUOVO (proposto) - estratto workflow
+- run: pip install pip-audit
+- run: pip-audit --strict
 ```
 
-#### 🟢 BASSA PRIORITÀ (1)
-1. Configurazione HTTP non secure-by-default (`VAP_REQUIRE_HTTPS=false`).
-   - File: `config.py:40`, `app.py:571`
-   - Impatto: cookie CSRF non `secure` in ambienti non hardenizzati; rischio downgrade in deploy iniziali.
+#### 🟢 BASSA PRIORITÀ (2)
+1. Default HTTPS non secure-by-default.
+   - File: `config.py:40`
+   - Impatto: in setup iniziali è facile esporre cookie senza flag `Secure`.
    - Soluzione (codice prima/dopo):
 
 ```python
@@ -126,17 +91,22 @@ require_https: bool = os.getenv("VAP_REQUIRE_HTTPS", "false").lower() == "true"
 ```python
 # NUOVO (proposto)
 require_https: bool = os.getenv("VAP_REQUIRE_HTTPS", "true").lower() == "true"
-# e override esplicito solo in dev
+# Override a false solo in ambiente development locale.
 ```
 
+2. Warning di deprecazione su dipendenze transitive in test suite.
+   - File: output runtime test (`passlib`, `python-jose`, `python-dateutil`, `reportlab`)
+   - Impatto: nessun blocco immediato, ma rischio incompatibilità con Python 3.13/3.14.
+   - Soluzione: pianificare upgrade progressivo e validare con matrice versioni Python in CI.
+
 ### RACCOMANDAZIONI AGGIUNTIVE
-- Introdurre una policy di security baseline in startup (fail-fast in produzione se restano default insicuri).
-- Aggiungere threat modeling leggero per endpoint `/auth/token`, `/api/v1/scans` e websocket.
-- Integrare `pip-audit` e `bandit` in CI con soglie bloccanti.
+- Aggiungere un baseline di hardening in startup con fail-fast in produzione (es. bloccare `VAP_REQUIRE_HTTPS=false` quando `VAP_ENV=production`).
+- Introdurre report periodico OWASP ASVS L1/L2 per endpoint principali (`/auth/token`, `/api/v1/scans`, websocket).
+- Tracciare KPI di qualità (coverage, tempo medio test, findings SAST/SCA) come quality gates.
 
 ### PROSSIMI STEP
-1. Confermare se procedo con il **CICLO #2** implementando direttamente le correzioni CRITICHE/ALTE.
-2. Dopo patch, rieseguire test + coverage + scansioni sicurezza e produrre delta report.
+1. Conferma se procedo con il **CICLO #2** implementando direttamente le correzioni di priorità ALTA/MEDIA.
+2. Dopo patch, rieseguo test e validazioni sicurezza per produrre un delta report.
 
 ---
 STATO: IN CORSO
