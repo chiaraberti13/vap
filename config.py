@@ -47,8 +47,9 @@ class Settings:
     jwt_audience: str = os.getenv("VAP_JWT_AUDIENCE", "vap-users")
     jwt_exp_minutes: int = int(os.getenv("VAP_JWT_EXP_MINUTES", "60"))
     jwt_required: bool = os.getenv("VAP_JWT_REQUIRED", "false").lower() == "true"
-    jwt_demo_user: str = os.getenv("VAP_JWT_DEMO_USER", "admin")
-    jwt_demo_password: str = os.getenv("VAP_JWT_DEMO_PASSWORD", "change-me")
+    jwt_demo_user: str = os.getenv("VAP_JWT_DEMO_USER", "")
+    jwt_demo_password: str = os.getenv("VAP_JWT_DEMO_PASSWORD", "")
+    trusted_proxy_ip: str = os.getenv("VAP_TRUSTED_PROXY_IP", "")
     cors_allowed_origins: List[str] = field(
         default_factory=lambda: _split_env_list(os.getenv("VAP_CORS_ALLOWED_ORIGINS", ""))
     )
