@@ -171,3 +171,8 @@ def test_cli_parser_choices_follow_runtime_scanners(monkeypatch):
     parser = scanner_engine._build_cli_parser()
     choices = next(action.choices for action in parser._actions if action.dest == "scan_type")
     assert choices == ["full", "custom"]
+
+
+def test_get_scan_type_choices_reflects_map(monkeypatch):
+    monkeypatch.setattr(scanner_engine, "SCANNERS_MAP", {"alpha": DummyScanner, "beta": DummyScanner})
+    assert scanner_engine.get_scan_type_choices() == ["full", "alpha", "beta"]

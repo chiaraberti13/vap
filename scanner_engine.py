@@ -59,6 +59,10 @@ SCANNERS_MAP = {
     "acunetix": AcunetixScanner,
     "nessus": NessusScanner,
 }
+
+
+def get_scan_type_choices() -> List[str]:
+    return ["full", *SCANNERS_MAP.keys()]
 @dataclass
 class ScanResult:
     target: str
@@ -276,7 +280,7 @@ def _build_cli_parser() -> "argparse.ArgumentParser":
     parser.add_argument(
         "--scan-type",
         default="full",
-        choices=["full", *SCANNERS_MAP.keys()],
+        choices=get_scan_type_choices(),
         help="Tipo di scansione da eseguire.",
     )
     parser.add_argument(
