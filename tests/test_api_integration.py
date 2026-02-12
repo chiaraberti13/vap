@@ -13,16 +13,21 @@ def _clear_scans() -> None:
 
 def test_list_scans_empty():
     _clear_scans()
+    app.app.dependency_overrides[app.enforce_api_key] = lambda: None
+    app.app.dependency_overrides[app.enforce_jwt] = lambda: None
 
     with TestClient(app.app) as client:
         response = client.get("/api/v1/scans")
 
     assert response.status_code == 200
     assert response.json() == []
+    app.app.dependency_overrides.clear()
 
 
 def test_create_scan(monkeypatch):
     _clear_scans()
+    app.app.dependency_overrides[app.enforce_api_key] = lambda: None
+    app.app.dependency_overrides[app.enforce_jwt] = lambda: None
 
     class DummyResult:
         id = "dummy-task"
@@ -35,7 +40,7 @@ def test_create_scan(monkeypatch):
     with TestClient(app.app) as client:
         response = client.post(
             "/api/v1/scans",
-            json={"target": "example.com", "scan_type": "full", "priority": 3},
+            json={"target": "example.com", "scan_type": "full", "priority": 3, "accept_privacy": True, "accept_terms": True},
         )
 
     assert response.status_code == 200
@@ -43,3 +48,4 @@ def test_create_scan(monkeypatch):
     assert payload["target"] == "example.com"
     assert payload["scan_type"] == "full"
     assert payload["priority"] == 3
+    app.app.dependency_overrides.clear()
