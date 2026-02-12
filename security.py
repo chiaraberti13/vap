@@ -108,9 +108,11 @@ def extract_bearer_token(request: Request) -> Optional[str]:
 
 
 def get_request_ip(request: Request) -> str:
-    forwarded = request.headers.get("x-forwarded-for")
-    if forwarded:
-        return forwarded.split(",")[0].strip()
+    trusted_proxy_ip = settings.trusted_proxy_ip
+    if trusted_proxy_ip and request.client and request.client.host == trusted_proxy_ip:
+        forwarded = request.headers.get("x-forwarded-for")
+        if forwarded:
+            return forwarded.split(",")[0].strip()
     return request.client.host if request.client else "unknown"
 
 

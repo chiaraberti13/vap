@@ -71,8 +71,9 @@ Usa `.env.example` come base e compila solo le variabili che ti servono.
 | `VAP_JWT_AUDIENCE` | `vap-users` | Audience JWT. |
 | `VAP_JWT_EXP_MINUTES` | `60` | Expiration JWT (min). |
 | `VAP_JWT_REQUIRED` | `false` | Richiede JWT. |
-| `VAP_JWT_DEMO_USER` | `admin` | User demo. |
-| `VAP_JWT_DEMO_PASSWORD` | `change-me` | Password demo. |
+| `VAP_JWT_DEMO_USER` | `` | Username opzionale per endpoint demo `/auth/token`. In produzione lasciarlo vuoto o disabilitare endpoint. |
+| `VAP_JWT_DEMO_PASSWORD` | `` | Password opzionale per endpoint demo `/auth/token`. Deve essere impostata esplicitamente. |
+| `VAP_TRUSTED_PROXY_IP` | `` | IP del reverse proxy fidato da cui accettare `X-Forwarded-For`. |
 
 ## CORS
 
