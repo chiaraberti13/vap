@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 """FastAPI application for Vulnerability Assessment Platform."""
-from __future__ import annotations
-
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 import asyncio
@@ -1070,6 +1068,7 @@ def download_report_ui(
 @app.get("/api/v1/scans", response_model=List[ScanStatus])
 @limiter.limit(settings.rate_limit_read)
 def list_scans(
+    request: Request,
     db: Session = Depends(get_db),
     _: None = Depends(enforce_api_key),
     __: None = Depends(enforce_jwt),
@@ -1103,6 +1102,7 @@ def list_scans(
 @app.get("/api/v1/scans/{scan_id}/status", response_model=ScanStatus)
 @limiter.limit(settings.rate_limit_read)
 def scan_status(
+    request: Request,
     scan_id: int,
     db: Session = Depends(get_db),
     _: None = Depends(enforce_api_key),
@@ -1162,6 +1162,7 @@ def download_report(
 @app.get("/api/v1/scans/{scan_id}/task")
 @limiter.limit(settings.rate_limit_read)
 def scan_task_status(
+    request: Request,
     scan_id: int,
     db: Session = Depends(get_db),
     _: None = Depends(enforce_api_key),
