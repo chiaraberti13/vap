@@ -2,6 +2,7 @@
 """Scan orchestration engine."""
 from __future__ import annotations
 
+import argparse
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -270,9 +271,7 @@ def serialize_findings(findings: List[Dict[str, Any]]) -> str:
     return json.dumps(findings, ensure_ascii=False, indent=2)
 
 
-def _build_cli_parser() -> "argparse.ArgumentParser":
-    import argparse
-
+def _build_cli_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Esegui una scansione di sicurezza.")
     parser.add_argument("--target", required=True, help="Target della scansione (URL o IP).")
     parser.add_argument(
