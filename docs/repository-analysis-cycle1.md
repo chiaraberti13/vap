@@ -1,12 +1,51 @@
 ## CICLO #1
 
-### PROBLEMI TROVATI: 5
+### PROBLEMI TROVATI: 6
 
 #### 🔴 CRITICI (0)
 Nessuno.
 
-#### 🟠 ALTA PRIORITÀ (1)
-1. Content Security Policy permissiva con `unsafe-inline` su script e stili.
+#### 🟠 ALTA PRIORITÀ (2)
+1. WebSocket `/ws` non applica l'enforcement JWT anche quando `VAP_JWT_REQUIRED=true`.
+   - File: `app.py:1273-1281`
+   - Impatto: un client con sola API key (o senza, se API key disattivata) può ottenere aggiornamenti in tempo reale di scansioni senza autenticazione bearer, bypassando il controllo usato sulle REST API.
+   - Soluzione (codice prima/dopo):
+
+```python
+# VECCHIO
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket) -> None:
+    scan_id_param = websocket.query_params.get("scan_id")
+    api_key = websocket.query_params.get("api_key")
+    if (settings.api_key or settings.api_key_hash) and not verify_api_key(api_key or ""):
+        await websocket.close(code=1008)
+        return
+```
+
+```python
+# NUOVO (proposto)
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket) -> None:
+    scan_id_param = websocket.query_params.get("scan_id")
+    api_key = websocket.query_params.get("api_key")
+    jwt_token = websocket.query_params.get("jwt")
+
+    if (settings.api_key or settings.api_key_hash) and not verify_api_key(api_key or ""):
+        await websocket.close(code=1008)
+        return
+
+    if settings.jwt_required:
+        if not jwt_token:
+            await websocket.close(code=1008)
+            return
+        try:
+            verify_jwt_token(jwt_token)
+        except ValueError:
+            await websocket.close(code=1008)
+            return
+```
+
+2. Content Security Policy permissiva con `unsafe-inline` su script e stili.
    - File: `config.py:76-79`
    - Impatto: aumenta in modo significativo la superficie XSS lato browser, perché consente esecuzione di JavaScript inline.
    - Soluzione (codice prima/dopo):
@@ -30,8 +69,31 @@ csp_policy: str = os.getenv(
 # + migrazione script inline verso file statici e, se necessario, nonce-based CSP.
 ```
 
-#### 🟡 MEDIA PRIORITÀ (2)
-1. Mancanza di pipeline CI/CD versionata nel repository.
+#### 🟡 MEDIA PRIORITÀ (3)
+1. Endpoint `/metrics` esposto senza autenticazione.
+   - File: `app.py:367-369`
+   - Impatto: disclosure di telemetria interna (path, volumi richieste, latenza) utile per reconnaissance.
+   - Soluzione (codice prima/dopo):
+
+```python
+# VECCHIO
+@app.get("/metrics")
+def metrics() -> Response:
+    return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
+```
+
+```python
+# NUOVO (proposto)
+@app.get("/metrics")
+def metrics(
+    request: Request,
+    _: None = Depends(enforce_api_key),
+    __: None = Depends(enforce_jwt),
+) -> Response:
+    return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
+```
+
+2. Mancanza di pipeline CI/CD versionata nel repository.
    - File: root repository (`.github/workflows` assente)
    - Impatto: nessuna garanzia automatica su linting, test, security scan e compatibilità Linux/Windows/macOS ad ogni commit.
    - Soluzione (codice prima/dopo):
@@ -61,7 +123,7 @@ jobs:
       - run: pytest -q
 ```
 
-2. Security dependency scanning non integrato nel progetto.
+3. Security dependency scanning non integrato nel progetto.
    - File: `requirements.txt` (presenza dipendenze, ma assenza tooling SCA nel repo)
    - Impatto: vulnerabilità note su dipendenze possono arrivare in produzione senza blocco preventivo.
    - Soluzione (codice prima/dopo):
@@ -77,7 +139,7 @@ jobs:
 - run: pip-audit --strict
 ```
 
-#### 🟢 BASSA PRIORITÀ (2)
+#### 🟢 BASSA PRIORITÀ (1)
 1. Default HTTPS non secure-by-default.
    - File: `config.py:40`
    - Impatto: in setup iniziali è facile esporre cookie senza flag `Secure`.
@@ -94,19 +156,14 @@ require_https: bool = os.getenv("VAP_REQUIRE_HTTPS", "true").lower() == "true"
 # Override a false solo in ambiente development locale.
 ```
 
-2. Warning di deprecazione su dipendenze transitive in test suite.
-   - File: output runtime test (`passlib`, `python-jose`, `python-dateutil`, `reportlab`)
-   - Impatto: nessun blocco immediato, ma rischio incompatibilità con Python 3.13/3.14.
-   - Soluzione: pianificare upgrade progressivo e validare con matrice versioni Python in CI.
-
 ### RACCOMANDAZIONI AGGIUNTIVE
-- Aggiungere un baseline di hardening in startup con fail-fast in produzione (es. bloccare `VAP_REQUIRE_HTTPS=false` quando `VAP_ENV=production`).
-- Introdurre report periodico OWASP ASVS L1/L2 per endpoint principali (`/auth/token`, `/api/v1/scans`, websocket).
-- Tracciare KPI di qualità (coverage, tempo medio test, findings SAST/SCA) come quality gates.
+- Introdurre policy di hardening fail-fast in produzione (es. bloccare startup se `VAP_ENV=production` con `VAP_REQUIRE_HTTPS=false`).
+- Eseguire baseline OWASP ASVS L1/L2 su endpoint principali (`/auth/token`, `/api/v1/scans`, websocket).
+- Aggiungere quality gates minimi in CI: coverage >= 80%, SCA severità high/critical = 0.
 
 ### PROSSIMI STEP
 1. Conferma se procedo con il **CICLO #2** implementando direttamente le correzioni di priorità ALTA/MEDIA.
-2. Dopo patch, rieseguo test e validazioni sicurezza per produrre un delta report.
+2. Dopo patch, rieseguo test e validazioni sicurezza per produrre delta report con evidenze.
 
 ---
 STATO: IN CORSO
