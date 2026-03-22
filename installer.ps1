@@ -135,8 +135,8 @@ try {
 
     Test-RequiredFiles
 
-    # Ensure core tools
-    Ensure-Command -Command "python" -Name "Python 3" -WingetId "Python.Python.3.11"
+    # Ensure core tools (prefer Python 3.12 to match Linux/macOS installer)
+    Ensure-Command -Command "python" -Name "Python 3" -WingetId "Python.Python.3.12"
     Ensure-Command -Command "git" -Name "Git" -WingetId "Git.Git"
     Ensure-Command -Command "go" -Name "Go" -WingetId "GoLang.Go"
 
@@ -146,6 +146,21 @@ try {
     Ensure-Command -Command "nmap" -Name "Nmap" -WingetId "Insecure.Nmap"
     Ensure-Command -Command "nikto" -Name "Nikto" -WingetId ""
     Ensure-Command -Command "whatweb" -Name "WhatWeb" -WingetId ""
+
+    # Redis is required for Celery (async scans). It is not available via winget.
+    # Options:
+    #   1. Install Redis for Windows: https://github.com/microsoftarchive/redis/releases
+    #   2. Use WSL2 + Ubuntu and run: sudo apt install redis
+    #   3. Use Docker: docker run -d -p 6379:6379 redis:7
+    if (-not (Get-Command redis-cli -ErrorAction SilentlyContinue)) {
+        Write-Log "Redis is NOT installed. Celery (async scanning) requires Redis." "WARN"
+        Write-Log "Install options:" "WARN"
+        Write-Log "  - WSL2 + Ubuntu: sudo apt install redis  (recommended)" "WARN"
+        Write-Log "  - Docker:        docker run -d -p 6379:6379 redis:7" "WARN"
+        Write-Log "  - Windows port:  https://github.com/microsoftarchive/redis/releases" "WARN"
+    } else {
+        Write-Log "Redis available." "SUCCESS"
+    }
 
     # Configure Go environment for Go-installed tools
     if (-not $env:GOPATH) {
@@ -193,9 +208,47 @@ try {
     Write-Log "Initializing database..."
     & $venvPython -c "from database import init_db; init_db()"
 
-    Write-Log "Installation completed successfully!" "SUCCESS"
-    Write-Log "Activate the environment with: .\venv\Scripts\Activate.ps1" "INFO"
-    Write-Log "Start the server with: python app.py" "INFO"
+    # -----------------------------------------------------------------------------
+    # Verification
+    # -----------------------------------------------------------------------------
+    Write-Log "Verifying Python dependencies..."
+    $verifyScript = @"
+import sys
+packages = ['fastapi', 'uvicorn', 'reportlab', 'sqlalchemy', 'celery']
+errors = 0
+for pkg in packages:
+    try:
+        __import__(pkg)
+        print(f'[+] {pkg}: OK')
+    except ImportError:
+        print(f'[X] {pkg}: NOT FOUND')
+        errors += 1
+sys.exit(errors)
+"@
+    $verifyResult = & $venvPython -c $verifyScript
+    $verifyResult | ForEach-Object { Write-Log $_ }
+    if ($LASTEXITCODE -ne 0) {
+        Write-Log "Some Python packages are missing. Review errors above." "WARN"
+    }
+
+    Write-Log "Verifying external tools..."
+    $tools = @("nmap", "nuclei", "subfinder", "git")
+    foreach ($tool in $tools) {
+        if (Get-Command $tool -ErrorAction SilentlyContinue) {
+            Write-Log "$tool`: OK" "SUCCESS"
+        } else {
+            Write-Log "$tool`: NOT FOUND (optional — scanner will run in simulated mode)" "WARN"
+        }
+    }
+
+    Write-Log "" "INFO"
+    Write-Log "=== INSTALLATION COMPLETE ===" "SUCCESS"
+    Write-Log "Next steps:" "INFO"
+    Write-Log "  1. Activate the virtual environment:  .\venv\Scripts\Activate.ps1" "INFO"
+    Write-Log "  2. Copy and edit configuration:       copy .env.example .env" "INFO"
+    Write-Log "  3. Start Redis (see warning above if missing)" "INFO"
+    Write-Log "  4. Start the server:                  python app.py" "INFO"
+    Write-Log "  5. Open the dashboard:                http://localhost:8000" "INFO"
 } catch {
     Handle-Error $_.Exception.Message
 }

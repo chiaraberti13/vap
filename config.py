@@ -169,3 +169,46 @@ class Settings:
 
 settings = Settings()
 settings.reports_dir.mkdir(parents=True, exist_ok=True)
+
+
+def _warn_production_security() -> None:
+    """Log warnings for insecure settings when running in production."""
+    import logging
+    _log = logging.getLogger("vap.config")
+
+    if settings.app_env != "production":
+        return
+
+    warnings = []
+
+    if not settings.csrf_secret:
+        warnings.append(
+            "VAP_CSRF_SECRET is not set: a random secret will be generated on each restart, "
+            "invalidating all active sessions. Set a stable secret in production."
+        )
+    if not settings.jwt_secret:
+        warnings.append(
+            "VAP_JWT_SECRET is not set: JWT authentication will fail or use an empty key. "
+            "Set a strong random secret (e.g. `openssl rand -hex 32`)."
+        )
+    if not settings.api_key and not settings.api_key_hash:
+        warnings.append(
+            "No API key configured (VAP_API_KEY / VAP_API_KEY_HASH): "
+            "the API is accessible without authentication."
+        )
+    if not settings.require_https:
+        warnings.append(
+            "VAP_REQUIRE_HTTPS=false: traffic is not forced over HTTPS. "
+            "Enable in production to protect credentials and scan data."
+        )
+    if settings.host == "0.0.0.0":
+        warnings.append(
+            "VAP_HOST=0.0.0.0: the server binds to all network interfaces. "
+            "Restrict to a specific interface if external exposure is not intended."
+        )
+
+    for msg in warnings:
+        _log.warning("[VAP PRODUCTION SECURITY] %s", msg)
+
+
+_warn_production_security()
