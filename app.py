@@ -1300,8 +1300,11 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
 if __name__ == "__main__":
     import uvicorn
 
+    # Pass the app object directly (not the string "app:app") to prevent uvicorn
+    # from re-importing this module, which would cause Prometheus metrics to be
+    # registered twice and raise ValueError: Duplicated timeseries.
     uvicorn.run(
-        "app:app",
+        app,
         host=settings.host,
         port=settings.port,
         reload=False,

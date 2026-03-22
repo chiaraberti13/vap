@@ -56,14 +56,21 @@ log_warning() {
 
 log_error() {
     echo -e "${RED}[✗]${NC} $1"
+    # All errors are automatically written to the error log file.
+    log_error_to_file "$1"
 }
 
-# Path for installer logs to support error analysis.
-LOG_FILE="installer_$(date +%Y%m%d_%H%M%S).log"
+# Path for the error-only log file.
+LOG_FILE="installer_errors_$(date +%Y%m%d_%H%M%S).log"
 
-# Log to file as well to make troubleshooting easier.
+# Write an error entry to the log file (errors only).
+log_error_to_file() {
+    echo "[$(date +%Y-%m-%dT%H:%M:%S%z)] [ERROR] $1" >> "$LOG_FILE"
+}
+
+# Legacy alias kept for compatibility with the on_error trap handler.
 log_to_file() {
-    echo "[$(date +%Y-%m-%dT%H:%M:%S%z)] $1" >> "$LOG_FILE"
+    log_error_to_file "$1"
 }
 
 # Ensure ~/.local/bin is in PATH and persisted for future shells.
@@ -245,11 +252,9 @@ check_required_files() {
     for file in "${required_files[@]}"; do
         if [ ! -f "$file" ]; then
             log_error "Missing required file: $file"
-            log_to_file "Missing required file: $file"
             ((missing++))
         elif [ ! -s "$file" ]; then
             log_error "Incomplete file detected (empty): $file"
-            log_to_file "Incomplete file detected (empty): $file"
             ((missing++))
         else
             log_success "File OK: $file"
@@ -663,10 +668,15 @@ install_security_tools() {
         if [ -d "$whatweb_dir" ]; then
             pushd "$whatweb_dir" >/dev/null
             ensure_local_bin_path
-            if make install PREFIX="$HOME/.local"; then
+            # Suppress verbose Ruby/Bundler output; redirect to a temp log in case of failure.
+            local whatweb_make_log
+            whatweb_make_log="$(mktemp /tmp/whatweb_make_XXXXXX.log)"
+            if make install PREFIX="$HOME/.local" >"$whatweb_make_log" 2>&1; then
                 log_success "WhatWeb installed to ~/.local"
+                rm -f "$whatweb_make_log"
             else
-                log_warning "WhatWeb make install failed. Falling back to local wrapper."
+                log_warning "WhatWeb make install failed (Ruby gem build issue). Falling back to local wrapper."
+                log_warning "See ${whatweb_make_log} for the full build log."
                 mkdir -p "$HOME/.local/bin"
                 cat << 'EOF' > "$HOME/.local/bin/whatweb"
 #!/bin/bash
@@ -864,15 +874,20 @@ print_final_instructions() {
     echo -e "1️⃣  Activate the virtual environment:"
     echo -e "   ${YELLOW}source venv/bin/activate${NC}"
     echo ""
-    echo -e "2️⃣  Start the server:"
-    echo -e "   ${YELLOW}${PYTHON_BIN} app.py${NC}"
+    echo -e "2️⃣  Start the server (always activate the venv first):"
+    echo -e "   ${YELLOW}python3 app.py${NC}"
     echo ""
     echo -e "3️⃣  Open your browser at:"
     echo -e "   ${YELLOW}http://localhost:8000${NC}"
     echo ""
     echo -e "${BLUE}📚 USEFUL COMMANDS:${NC}"
-    echo -e "   • Start with verbose logs: ${YELLOW}${PYTHON_BIN} app.py --debug${NC}"
-    echo -e "   • Run a CLI scan: ${YELLOW}${PYTHON_BIN} scanner_engine.py --target <URL>${NC}"
+    echo -e "   • Run a CLI scan:  ${YELLOW}python3 scanner_engine.py --target <URL>${NC}"
+    echo -e "   • Run tests:       ${YELLOW}pytest${NC}"
+    echo -e "   • Full guide:      ${YELLOW}README.md${NC}"
+    if [ -f "$LOG_FILE" ]; then
+        echo ""
+        echo -e "${YELLOW}📄 Error log saved to: ${LOG_FILE}${NC}"
+    fi
     echo ""
     echo -e "${RED}⚠️  DISCLAIMER:${NC}"
     echo -e "   This tool is intended ONLY for authorized testing."
