@@ -25,3 +25,14 @@ celery_app.conf.update(
     task_soft_time_limit=settings.celery_task_soft_time_limit,
     result_expires=settings.celery_result_expires_seconds,
 )
+
+
+def check_broker_connection() -> bool:
+    """Return True if the Celery broker (Redis) is reachable."""
+    try:
+        conn = celery_app.connection_for_write()
+        conn.ensure_connection(max_retries=1, timeout=2)
+        conn.release()
+        return True
+    except Exception:
+        return False
