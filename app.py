@@ -27,7 +27,7 @@ from starlette.middleware.sessions import SessionMiddleware
 import structlog
 
 from background_jobs import start_background_jobs
-from celery_app import celery_app
+from celery_app import celery_app, check_broker_connection
 from compliance import (
     DATA_CLASSIFICATIONS,
     CONSENT_TYPES,
@@ -64,6 +64,14 @@ async def lifespan(_: FastAPI):
     configure_structlog()
     require_jwt_configuration()
     scheduler = start_background_jobs()
+    if not check_broker_connection():
+        import logging
+        logging.getLogger("vap.startup").warning(
+            "Celery broker non raggiungibile (%s). "
+            "Le scansioni non potranno essere accodate finché Redis non è avviato. "
+            "Avvia Redis con: redis-server",
+            settings.celery_broker_url,
+        )
     yield
     scheduler.shutdown(wait=False)
 
@@ -374,6 +382,11 @@ def _check_api_cache() -> bool:
     return True
 
 
+def _check_broker() -> bool:
+    """Return True if the Celery broker (Redis) is reachable."""
+    return check_broker_connection()
+
+
 @app.get("/metrics")
 def metrics() -> Response:
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
@@ -393,6 +406,7 @@ def readiness_check() -> JSONResponse:
     checks = {
         "database": _check_database(),
         "api_cache": _check_api_cache(),
+        "broker": _check_broker(),
     }
     overall_ok = all(checks.values())
     payload = {
@@ -977,12 +991,32 @@ def create_scan(
     db.commit()
     db.refresh(scan)
 
-    task_result = orchestrate_scan.apply_async(
-        args=[scan.id, scan.scan_type, scan.target],
-        priority=payload.priority,
-    )
-    scan.celery_task_id = task_result.id
-    db.commit()
+    try:
+        task_result = orchestrate_scan.apply_async(
+            args=[scan.id, scan.scan_type, scan.target],
+            priority=payload.priority,
+        )
+        scan.celery_task_id = task_result.id
+        db.commit()
+    except Exception as exc:
+        http_logger.error("celery_dispatch_failed", scan_id=scan.id, error=str(exc))
+        scan.status = "failed"
+        db.commit()
+        _record_audit(
+            db,
+            request,
+            "scan_dispatch_failed",
+            subject_id=subject_id,
+            scan_id=scan.id,
+            error=str(exc),
+        )
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "Servizio di accodamento non disponibile: impossibile connettersi al broker "
+                f"({settings.celery_broker_url}). Verifica che Redis sia avviato."
+            ),
+        )
 
     _invalidate_cache_keys(_cache_key("scans:list"))
 
