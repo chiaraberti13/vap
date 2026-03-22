@@ -71,16 +71,26 @@ async def lifespan(_: FastAPI):
 limiter = Limiter(key_func=get_remote_address, default_limits=[settings.rate_limit_default])
 http_logger = structlog.get_logger("vap.http")
 
-REQUEST_COUNT = Counter(
-    "vap_http_requests_total",
-    "Numero totale di richieste HTTP",
-    ["method", "path", "status_code"],
-)
-REQUEST_LATENCY = Histogram(
-    "vap_http_request_duration_seconds",
-    "Durata delle richieste HTTP in secondi",
-    ["method", "path"],
-)
+try:
+    REQUEST_COUNT = Counter(
+        "vap_http_requests_total",
+        "Numero totale di richieste HTTP",
+        ["method", "path", "status_code"],
+    )
+except ValueError:
+    # Already registered (e.g., on uvicorn hot-reload)
+    from prometheus_client import REGISTRY as _REGISTRY
+    REQUEST_COUNT = _REGISTRY._names_to_collectors["vap_http_requests"]
+
+try:
+    REQUEST_LATENCY = Histogram(
+        "vap_http_request_duration_seconds",
+        "Durata delle richieste HTTP in secondi",
+        ["method", "path"],
+    )
+except ValueError:
+    from prometheus_client import REGISTRY as _REGISTRY
+    REQUEST_LATENCY = _REGISTRY._names_to_collectors["vap_http_request_duration_seconds"]
 
 app = FastAPI(
     title=settings.app_name,
