@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections import Counter
 from datetime import datetime, timezone
+from html import escape as html_escape
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
@@ -395,9 +396,9 @@ def generate_report(scan_id: int, target: str, scan_type: str, findings: List[Di
     else:
         cvss_summary = "Punteggi CVSS v3.1 non disponibili per i finding rilevati."
     summary_text = (
-        f"Il report sintetizza {len(findings)} finding sul target {target}. "
-        f"Il livello di rischio complessivo è {risk_level}. "
-        f"{cvss_summary} "
+        f"Il report sintetizza {len(findings)} finding sul target {html_escape(target)}. "
+        f"Il livello di rischio complessivo è {html_escape(risk_level)}. "
+        f"{html_escape(cvss_summary)} "
         "Gli indicatori principali includono esposizioni di servizi, "
         "configurazioni non sicure e potenziali vulnerabilità applicative."
     )
@@ -488,16 +489,16 @@ def generate_report(scan_id: int, target: str, scan_type: str, findings: List[Di
         story.append(Spacer(1, 6))
         for finding in findings:
             severity = finding.get("severity", "info").lower()
-            title = finding.get("title", "Finding")
-            description = finding.get("description", "")
-            recommendation = finding.get("recommendation", "")
-            cve_list = finding.get("cve") or []
-            cwe_list = finding.get("cwe") or []
-            cvss_score = finding.get("cvss_score") or "n/d"
-            cvss_metrics = finding.get("cvss_metrics") or "n/d"
+            title = html_escape(str(finding.get("title", "Finding")))
+            description = html_escape(str(finding.get("description", "")))
+            recommendation = html_escape(str(finding.get("recommendation", "")))
+            cve_list = [html_escape(str(c)) for c in (finding.get("cve") or [])]
+            cwe_list = [html_escape(str(c)) for c in (finding.get("cwe") or [])]
+            cvss_score = html_escape(str(finding.get("cvss_score") or "n/d"))
+            cvss_metrics = html_escape(str(finding.get("cvss_metrics") or "n/d"))
 
             severity_style = severity_styles.get(severity, styles["Heading4"])
-            story.append(Paragraph(f"<b>{title}</b> ({severity})", severity_style))
+            story.append(Paragraph(f"<b>{title}</b> ({html_escape(severity)})", severity_style))
             story.append(Paragraph(description, styles["BodyText"]))
             story.append(
                 Paragraph(

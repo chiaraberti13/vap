@@ -270,7 +270,7 @@ install_system_dependencies() {
     case "$PLATFORM" in
         linux)
             case "$DISTRO" in
-                ubuntu|debian|kali)
+                ubuntu|debian|kali|linuxmint|pop)
                     log_info "Updating apt repositories..."
                     sudo apt-get update -qq
 
@@ -295,10 +295,113 @@ install_system_dependencies() {
                         sqlite3 \
                         libsqlite3-dev
                     ;;
+                fedora)
+                    log_info "Installing base packages via dnf (Fedora)..."
+                    sudo dnf install -y \
+                        python3 \
+                        python3-pip \
+                        git \
+                        wget \
+                        curl \
+                        nmap \
+                        nikto \
+                        golang \
+                        gcc \
+                        openssl-devel \
+                        libffi-devel \
+                        cairo-devel \
+                        gdk-pixbuf2-devel \
+                        pango-devel \
+                        python3-devel \
+                        sqlite \
+                        sqlite-devel
+                    ;;
+                centos|rhel|rocky|almalinux)
+                    log_info "Installing base packages via dnf/yum (RHEL/CentOS/Rocky)..."
+                    if command -v dnf &> /dev/null; then
+                        sudo dnf install -y epel-release 2>/dev/null || true
+                        sudo dnf install -y \
+                            python3 \
+                            python3-pip \
+                            git \
+                            wget \
+                            curl \
+                            nmap \
+                            golang \
+                            gcc \
+                            openssl-devel \
+                            libffi-devel \
+                            cairo-devel \
+                            gdk-pixbuf2-devel \
+                            pango-devel \
+                            python3-devel \
+                            sqlite \
+                            sqlite-devel
+                    else
+                        sudo yum install -y epel-release 2>/dev/null || true
+                        sudo yum install -y \
+                            python3 \
+                            python3-pip \
+                            git \
+                            wget \
+                            curl \
+                            nmap \
+                            golang \
+                            gcc \
+                            openssl-devel \
+                            libffi-devel \
+                            cairo-devel \
+                            gdk-pixbuf2-devel \
+                            pango-devel \
+                            python3-devel \
+                            sqlite \
+                            sqlite-devel
+                    fi
+                    log_warning "nikto is not available in standard RHEL/CentOS repos. Install manually from https://cirt.net/Nikto2."
+                    ;;
+                arch|manjaro|endeavouros)
+                    log_info "Installing base packages via pacman (Arch-based)..."
+                    sudo pacman -Sy --noconfirm \
+                        python \
+                        python-pip \
+                        git \
+                        wget \
+                        curl \
+                        nmap \
+                        nikto \
+                        go \
+                        base-devel \
+                        cairo \
+                        gdk-pixbuf2 \
+                        pango \
+                        sqlite
+                    ;;
+                opensuse*|sles)
+                    log_info "Installing base packages via zypper (openSUSE/SLES)..."
+                    sudo zypper install -y \
+                        python3 \
+                        python3-pip \
+                        git \
+                        wget \
+                        curl \
+                        nmap \
+                        nikto \
+                        go \
+                        gcc \
+                        libopenssl-devel \
+                        libffi-devel \
+                        cairo-devel \
+                        gdk-pixbuf-devel \
+                        pango-devel \
+                        python3-devel \
+                        sqlite3 \
+                        sqlite3-devel
+                    ;;
                 *)
-                    log_error "Unsupported Linux distribution: $DISTRO"
-                    log_warning "Manual installation is required for this distro."
-                    exit 1
+                    log_warning "Unsupported Linux distribution: $DISTRO"
+                    log_warning "Automatic package installation skipped."
+                    log_warning "Install manually: python3, python3-pip, python3-venv, git, curl, nmap, nikto, go, gcc, libssl-dev, sqlite3"
+                    log_warning "Then re-run this installer."
                     ;;
             esac
             ;;
@@ -415,6 +518,9 @@ install_go_from_official() {
     fi
 
     log_info "Installing Go to /usr/local/go..."
+    # NOTE: for maximum security, verify the SHA256 checksum before extracting.
+    # Reference: https://go.dev/dl/ — each release lists its expected checksum.
+    log_warning "Checksum verification of the Go tarball is recommended. See https://go.dev/dl/ for the expected SHA256."
     sudo rm -rf /usr/local/go
     sudo tar -C /usr/local -xzf "$tmp_archive"
     rm -f "$tmp_archive"
@@ -598,8 +704,12 @@ EOF
         fi
 
         if [ -d "$dirsearch_dir" ]; then
-            pip3 install -r "$dirsearch_dir/requirements.txt" --break-system-packages 2>/dev/null || \
-                pip3 install -r "$dirsearch_dir/requirements.txt"
+            # Use the venv pip if available to avoid polluting the system Python environment.
+            local _pip_cmd="pip3"
+            if [ -f "$start_dir/venv/bin/pip" ]; then
+                _pip_cmd="$start_dir/venv/bin/pip"
+            fi
+            "$_pip_cmd" install -r "$dirsearch_dir/requirements.txt"
             ensure_local_bin_path
             mkdir -p "$HOME/.local/bin"
             cat << EOF > "$HOME/.local/bin/dirsearch"

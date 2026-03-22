@@ -16,10 +16,20 @@ reportlab==4.0.9
 # === SECURITY TOOLS ===
 requests==2.31.0
 slowapi==0.1.9
+# SECURITY NOTE: passlib is in maintenance-only mode. Consider migrating to
+# `pwdlib` or `argon2-cffi` directly for future projects.
 passlib[bcrypt]==1.7.4
 argon2-cffi==23.1.0
+# SECURITY NOTE: python-jose 3.3.0 is affected by CVE-2022-29217 (algorithm
+# confusion). Consider replacing with `PyJWT>=2.8` or `joserfc` if RS256/ES256
+# support is needed. For HS256-only usage the practical risk is low, but
+# upgrading to a maintained library is recommended.
 python-jose==3.3.0
 structlog==24.1.0
+# SECURITY NOTE: bleach 6.1.0 is the final release; the project is no longer
+# maintained. It is currently used only for stripping HTML from scan targets
+# (scanner_engine.py). For new HTML sanitisation needs, consider `nh3` or
+# `lxml.html.clean`.
 bleach==6.1.0
 validators==0.22.0
 itsdangerous==2.1.2
