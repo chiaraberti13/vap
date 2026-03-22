@@ -476,7 +476,10 @@ class ConnectionManager:
 
     async def broadcast(self, scan_id: int, payload: Dict[str, Any]) -> None:
         for connection in list(self.active_connections.get(scan_id, set())):
-            await connection.send_json(payload)
+            try:
+                await connection.send_json(payload)
+            except Exception:
+                self.disconnect(scan_id, connection)
 
 
 manager = ConnectionManager()
@@ -1352,7 +1355,7 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
                     continue
                 payload = _build_scan_payload(scan)
                 await manager.broadcast(scan_id, payload)
-    except WebSocketDisconnect:
+    except (WebSocketDisconnect, Exception):
         manager.disconnect(scan_id, websocket)
 
 
