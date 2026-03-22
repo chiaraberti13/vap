@@ -14,7 +14,7 @@ sqlalchemy==2.0.25
 reportlab==4.0.9
 
 # === SECURITY TOOLS ===
-requests==2.31.0
+requests==2.32.3
 slowapi==0.1.9
 # SECURITY NOTE: passlib is in maintenance-only mode. Consider migrating to
 # `pwdlib` or `argon2-cffi` directly for future projects.

@@ -56,14 +56,22 @@ log_warning() {
 
 log_error() {
     echo -e "${RED}[✗]${NC} $1"
+    log_error_to_file "$1"
 }
 
 # Path for installer logs to support error analysis.
-LOG_FILE="installer_$(date +%Y%m%d_%H%M%S).log"
+_LOG_TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
+LOG_FILE="installer_${_LOG_TIMESTAMP}.log"
+ERROR_LOG_FILE="installer_errors_${_LOG_TIMESTAMP}.log"
 
 # Log to file as well to make troubleshooting easier.
 log_to_file() {
     echo "[$(date +%Y-%m-%dT%H:%M:%S%z)] $1" >> "$LOG_FILE"
+}
+
+# Log only errors to the error-only log file.
+log_error_to_file() {
+    echo "[$(date +%Y-%m-%dT%H:%M:%S%z)] ERROR: $1" >> "$ERROR_LOG_FILE"
 }
 
 # Ensure ~/.local/bin is in PATH and persisted for future shells.
@@ -874,6 +882,10 @@ print_final_instructions() {
     echo -e "   • Start with verbose logs: ${YELLOW}${PYTHON_BIN} app.py --debug${NC}"
     echo -e "   • Run a CLI scan: ${YELLOW}${PYTHON_BIN} scanner_engine.py --target <URL>${NC}"
     echo ""
+    echo -e "${BLUE}📄 INSTALLATION LOGS:${NC}"
+    echo -e "   • Full log:        ${YELLOW}${LOG_FILE}${NC}"
+    echo -e "   • Errors-only log: ${YELLOW}${ERROR_LOG_FILE}${NC}"
+    echo ""
     echo -e "${RED}⚠️  DISCLAIMER:${NC}"
     echo -e "   This tool is intended ONLY for authorized testing."
     echo -e "   Unauthorized usage may violate local and international laws."
@@ -889,7 +901,9 @@ on_error() {
     log_error "Command: ${command}"
     log_error "Line: ${line_number}"
     log_error "Check the log file for details: ${LOG_FILE}"
+    log_error "Errors-only log: ${ERROR_LOG_FILE}"
     log_to_file "ERROR: exit_code=${exit_code} line=${line_number} command=${command}"
+    log_error_to_file "exit_code=${exit_code} line=${line_number} command=${command}"
     exit "$exit_code"
 }
 
