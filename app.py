@@ -792,12 +792,61 @@ def create_scan_form(
     db.commit()
     db.refresh(scan)
 
-    task_result = orchestrate_scan.apply_async(
-        args=[scan.id, scan.scan_type, scan.target],
-        priority=priority,
-    )
-    scan.celery_task_id = task_result.id
-    db.commit()
+    try:
+        task_result = orchestrate_scan.apply_async(
+            args=[scan.id, scan.scan_type, scan.target],
+            priority=priority,
+        )
+        scan.celery_task_id = task_result.id
+        db.commit()
+    except Exception as exc:
+        http_logger.error("celery_dispatch_failed", scan_id=scan.id, error=str(exc))
+        scan.status = "failed"
+        db.commit()
+        _record_audit(
+            db,
+            request,
+            "scan_created",
+            subject_id=subject_id,
+            scan_id=scan.id,
+            scan_type=scan.scan_type,
+            data_classification=scan.data_classification,
+        )
+        _record_audit(
+            db,
+            request,
+            "scan_dispatch_failed",
+            subject_id=subject_id,
+            scan_id=scan.id,
+            error=str(exc),
+        )
+        csrf_token = generate_csrf_token()
+        kpi_metrics = _build_kpi_metrics(db)
+        dashboard_timestamp = datetime.now(timezone.utc)
+        response = templates.TemplateResponse(
+            "index.html",
+            {
+                "request": request,
+                "scan_types": SCAN_TYPES,
+                "api_key_required": bool(settings.api_key or settings.api_key_hash),
+                "error": "Servizio di accodamento non disponibile. Riprova più tardi.",
+                "csrf_token": csrf_token,
+                "data_classifications": DATA_CLASSIFICATIONS,
+                "privacy_policy_version": settings.privacy_policy_version,
+                "terms_version": settings.terms_of_service_version,
+                "kpi_metrics": kpi_metrics,
+                "dashboard_timestamp": dashboard_timestamp,
+            },
+            status_code=503,
+        )
+        response.set_cookie(
+            settings.csrf_cookie_name,
+            csrf_token,
+            httponly=True,
+            secure=settings.require_https,
+            samesite="lax",
+        )
+        return response
 
     redirect_url = f"/scans/{scan.id}"
     if api_key:
