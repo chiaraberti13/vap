@@ -15,6 +15,7 @@ reportlab==4.0.9
 
 # === SECURITY TOOLS ===
 requests==2.32.3
+chardet>=3.0.2,<6
 slowapi==0.1.9
 # SECURITY NOTE: passlib is in maintenance-only mode. Consider migrating to
 # `pwdlib` or `argon2-cffi` directly for future projects.
