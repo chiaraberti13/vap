@@ -178,7 +178,12 @@ def validate_nmap_target(target: str) -> str:
 def _collect_findings(results: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     findings: List[Dict[str, Any]] = []
     for result in results:
-        findings.extend(result.get("findings", []))
+        tool_name = result.get("tool", "")
+        for finding in result.get("findings", []):
+            if tool_name and not finding.get("tool"):
+                finding = dict(finding)
+                finding["tool"] = tool_name
+            findings.append(finding)
     return findings[: settings.max_findings]
 
 

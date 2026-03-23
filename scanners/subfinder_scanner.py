@@ -41,11 +41,109 @@ class SubfinderScanner:
                 "status": "simulated",
                 "findings": [
                     {
-                        "title": "Sottodomini individuati",
-                        "severity": "info",
-                        "description": "Simulazione: elenco di sottodomini pubblici.",
-                        "recommendation": "Revisionare DNS e rimuovere asset non necessari.",
-                    }
+                        "tool": "subfinder",
+                        "title": "Subdomain Takeover — Record DNS pendente su risorsa cloud non più attiva",
+                        "severity": "high",
+                        "description": (
+                            "Subfinder ha scoperto il sottodominio 'staging.example.com' con un "
+                            "record CNAME che punta a 'example-staging.herokuapp.com', un "
+                            "dyno Heroku non più registrato. Il dominio Heroku di destinazione "
+                            "risulta disponibile per la registrazione, permettendo a un attaccante "
+                            "di registrarlo e ottenere il pieno controllo del sottodominio "
+                            "staging.example.com. Questo scenario, noto come Subdomain Takeover, "
+                            "è una delle vulnerabilità più critiche in ambito DNS."
+                        ),
+                        "impact": (
+                            "Un attaccante che registra il dominio Heroku puntato può: "
+                            "servire contenuti arbitrari da staging.example.com (phishing, "
+                            "malware), rubare cookie di sessione condivisi tra sottodomini "
+                            "(se il cookie non ha il flag 'domain' ristretto), eseguire attacchi "
+                            "Cross-Site Scripting che bypassano le policy Same-Origin, e ottenere "
+                            "certificati TLS validi per il sottodominio tramite challenge DNS-01."
+                        ),
+                        "attack_scenario": (
+                            "1. L'attaccante esegue Subfinder e identifica staging.example.com "
+                            "→ CNAME → example-staging.herokuapp.com.\n"
+                            "2. Verifica che 'example-staging.herokuapp.com' non sia registrato: "
+                            "curl -I https://example-staging.herokuapp.com → Error 'No such app'.\n"
+                            "3. Registra gratuitamente 'example-staging' su Heroku.\n"
+                            "4. Carica un'app che risponde per staging.example.com con contenuto "
+                            "fraudolento (fake login, cookie stealer).\n"
+                            "5. Utenti che visitano staging.example.com vengono compromessi."
+                        ),
+                        "recommendation": (
+                            "1. Rimuovere immediatamente il record CNAME pendente da staging.example.com.\n"
+                            "2. Eseguire un audit completo di tutti i record DNS per identificare "
+                            "altri CNAME/A record che puntano a risorse non più attive.\n"
+                            "3. Implementare un processo di decommissioning che preveda la "
+                            "rimozione dei record DNS prima del rilascio delle risorse cloud.\n"
+                            "4. Monitorare periodicamente tutti i sottodomini con strumenti come "
+                            "can-i-take-over-xyz o nuclei template dns-subdomain-takeover.\n"
+                            "5. Utilizzare DMARC, SPF e DKIM per proteggere il dominio principale "
+                            "da spoofing via sottodomini compromessi."
+                        ),
+                        "evidence": "staging.example.com. CNAME example-staging.herokuapp.com. → HTTP 404 'No such app'",
+                        "affected_component": "DNS — CNAME record staging.example.com",
+                        "host": "staging.example.com",
+                        "cwe": ["CWE-350"],
+                        "cvss_score": 8.1,
+                        "tags": ["owasp-a05", "subdomain-takeover", "dns"],
+                        "references": [
+                            "https://owasp.org/Top10/A05_2021-Security_Misconfiguration/",
+                            "https://github.com/EdOverflow/can-i-take-over-xyz",
+                            "https://cwe.mitre.org/data/definitions/350.html",
+                        ],
+                    },
+                    {
+                        "tool": "subfinder",
+                        "title": "Ambiente di sviluppo accessibile pubblicamente — dev.example.com esposto",
+                        "severity": "medium",
+                        "description": (
+                            "Subfinder ha identificato il sottodominio 'dev.example.com' attivo "
+                            "e raggiungibile pubblicamente. L'ambiente di sviluppo espone "
+                            "funzionalità non ancora approvate per la produzione, file di "
+                            "configurazione con debug mode attivo, endpoint di test non "
+                            "autenticati e potenzialmente credenziali hardcoded nei sorgenti "
+                            "accessibili. L'interfaccia web mostra stack trace completi per "
+                            "qualsiasi errore applicativo."
+                        ),
+                        "impact": (
+                            "Gli ambienti di sviluppo contengono tipicamente credenziali di "
+                            "database, chiavi API e segreti di configurazione diversi ma spesso "
+                            "simili a quelli di produzione. L'accesso all'ambiente dev può "
+                            "rivelare logiche di business non documentate, vulnerabilità non "
+                            "ancora risolte e informazioni strutturali sull'architettura "
+                            "dell'applicazione di produzione."
+                        ),
+                        "attack_scenario": (
+                            "1. L'attaccante scopre dev.example.com tramite enumerazione DNS.\n"
+                            "2. Accede all'applicazione con debug mode attivo, leggendo stack trace.\n"
+                            "3. Identifica path interni, nomi di moduli e librerie utilizzate.\n"
+                            "4. Trova endpoint /debug/config che espone variabili d'ambiente.\n"
+                            "5. Utilizza chiavi API di sviluppo trovate per accedere a servizi "
+                            "cloud condivisi con l'ambiente di produzione."
+                        ),
+                        "recommendation": (
+                            "1. Rendere dev.example.com accessibile solo dalla rete aziendale "
+                            "tramite VPN o IP allowlist.\n"
+                            "2. Disabilitare il debug mode in tutti gli ambienti non-development "
+                            "e assicurarsi che le credenziali dev/prod siano completamente separate.\n"
+                            "3. Implementare autenticazione HTTP Basic o OAuth come protezione "
+                            "aggiuntiva dell'ambiente di sviluppo.\n"
+                            "4. Rimuovere endpoint di debug e diagnostica prima dell'esposizione "
+                            "anche parziale all'esterno."
+                        ),
+                        "evidence": "dev.example.com → HTTP 200 OK (DEBUG=True, Stack Trace visibile)",
+                        "affected_component": "Ambiente di sviluppo — dev.example.com",
+                        "host": "dev.example.com",
+                        "cwe": ["CWE-215", "CWE-1244"],
+                        "cvss_score": 5.3,
+                        "tags": ["owasp-a05", "information-disclosure", "misconfiguration"],
+                        "references": [
+                            "https://owasp.org/Top10/A05_2021-Security_Misconfiguration/",
+                            "https://cwe.mitre.org/data/definitions/215.html",
+                        ],
+                    },
                 ],
             }
 

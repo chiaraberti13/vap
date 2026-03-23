@@ -122,7 +122,12 @@ def orchestrate_scan(self, scan_id: int, scan_type: str, target: str) -> str:
 def finalize_scan(self, results: List[Dict[str, Any]], scan_id: int, target: str, scan_type: str) -> str:
     findings: List[Dict[str, Any]] = []
     for result in results:
-        findings.extend(result.get("findings", []))
+        tool_name = result.get("tool", "")
+        for finding in result.get("findings", []):
+            if tool_name and not finding.get("tool"):
+                finding = dict(finding)
+                finding["tool"] = tool_name
+            findings.append(finding)
     findings = enrich_findings(findings)
 
     with SessionLocal() as db:

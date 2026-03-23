@@ -28,11 +28,111 @@ class DirsearchScanner:
                 "status": "simulated",
                 "findings": [
                     {
-                        "title": "Endpoint nascosti individuati",
-                        "severity": "info",
-                        "description": "Simulazione: directory comuni esposte.",
-                        "recommendation": "Limitare l'accesso agli endpoint amministrativi.",
-                    }
+                        "tool": "dirsearch",
+                        "title": "Repository Git esposto pubblicamente — /.git/ accessibile via HTTP",
+                        "severity": "critical",
+                        "description": (
+                            "Dirsearch ha scoperto la directory /.git/ accessibile via HTTP "
+                            "sul server web target. Il repository Git contiene l'intera "
+                            "storia del codice sorgente dell'applicazione, inclusi file di "
+                            "configurazione con credenziali hardcoded, chiavi API, segreti di "
+                            "cifratura e variabili d'ambiente. Il file /.git/config è leggibile "
+                            "e rivela l'URL del repository remoto. Con strumenti come GitDumper "
+                            "o git-dumper, un attaccante può ricostruire l'intero repository "
+                            "anche se il directory listing è disabilitato."
+                        ),
+                        "impact": (
+                            "L'esposizione del repository Git rappresenta una delle vulnerabilità "
+                            "più critiche per un'applicazione web. Consente l'accesso completo "
+                            "al codice sorgente (logiche di business, algoritmi proprietari), "
+                            "il recupero di credenziali hardcoded (database, AWS keys, JWT secrets), "
+                            "la ricostruzione di versioni precedenti che potrebbero contenere "
+                            "vulnerabilità già 'corrette' ma ancora sfruttabili, e la scoperta "
+                            "di endpoint nascosti non documentati."
+                        ),
+                        "attack_scenario": (
+                            "1. Dirsearch identifica HTTP 200 su /.git/HEAD (contenuto: 'ref: refs/heads/main').\n"
+                            "2. L'attaccante esegue: git-dumper http://target.com/.git ./repo_dump\n"
+                            "3. Analizza la history git: git log --all --oneline --format='%H %s'\n"
+                            "4. Trova commit con messaggio 'temp: hardcoded DB password'.\n"
+                            "5. Recupera: git show abc123:config/database.yml → password: 'prod_super_secret_2023'\n"
+                            "6. Usa le credenziali per accedere direttamente al database PostgreSQL."
+                        ),
+                        "recommendation": (
+                            "1. Bloccare immediatamente l'accesso a /.git/ nel web server:\n"
+                            "   - Nginx: location ^~ /.git { deny all; return 404; }\n"
+                            "   - Apache: RedirectMatch 404 /\\.git\n"
+                            "2. Revocare tutte le credenziali e i token esposti nella history git.\n"
+                            "3. Non memorizzare segreti nel codice sorgente: usare variabili "
+                            "d'ambiente o un secrets manager (HashiCorp Vault, AWS Secrets Manager).\n"
+                            "4. Aggiungere un file .gitignore appropriato per escludere file "
+                            "di configurazione sensibili.\n"
+                            "5. Considerare la rotazione di tutte le chiavi API e credenziali "
+                            "per l'intera storia del repository."
+                        ),
+                        "evidence": "GET /.git/HEAD → HTTP 200 OK\nref: refs/heads/main",
+                        "affected_component": "Repository Git — /.git/config, /.git/FETCH_HEAD",
+                        "path": "/.git/",
+                        "cwe": ["CWE-312", "CWE-538"],
+                        "cvss_score": 9.1,
+                        "tags": ["owasp-a02", "git-exposure", "credential-exposure", "source-code"],
+                        "references": [
+                            "https://owasp.org/Top10/A02_2021-Cryptographic_Failures/",
+                            "https://cwe.mitre.org/data/definitions/538.html",
+                            "https://github.com/arthaud/git-dumper",
+                        ],
+                    },
+                    {
+                        "tool": "dirsearch",
+                        "title": "Interfaccia amministrativa esposta — /admin/dashboard accessibile",
+                        "severity": "high",
+                        "description": (
+                            "Dirsearch ha identificato l'endpoint /admin/dashboard accessibile "
+                            "pubblicamente con risposta HTTP 200. Il pannello di amministrazione "
+                            "espone funzionalità sensibili quali la gestione utenti, la "
+                            "configurazione del sistema e l'accesso ai log applicativi. "
+                            "Il pannello non implementa autenticazione aggiuntiva oltre al "
+                            "form di login standard, rendendolo vulnerabile ad attacchi di "
+                            "brute force e a exploit di vulnerabilità note nei framework "
+                            "di admin panel comunemente utilizzati."
+                        ),
+                        "impact": (
+                            "L'accesso non autorizzato al pannello amministrativo può portare "
+                            "alla compromissione completa dell'applicazione: creazione di "
+                            "account admin aggiuntivi, modifica dei contenuti, accesso ai "
+                            "dati di tutti gli utenti, upload di file malevoli e potenziale "
+                            "esecuzione di codice sul server attraverso funzionalità di "
+                            "gestione avanzate."
+                        ),
+                        "attack_scenario": (
+                            "1. Dirsearch identifica /admin/dashboard → HTTP 200.\n"
+                            "2. L'attaccante accede e trova un form di login senza rate limiting.\n"
+                            "3. Esegue attacco brute force con Hydra usando wordlist admin-specific.\n"
+                            "4. Accede con credenziali di default 'admin/admin' non cambiate.\n"
+                            "5. Carica una web shell tramite la funzione 'Upload Template'.\n"
+                            "6. Esegue comandi OS con i privilegi dell'utente web server."
+                        ),
+                        "recommendation": (
+                            "1. Limitare l'accesso a /admin/* tramite IP allowlist o VPN.\n"
+                            "2. Implementare autenticazione MFA obbligatoria per tutti gli "
+                            "account amministrativi.\n"
+                            "3. Spostare il pannello admin su un percorso non predicibile "
+                            "e non indicizzato dai motori di ricerca (X-Robots-Tag: noindex).\n"
+                            "4. Aggiungere rate limiting severo: max 3 tentativi in 10 minuti.\n"
+                            "5. Abilitare logging dettagliato e alerting real-time per "
+                            "ogni accesso all'area amministrativa."
+                        ),
+                        "evidence": "GET /admin/dashboard → HTTP 200 OK (Admin Panel v2.4.1)",
+                        "affected_component": "Admin Panel — /admin/dashboard, /admin/users",
+                        "path": "/admin/dashboard",
+                        "cwe": ["CWE-284", "CWE-521"],
+                        "cvss_score": 8.8,
+                        "tags": ["owasp-a01", "broken-access-control", "admin-panel"],
+                        "references": [
+                            "https://owasp.org/Top10/A01_2021-Broken_Access_Control/",
+                            "https://cwe.mitre.org/data/definitions/284.html",
+                        ],
+                    },
                 ],
             }
 

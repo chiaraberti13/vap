@@ -35,11 +35,99 @@ class NmapScanner:
                 "status": "simulated",
                 "findings": [
                     {
-                        "title": "Porte esposte rilevate",
+                        "tool": "nmap",
+                        "title": "Porta di gestione 8080 esposta pubblicamente — Pannello admin accessibile",
+                        "severity": "medium",
+                        "description": (
+                            "Nmap ha rilevato la porta TCP 8080 aperta sull'host target con un "
+                            "servizio HTTP attivo (Apache Tomcat 9.0.45). La porta espone "
+                            "l'interfaccia di gestione del server applicativo direttamente su "
+                            "Internet senza restrizioni di accesso IP. Servizi di management "
+                            "come Tomcat Manager, Jenkins o simili su porte non standard "
+                            "spesso presentano credenziali di default o vulnerabilità note."
+                        ),
+                        "impact": (
+                            "L'accesso all'interfaccia di gestione può permettere il deploy di "
+                            "applicazioni WAR malevole (nel caso di Tomcat Manager), l'esecuzione "
+                            "di comandi arbitrari sul sistema operativo sottostante e la "
+                            "compromissione totale del server. Le credenziali di default "
+                            "(admin/admin, tomcat/tomcat) sono spesso ancora attive."
+                        ),
+                        "attack_scenario": (
+                            "1. Nmap o Shodan identificano la porta 8080 aperta sul target.\n"
+                            "2. L'attaccante accede a http://target:8080/manager/html.\n"
+                            "3. Tenta credenziali di default: admin/admin, tomcat/s3cret.\n"
+                            "4. Se autenticato, carica una WAR shell (es. msfvenom -p java/jsp_shell_reverse_tcp).\n"
+                            "5. Ottiene una reverse shell con i privilegi dell'utente Tomcat sul sistema."
+                        ),
+                        "recommendation": (
+                            "1. Bloccare la porta 8080 a livello di firewall/security group, "
+                            "rendendola accessibile solo da IP di gestione autorizzati.\n"
+                            "2. Spostare l'interfaccia di gestione su una rete di management "
+                            "separata (VLAN dedicata).\n"
+                            "3. Cambiare tutte le credenziali di default e applicare una password "
+                            "policy robusta.\n"
+                            "4. Aggiornare Tomcat all'ultima versione stabile con patch di sicurezza.\n"
+                            "5. Abilitare TLS/HTTPS anche sull'interfaccia di management."
+                        ),
+                        "evidence": "PORT 8080/tcp OPEN  http  Apache Tomcat 9.0.45",
+                        "affected_component": "Apache Tomcat — porta TCP 8080",
+                        "port": "8080",
+                        "protocol": "tcp",
+                        "cwe": ["CWE-284", "CWE-1188"],
+                        "cvss_score": 6.8,
+                        "tags": ["owasp-a05", "misconfiguration", "exposed-service"],
+                        "references": [
+                            "https://owasp.org/Top10/A05_2021-Security_Misconfiguration/",
+                            "https://cwe.mitre.org/data/definitions/1188.html",
+                            "https://tomcat.apache.org/security.html",
+                        ],
+                    },
+                    {
+                        "tool": "nmap",
+                        "title": "Server Banner Disclosure — Versione software esposta negli header HTTP",
                         "severity": "low",
-                        "description": "Simulazione: individuate porte 80/443 aperte.",
-                        "recommendation": "Limitare le porte esposte e usare firewall.",
-                    }
+                        "description": (
+                            "Il server web risponde includendo negli header HTTP la versione "
+                            "esatta del software in uso: 'Server: nginx/1.18.0 (Ubuntu)'. "
+                            "Questa informazione consente a un attaccante di identificare "
+                            "immediatamente il software installato e ricercare vulnerabilità "
+                            "specifiche per quella versione nei database CVE pubblici (NVD, "
+                            "ExploitDB). Il banner disclosure riduce significativamente il "
+                            "costo della ricognizione per un attaccante."
+                        ),
+                        "impact": (
+                            "L'esposizione della versione del server facilita la selezione "
+                            "mirata di exploit per vulnerabilità note nella versione identificata. "
+                            "Sebbene non costituisca una vulnerabilità direttamente sfruttabile, "
+                            "riduce il tempo necessario per un attaccante per trovare un vettore "
+                            "di attacco specifico e aumenta la superficie di attacco complessiva."
+                        ),
+                        "attack_scenario": (
+                            "1. L'attaccante invia una semplice richiesta HTTP HEAD al target.\n"
+                            "2. Legge l'header 'Server: nginx/1.18.0 (Ubuntu)' nella risposta.\n"
+                            "3. Cerca su NVD/ExploitDB le CVE per nginx 1.18.0.\n"
+                            "4. Identifica CVE-2021-23017 (1-byte memory overwrite) applicabile.\n"
+                            "5. Prepara un exploit mirato per la versione specifica rilevata."
+                        ),
+                        "recommendation": (
+                            "1. Configurare nginx con 'server_tokens off;' nel file nginx.conf "
+                            "per rimuovere la versione dall'header Server.\n"
+                            "2. Per Apache: impostare 'ServerTokens Prod' e 'ServerSignature Off'.\n"
+                            "3. Rimuovere o oscurare l'header X-Powered-By e simili.\n"
+                            "4. Mantenere il software aggiornato all'ultima versione stabile "
+                            "per ridurre la superficie di attacco nota."
+                        ),
+                        "evidence": "HTTP/1.1 200 OK\nServer: nginx/1.18.0 (Ubuntu)\nX-Powered-By: PHP/7.4.3",
+                        "affected_component": "HTTP Server — header di risposta",
+                        "cwe": ["CWE-200"],
+                        "cvss_score": 3.7,
+                        "tags": ["owasp-a05", "information-disclosure", "banner-disclosure"],
+                        "references": [
+                            "https://cwe.mitre.org/data/definitions/200.html",
+                            "https://nginx.org/en/docs/http/ngx_http_core_module.html#server_tokens",
+                        ],
+                    },
                 ],
             }
 
