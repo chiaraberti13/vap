@@ -552,8 +552,10 @@ def _build_kpi_metrics(db: Session) -> Dict[str, Any]:
         .all()
     )
     if completed_rows:
+        def _to_utc(dt: datetime) -> datetime:
+            return dt if dt.tzinfo is not None else dt.replace(tzinfo=timezone.utc)
         total_seconds = sum(
-            (completed_at - created_at).total_seconds()
+            (_to_utc(completed_at) - _to_utc(created_at)).total_seconds()
             for created_at, completed_at in completed_rows
             if completed_at and created_at
         )
