@@ -60,9 +60,11 @@ log_error() {
 }
 
 # Path for installer logs to support error analysis.
+# Use absolute paths so logs land in the repo root even when the CWD changes
+# (e.g. after pushd inside install_security_tools).
 _LOG_TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
-LOG_FILE="installer_${_LOG_TIMESTAMP}.log"
-ERROR_LOG_FILE="installer_errors_${_LOG_TIMESTAMP}.log"
+LOG_FILE="${SCRIPT_DIR}/installer_${_LOG_TIMESTAMP}.log"
+ERROR_LOG_FILE="${SCRIPT_DIR}/installer_errors_${_LOG_TIMESTAMP}.log"
 
 # Log to file as well to make troubleshooting easier.
 log_to_file() {
@@ -713,11 +715,18 @@ EOF
 
         if [ -d "$dirsearch_dir" ]; then
             # Use the venv pip if available to avoid polluting the system Python environment.
+            # Note: install_security_tools runs before create_python_venv, so the venv may not
+            # exist yet; fall back to pip3 with --user to satisfy PEP 668 on managed systems.
             local _pip_cmd="pip3"
+            local _pip_extra_args=()
             if [ -f "$start_dir/venv/bin/pip" ]; then
                 _pip_cmd="$start_dir/venv/bin/pip"
+            else
+                _pip_extra_args=("--user")
             fi
-            "$_pip_cmd" install -r "$dirsearch_dir/requirements.txt"
+            if ! "$_pip_cmd" install "${_pip_extra_args[@]}" -r "$dirsearch_dir/requirements.txt"; then
+                log_warning "Dirsearch pip install failed. The wrapper script will still work if dependencies are already present."
+            fi
             ensure_local_bin_path
             mkdir -p "$HOME/.local/bin"
             cat << EOF > "$HOME/.local/bin/dirsearch"
