@@ -140,7 +140,11 @@ def finalize_scan(self, results: List[Dict[str, Any]], scan_id: int, target: str
         scan.findings_json = serialize_findings(findings)
 
         try:
-            report_path = generate_report(scan.id, target, scan_type, findings)
+            report_path = generate_report(
+                scan.id, target, scan_type, findings,
+                start_time=scan.created_at,
+                end_time=scan.completed_at,
+            )
         except Exception as exc:
             scan.status = "report_failed"
             scan.report_path = None
@@ -247,7 +251,11 @@ def run_scan_in_process(scan_id: int, scan_type: str, target: str) -> None:
         scan.progress = 100
         scan.findings_json = serialize_findings(findings)
         try:
-            report_path = generate_report(scan.id, target, scan_type, findings)
+            report_path = generate_report(
+                scan.id, target, scan_type, findings,
+                start_time=scan.created_at,
+                end_time=scan.completed_at,
+            )
             scan.report_path = str(report_path)
             _append_log(scan, "Report PDF generato.")
         except Exception as exc:
