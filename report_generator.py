@@ -302,6 +302,11 @@ def _build_summary(
     start_str = start_time.strftime(fmt) if start_time else "—"
     end_str   = end_time.strftime(fmt)   if end_time   else "—"
     if start_time and end_time:
+        # Normalize to UTC-aware to handle offset-naive datetimes from SQLite
+        if start_time.tzinfo is None:
+            start_time = start_time.replace(tzinfo=timezone.utc)
+        if end_time.tzinfo is None:
+            end_time = end_time.replace(tzinfo=timezone.utc)
         secs = int((end_time - start_time).total_seconds())
         duration_str = f"{secs} sec"
     else:
