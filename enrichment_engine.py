@@ -21,14 +21,24 @@ MITRE_CWE_MAPPING: Dict[str, List[Dict[str, Any]]] = {
             "technique_id": "T1189",
             "technique_name": "Drive-by Compromise",
             "tactics": ["Initial Access"],
-        }
+        },
+        {
+            "technique_id": "T1185",
+            "technique_name": "Browser Session Hijacking",
+            "tactics": ["Collection"],
+        },
     ],
     "CWE-89": [
         {
             "technique_id": "T1190",
             "technique_name": "Exploit Public-Facing Application",
             "tactics": ["Initial Access"],
-        }
+        },
+        {
+            "technique_id": "T1213",
+            "technique_name": "Data from Information Repositories",
+            "tactics": ["Collection"],
+        },
     ],
     "CWE-77": [
         {
@@ -37,11 +47,173 @@ MITRE_CWE_MAPPING: Dict[str, List[Dict[str, Any]]] = {
             "tactics": ["Execution"],
         }
     ],
+    "CWE-78": [
+        {
+            "technique_id": "T1059",
+            "technique_name": "Command and Scripting Interpreter",
+            "tactics": ["Execution"],
+        },
+        {
+            "technique_id": "T1190",
+            "technique_name": "Exploit Public-Facing Application",
+            "tactics": ["Initial Access"],
+        },
+    ],
     "CWE-22": [
         {
-            "technique_id": "T1006",
-            "technique_name": "Direct Volume Access",
-            "tactics": ["Defense Evasion"],
+            "technique_id": "T1083",
+            "technique_name": "File and Directory Discovery",
+            "tactics": ["Discovery"],
+        },
+        {
+            "technique_id": "T1005",
+            "technique_name": "Data from Local System",
+            "tactics": ["Collection"],
+        },
+    ],
+    "CWE-284": [
+        {
+            "technique_id": "T1078",
+            "technique_name": "Valid Accounts",
+            "tactics": ["Defense Evasion", "Persistence", "Privilege Escalation", "Initial Access"],
+        }
+    ],
+    "CWE-285": [
+        {
+            "technique_id": "T1548",
+            "technique_name": "Abuse Elevation Control Mechanism",
+            "tactics": ["Privilege Escalation", "Defense Evasion"],
+        }
+    ],
+    "CWE-306": [
+        {
+            "technique_id": "T1078",
+            "technique_name": "Valid Accounts",
+            "tactics": ["Initial Access"],
+        }
+    ],
+    "CWE-200": [
+        {
+            "technique_id": "T1592",
+            "technique_name": "Gather Victim Host Information",
+            "tactics": ["Reconnaissance"],
+        }
+    ],
+    "CWE-312": [
+        {
+            "technique_id": "T1552",
+            "technique_name": "Unsecured Credentials",
+            "tactics": ["Credential Access"],
+        }
+    ],
+    "CWE-538": [
+        {
+            "technique_id": "T1552",
+            "technique_name": "Unsecured Credentials",
+            "tactics": ["Credential Access"],
+        }
+    ],
+    "CWE-601": [
+        {
+            "technique_id": "T1566",
+            "technique_name": "Phishing",
+            "tactics": ["Initial Access"],
+        }
+    ],
+    "CWE-614": [
+        {
+            "technique_id": "T1539",
+            "technique_name": "Steal Web Session Cookie",
+            "tactics": ["Credential Access"],
+        }
+    ],
+    "CWE-1004": [
+        {
+            "technique_id": "T1539",
+            "technique_name": "Steal Web Session Cookie",
+            "tactics": ["Credential Access"],
+        }
+    ],
+    "CWE-307": [
+        {
+            "technique_id": "T1110",
+            "technique_name": "Brute Force",
+            "tactics": ["Credential Access"],
+        }
+    ],
+    "CWE-326": [
+        {
+            "technique_id": "T1040",
+            "technique_name": "Network Sniffing",
+            "tactics": ["Credential Access", "Discovery"],
+        }
+    ],
+    "CWE-319": [
+        {
+            "technique_id": "T1040",
+            "technique_name": "Network Sniffing",
+            "tactics": ["Credential Access", "Discovery"],
+        }
+    ],
+    "CWE-1336": [
+        {
+            "technique_id": "T1190",
+            "technique_name": "Exploit Public-Facing Application",
+            "tactics": ["Initial Access"],
+        },
+        {
+            "technique_id": "T1059",
+            "technique_name": "Command and Scripting Interpreter",
+            "tactics": ["Execution"],
+        },
+    ],
+    "CWE-94": [
+        {
+            "technique_id": "T1190",
+            "technique_name": "Exploit Public-Facing Application",
+            "tactics": ["Initial Access"],
+        }
+    ],
+    "CWE-639": [
+        {
+            "technique_id": "T1087",
+            "technique_name": "Account Discovery",
+            "tactics": ["Discovery"],
+        }
+    ],
+    "CWE-942": [
+        {
+            "technique_id": "T1185",
+            "technique_name": "Browser Session Hijacking",
+            "tactics": ["Collection"],
+        }
+    ],
+    "CWE-350": [
+        {
+            "technique_id": "T1584",
+            "technique_name": "Compromise Infrastructure",
+            "tactics": ["Resource Development"],
+        }
+    ],
+    "CWE-209": [
+        {
+            "technique_id": "T1592",
+            "technique_name": "Gather Victim Host Information",
+            "tactics": ["Reconnaissance"],
+        }
+    ],
+    "CWE-530": [
+        {
+            "technique_id": "T1005",
+            "technique_name": "Data from Local System",
+            "tactics": ["Collection"],
+        }
+    ],
+    "CWE-1021": [
+        {
+            "technique_id": "T1185",
+            "technique_name": "Browser Session Hijacking",
+            "tactics": ["Collection"],
         }
     ],
 }
@@ -56,7 +228,7 @@ KEYWORD_MITRE_MAPPING: List[Tuple[re.Pattern[str], Dict[str, Any]]] = [
         },
     ),
     (
-        re.compile(r"xss|cross-site", re.IGNORECASE),
+        re.compile(r"xss|cross-site\s*scripting", re.IGNORECASE),
         {
             "technique_id": "T1189",
             "technique_name": "Drive-by Compromise",
@@ -64,11 +236,91 @@ KEYWORD_MITRE_MAPPING: List[Tuple[re.Pattern[str], Dict[str, Any]]] = [
         },
     ),
     (
-        re.compile(r"command injection", re.IGNORECASE),
+        re.compile(r"command injection|os injection|rce|remote code execution", re.IGNORECASE),
         {
             "technique_id": "T1059",
             "technique_name": "Command and Scripting Interpreter",
             "tactics": ["Execution"],
+        },
+    ),
+    (
+        re.compile(r"path traversal|directory traversal|local file inclusion|lfi", re.IGNORECASE),
+        {
+            "technique_id": "T1005",
+            "technique_name": "Data from Local System",
+            "tactics": ["Collection"],
+        },
+    ),
+    (
+        re.compile(r"brute.?force|credential stuffing|password spraying", re.IGNORECASE),
+        {
+            "technique_id": "T1110",
+            "technique_name": "Brute Force",
+            "tactics": ["Credential Access"],
+        },
+    ),
+    (
+        re.compile(r"idor|insecure direct object|broken access control", re.IGNORECASE),
+        {
+            "technique_id": "T1087",
+            "technique_name": "Account Discovery",
+            "tactics": ["Discovery"],
+        },
+    ),
+    (
+        re.compile(r"subdomain takeover|dns takeover", re.IGNORECASE),
+        {
+            "technique_id": "T1584",
+            "technique_name": "Compromise Infrastructure",
+            "tactics": ["Resource Development"],
+        },
+    ),
+    (
+        re.compile(r"open redirect|url redirect", re.IGNORECASE),
+        {
+            "technique_id": "T1566",
+            "technique_name": "Phishing",
+            "tactics": ["Initial Access"],
+        },
+    ),
+    (
+        re.compile(r"session hijack|cookie theft|cookie steal", re.IGNORECASE),
+        {
+            "technique_id": "T1539",
+            "technique_name": "Steal Web Session Cookie",
+            "tactics": ["Credential Access"],
+        },
+    ),
+    (
+        re.compile(r"template injection|ssti", re.IGNORECASE),
+        {
+            "technique_id": "T1190",
+            "technique_name": "Exploit Public-Facing Application",
+            "tactics": ["Initial Access"],
+        },
+    ),
+    (
+        re.compile(r"cors|cross.origin", re.IGNORECASE),
+        {
+            "technique_id": "T1185",
+            "technique_name": "Browser Session Hijacking",
+            "tactics": ["Collection"],
+        },
+    ),
+    (
+        re.compile(r"exposed.*credential|hardcoded.*password|git.*expos|secret.*expos", re.IGNORECASE),
+        {
+            "technique_id": "T1552",
+            "technique_name": "Unsecured Credentials",
+            "tactics": ["Credential Access"],
+        },
+    ),
+    (
+        re.compile(r"tls|ssl|cipher|https.*missing|hsts", re.IGNORECASE),
+        {
+            "technique_id": "T1040",
+            "technique_name": "Network Sniffing",
+            "tactics": ["Credential Access"],
         },
     ),
 ]

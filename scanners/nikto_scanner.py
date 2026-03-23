@@ -34,11 +34,115 @@ class NiktoScanner:
                 "status": "simulated",
                 "findings": [
                     {
-                        "title": "Configurazione HTTP potenzialmente debole",
+                        "tool": "nikto",
+                        "title": "Security Headers HTTP critici mancanti — CSP, HSTS, X-Frame-Options assenti",
                         "severity": "medium",
-                        "description": "Simulazione: header di sicurezza mancanti.",
-                        "recommendation": "Implementare CSP, HSTS e X-Frame-Options.",
-                    }
+                        "description": (
+                            "Nikto ha verificato che l'applicazione web non implementa i "
+                            "principali header di sicurezza HTTP raccomandati da OWASP e "
+                            "dai browser vendor. In particolare risultano assenti: "
+                            "Content-Security-Policy (CSP), Strict-Transport-Security (HSTS), "
+                            "X-Frame-Options, X-Content-Type-Options, Referrer-Policy e "
+                            "Permissions-Policy. L'assenza di questi header amplifica "
+                            "l'impatto di altre vulnerabilità come XSS e Clickjacking e "
+                            "indebolisce le difese del browser dell'utente finale."
+                        ),
+                        "impact": (
+                            "Senza CSP, eventuali vulnerabilità XSS possono eseguire script "
+                            "arbitrari senza restrizioni. Senza HSTS, gli utenti sono vulnerabili "
+                            "ad attacchi SSL stripping e MITM sulle prime connessioni HTTP. "
+                            "Senza X-Frame-Options, l'applicazione è vulnerabile a Clickjacking, "
+                            "permettendo a un attaccante di ingannare gli utenti per eseguire "
+                            "azioni non intenzionali su un iframe nascosto."
+                        ),
+                        "attack_scenario": (
+                            "Clickjacking Attack:\n"
+                            "1. L'attaccante crea una pagina HTML con un iframe invisibile che "
+                            "carica la pagina di pagamento dell'applicazione target.\n"
+                            "2. Sovrappone elementi visibili ingannevoli ('Vinci un iPhone!').\n"
+                            "3. La vittima clicca sul pulsante visibile attivando in realtà "
+                            "'Conferma pagamento' nell'iframe nascosto.\n\n"
+                            "SSL Stripping Attack (assenza HSTS):\n"
+                            "1. MITM sulla rete locale sostituisce i link https:// con http://.\n"
+                            "2. Le credenziali viaggiano in chiaro verso l'attaccante."
+                        ),
+                        "recommendation": (
+                            "Aggiungere i seguenti header HTTP in tutte le risposte del server:\n"
+                            "1. Content-Security-Policy: default-src 'self'; script-src 'self' "
+                            "'nonce-{random}'; object-src 'none';\n"
+                            "2. Strict-Transport-Security: max-age=31536000; includeSubDomains; preload\n"
+                            "3. X-Frame-Options: DENY\n"
+                            "4. X-Content-Type-Options: nosniff\n"
+                            "5. Referrer-Policy: strict-origin-when-cross-origin\n"
+                            "6. Permissions-Policy: geolocation=(), camera=(), microphone=()"
+                        ),
+                        "evidence": (
+                            "HTTP/1.1 200 OK\n"
+                            "Content-Type: text/html\n"
+                            "# Assenti: Content-Security-Policy, Strict-Transport-Security,\n"
+                            "# X-Frame-Options, X-Content-Type-Options"
+                        ),
+                        "affected_component": "HTTP Response Headers — tutte le pagine dell'applicazione",
+                        "cwe": ["CWE-1021", "CWE-693", "CWE-16"],
+                        "cvss_score": 6.1,
+                        "tags": ["owasp-a05", "security-headers", "clickjacking", "xss"],
+                        "references": [
+                            "https://owasp.org/www-project-secure-headers/",
+                            "https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy",
+                            "https://cwe.mitre.org/data/definitions/1021.html",
+                        ],
+                    },
+                    {
+                        "tool": "nikto",
+                        "title": "File di backup accessibile — database.sql.bak esposto nella webroot",
+                        "severity": "high",
+                        "description": (
+                            "Nikto ha rilevato il file '/backup/database.sql.bak' accessibile "
+                            "pubblicamente via HTTP (risposta 200 OK, Content-Length: 4.2MB). "
+                            "Il file contiene il dump completo del database dell'applicazione, "
+                            "incluse la struttura delle tabelle, tutti i record utente con "
+                            "credenziali (hashate), dati personali e configurazioni applicative. "
+                            "La presenza di file di backup nella webroot è un errore operativo "
+                            "critico che espone l'intera base dati."
+                        ),
+                        "impact": (
+                            "L'accesso al dump del database permette l'estrazione di tutti i dati "
+                            "utente (PII, credenziali, dati di pagamento se presenti), la "
+                            "ricostruzione dello schema del database per attacchi SQL injection "
+                            "mirati, e il recupero di chiavi di cifratura o token segreti "
+                            "eventualmente salvati nel database. Costituisce una violazione "
+                            "GDPR con obbligo di notifica all'autorità di controllo."
+                        ),
+                        "attack_scenario": (
+                            "1. Nikto o Dirsearch identificano /backup/database.sql.bak.\n"
+                            "2. L'attaccante scarica il file con wget o curl.\n"
+                            "3. Importa il database localmente e analizza la struttura.\n"
+                            "4. Estrae 50.000 record utenti con email, hash bcrypt delle password.\n"
+                            "5. Tenta attacchi dictionary su hash bcrypt con hashcat e wordlist rockyou.\n"
+                            "6. Recupera password di account amministrativi e accede al pannello."
+                        ),
+                        "recommendation": (
+                            "1. Rimuovere immediatamente il file dalla webroot e verificare "
+                            "altri file di backup presenti (.sql, .bak, .tar.gz, .zip, .old).\n"
+                            "2. Spostare i backup in storage separati non accessibili via web "
+                            "(S3 privato, NAS interno, storage cifrato off-site).\n"
+                            "3. Implementare regole nel web server per bloccare l'accesso a "
+                            "estensioni di backup: deny all per .bak, .sql, .old, .backup.\n"
+                            "4. Eseguire un audit di tutti i file presenti nella webroot.\n"
+                            "5. Valutare l'impatto della violazione ed eseguire notifica GDPR "
+                            "se i dati esposti includono PII di soggetti europei (entro 72h)."
+                        ),
+                        "evidence": "GET /backup/database.sql.bak → HTTP 200 OK (Content-Length: 4,294,967 bytes)",
+                        "affected_component": "Web Server — file system della webroot /backup/",
+                        "path": "/backup/database.sql.bak",
+                        "cwe": ["CWE-530", "CWE-552"],
+                        "cvss_score": 8.2,
+                        "tags": ["owasp-a05", "sensitive-data-exposure", "backup-file"],
+                        "references": [
+                            "https://owasp.org/Top10/A05_2021-Security_Misconfiguration/",
+                            "https://cwe.mitre.org/data/definitions/530.html",
+                        ],
+                    },
                 ],
             }
 

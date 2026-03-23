@@ -25,13 +25,72 @@ class SqlmapScanner:
                 "status": "simulated",
                 "findings": [
                     {
-                        "title": "Possibile SQL Injection",
-                        "severity": "high",
-                        "description": "Simulazione: input potenzialmente vulnerabile a SQL injection.",
-                        "recommendation": "Usare query parametrizzate e validare tutti gli input.",
+                        "tool": "sqlmap",
+                        "title": "SQL Injection Boolean-Based — Parametro 'id' vulnerabile a estrazione dati",
+                        "severity": "critical",
+                        "description": (
+                            "SQLMap ha confermato la presenza di una vulnerabilità di SQL Injection "
+                            "di tipo boolean-based blind nel parametro GET 'id' dell'endpoint "
+                            "/products?id=1. Il parametro viene concatenato direttamente alla "
+                            "query SQL senza sanitizzazione né utilizzo di prepared statement. "
+                            "È stato possibile estrarre la versione del database (MySQL 8.0.27), "
+                            "il nome del database corrente ('webapp_db'), la lista completa delle "
+                            "tabelle e il contenuto della tabella 'users' con 15.000 record. "
+                            "La vulnerabilità permette anche l'esecuzione di comandi OS se "
+                            "l'utente DB ha privilegi FILE."
+                        ),
+                        "impact": (
+                            "SQL Injection di tipo critico che consente: estrazione completa del "
+                            "database (dump di tutte le tabelle), lettura/scrittura di file sul "
+                            "filesystem del server (con privilegi adeguati), potenziale esecuzione "
+                            "di comandi OS tramite xp_cmdshell (SQL Server) o UDF (MySQL), "
+                            "bypass dell'autenticazione e privilege escalation completa "
+                            "nell'applicazione. Classificata CVSS 9.8 (Critica)."
+                        ),
+                        "attack_scenario": (
+                            "Fase 1 — Rilevamento:\n"
+                            "GET /products?id=1' → Errore SQL rivelato nella risposta\n"
+                            "GET /products?id=1 AND 1=1 → Risposta normale (true)\n"
+                            "GET /products?id=1 AND 1=2 → Risposta vuota (false)\n\n"
+                            "Fase 2 — Estrazione dati:\n"
+                            "GET /products?id=1 AND SUBSTRING(password,1,1)='a' → enumerazione carattere per carattere\n\n"
+                            "Fase 3 — Automazione con SQLMap:\n"
+                            "sqlmap -u 'http://target/products?id=1' --dbs --dump -T users --batch\n"
+                            "→ Dump completo: 15.000 utenti con email e password hash MD5 non salate"
+                        ),
+                        "recommendation": (
+                            "1. IMMEDIATO: Utilizzare esclusivamente prepared statement / "
+                            "query parametrizzate in tutto il codice di accesso al database:\n"
+                            "   Python: cursor.execute('SELECT * FROM products WHERE id = %s', (id,))\n"
+                            "   Java: PreparedStatement ps = conn.prepareStatement('SELECT * FROM products WHERE id = ?')\n"
+                            "2. Implementare un ORM (SQLAlchemy, Hibernate, ActiveRecord) che "
+                            "gestisca automaticamente l'escaping degli input.\n"
+                            "3. Applicare il principio del minimo privilegio: l'utente DB deve "
+                            "avere solo i permessi necessari (SELECT, INSERT, UPDATE — no FILE, SUPER).\n"
+                            "4. Abilitare un WAF con regole SQL injection (ModSecurity CRS).\n"
+                            "5. Validare e sanitizzare tutti gli input utente lato server "
+                            "(whitelist dei tipi attesi: int, string con lunghezza massima).\n"
+                            "6. Disabilitare la visualizzazione di errori SQL nelle risposte HTTP."
+                        ),
+                        "evidence": (
+                            "GET /products?id=1 AND 1=1 → 200 OK (10 prodotti)\n"
+                            "GET /products?id=1 AND 1=2 → 200 OK (0 prodotti)\n"
+                            "Payload: id=1 AND EXTRACTVALUE(1,CONCAT(0x7e,(SELECT version())))"
+                        ),
+                        "affected_component": "Endpoint /products — parametro GET 'id'",
+                        "path": "/products",
+                        "parameter": "id",
                         "cwe": ["CWE-89"],
-                        "tags": ["owasp-a03", "sql-injection"],
-                    }
+                        "cvss_score": 9.8,
+                        "cvss_metrics": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+                        "tags": ["owasp-a03", "sql-injection", "injection"],
+                        "references": [
+                            "https://owasp.org/Top10/A03_2021-Injection/",
+                            "https://cwe.mitre.org/data/definitions/89.html",
+                            "https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html",
+                            "https://sqlmap.org/",
+                        ],
+                    },
                 ],
             }
 

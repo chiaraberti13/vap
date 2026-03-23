@@ -86,11 +86,104 @@ class WhatWebScanner:
                 "status": "simulated",
                 "findings": [
                     {
-                        "title": "Tecnologia web identificata",
-                        "severity": "info",
-                        "description": "Simulazione: stack tecnologico rilevato.",
-                        "recommendation": "Aggiornare componenti e ridurre banner.",
-                    }
+                        "tool": "whatweb",
+                        "title": "CMS WordPress 5.8.1 rilevato — Versione con vulnerabilità note",
+                        "severity": "medium",
+                        "description": (
+                            "WhatWeb ha identificato l'utilizzo di WordPress versione 5.8.1, "
+                            "una versione che presenta diverse vulnerabilità documentate nei "
+                            "database CVE pubblici. Tra le più critiche: CVE-2022-21661 "
+                            "(SQL injection via WP_Query) e CVE-2022-21664 (SQL injection "
+                            "nel core). L'identificazione della versione esatta è resa "
+                            "possibile dal meta tag 'generator' e dai path dei file statici "
+                            "(wp-includes/css/dist/block-library/style.min.css?ver=5.8.1). "
+                            "Il fingerprinting include anche plugin attivi: WooCommerce 5.6.0 "
+                            "e Contact Form 7 5.4.1, entrambi con CVE note."
+                        ),
+                        "impact": (
+                            "Le vulnerabilità di SQL injection nel core di WordPress possono "
+                            "portare all'estrazione non autorizzata del database (username, "
+                            "password hash, contenuti privati, dati di pagamento se presente "
+                            "WooCommerce). I plugin vulnerabili amplificano ulteriormente la "
+                            "superficie di attacco con possibili scenari di Remote Code Execution "
+                            "e compromissione completa del server."
+                        ),
+                        "attack_scenario": (
+                            "1. L'attaccante legge l'header/meta 'generator: WordPress 5.8.1'.\n"
+                            "2. Ricerca su WPScan/NVD le CVE per questa versione specifica.\n"
+                            "3. Sfrutta CVE-2022-21661 inviando una query SQL malevola via "
+                            "parametro 'tax_query' nella REST API.\n"
+                            "4. Estrae la tabella wp_users con username e password hash.\n"
+                            "5. Esegue un attacco dictionary offline sugli hash MD5 non salati."
+                        ),
+                        "recommendation": (
+                            "1. Aggiornare WordPress all'ultima versione stabile immediatamente "
+                            "tramite il pannello di amministrazione o WP-CLI.\n"
+                            "2. Aggiornare tutti i plugin e i temi all'ultima versione disponibile.\n"
+                            "3. Rimuovere il meta tag 'generator' tramite functions.php: "
+                            "remove_action('wp_head', 'wp_generator').\n"
+                            "4. Implementare un WAF specifico per WordPress (Wordfence, Sucuri).\n"
+                            "5. Limitare l'accesso a wp-admin e wp-login.php tramite allowlist IP.\n"
+                            "6. Abilitare autenticazione a due fattori per tutti gli account admin."
+                        ),
+                        "evidence": "<meta name=\"generator\" content=\"WordPress 5.8.1\">",
+                        "affected_component": "CMS WordPress 5.8.1 + Plugin WooCommerce 5.6.0",
+                        "cve": ["CVE-2022-21661", "CVE-2022-21664"],
+                        "cwe": ["CWE-89", "CWE-1104"],
+                        "cvss_score": 8.8,
+                        "tags": ["owasp-a06", "vulnerable-component", "cms"],
+                        "references": [
+                            "https://nvd.nist.gov/vuln/detail/CVE-2022-21661",
+                            "https://owasp.org/Top10/A06_2021-Vulnerable_and_Outdated_Components/",
+                            "https://wordpress.org/news/category/security/",
+                        ],
+                    },
+                    {
+                        "tool": "whatweb",
+                        "title": "Header informativi esposti — Stack tecnologico rilevabile",
+                        "severity": "low",
+                        "description": (
+                            "Gli header HTTP di risposta espongono dettagli sul server applicativo: "
+                            "'X-Powered-By: PHP/7.4.3', 'X-Generator: Drupal 9 (https://www.drupal.org)', "
+                            "'X-AspNet-Version: 4.0.30319'. Queste informazioni permettono a un "
+                            "attaccante di identificare con precisione lo stack tecnologico e "
+                            "selezionare exploit mirati per le versioni specifiche rilevate. "
+                            "PHP 7.4.3 ha raggiunto End-of-Life nel novembre 2022 e non riceve "
+                            "più aggiornamenti di sicurezza."
+                        ),
+                        "impact": (
+                            "L'esposizione della versione PHP facilita la ricerca di vulnerabilità "
+                            "specifiche (PHP 7.4.x presenta CVE-2021-21707, CVE-2022-31625). "
+                            "Una versione EOL non riceve patch di sicurezza, esponendo "
+                            "l'applicazione a exploit già pubblicamente disponibili senza "
+                            "possibilità di correzione dal vendor."
+                        ),
+                        "attack_scenario": (
+                            "1. L'attaccante analizza gli header HTTP della risposta.\n"
+                            "2. Identifica PHP/7.4.3 dall'header X-Powered-By.\n"
+                            "3. Verifica lo stato EOL su endoflife.date/php.\n"
+                            "4. Ricerca exploit per CVE-2022-31625 (heap buffer overflow in PHP).\n"
+                            "5. Utilizza l'exploit per eseguire codice arbitrario sul server."
+                        ),
+                        "recommendation": (
+                            "1. Rimuovere l'header X-Powered-By: aggiungere 'expose_php = Off' "
+                            "nel php.ini.\n"
+                            "2. Aggiornare PHP a una versione supportata (≥8.1).\n"
+                            "3. Rimuovere gli header X-Generator e X-AspNet-Version tramite "
+                            "configurazione del web server.\n"
+                            "4. Implementare un piano di aggiornamento regolare per tutte "
+                            "le componenti del server."
+                        ),
+                        "evidence": "X-Powered-By: PHP/7.4.3\nX-Generator: WordPress 5.8.1",
+                        "affected_component": "HTTP Response Headers — PHP 7.4.3 (EOL)",
+                        "cwe": ["CWE-200", "CWE-1104"],
+                        "cvss_score": 3.1,
+                        "tags": ["owasp-a05", "information-disclosure", "outdated-component"],
+                        "references": [
+                            "https://cwe.mitre.org/data/definitions/200.html",
+                            "https://www.php.net/eol.php",
+                        ],
+                    },
                 ],
             }
 
