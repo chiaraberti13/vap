@@ -7,7 +7,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Generator
 
-from sqlalchemy import Column, DateTime, Index, Integer, String, Text, create_engine, event
+from sqlalchemy import Column, DateTime, Float, Index, Integer, String, Text, create_engine, event, inspect, text
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
 
 from config import settings
@@ -80,6 +80,13 @@ class Scan(Base):
     notifications_json = Column(Text, nullable=True)
     data_subject_id = Column(String(64), nullable=True)
     data_classification = Column(String(40), nullable=False, default="internal")
+    # B9 – scan stats & redirect tracking
+    tests_performed = Column(Integer, nullable=True)
+    urls_spidered = Column(Integer, nullable=True)
+    injection_points = Column(Integer, nullable=True)
+    http_requests_total = Column(Integer, nullable=True)
+    avg_response_time_ms = Column(Float, nullable=True)
+    redirect_from = Column(String(512), nullable=True)
 
 
 class ConsentRecord(Base):
@@ -116,8 +123,29 @@ class AuditEvent(Base):
     metadata_json = Column(Text, nullable=True)
 
 
+_B9_MIGRATIONS = [
+    ("tests_performed", "INTEGER"),
+    ("urls_spidered", "INTEGER"),
+    ("injection_points", "INTEGER"),
+    ("http_requests_total", "INTEGER"),
+    ("avg_response_time_ms", "REAL"),
+    ("redirect_from", "VARCHAR(512)"),
+]
+
+
+def _migrate_scans_table(conn) -> None:
+    """Add B9 columns to an existing scans table (idempotent)."""
+    inspector = inspect(conn)
+    existing = {col["name"] for col in inspector.get_columns("scans")}
+    for col_name, col_type in _B9_MIGRATIONS:
+        if col_name not in existing:
+            conn.execute(text(f"ALTER TABLE scans ADD COLUMN {col_name} {col_type}"))
+
+
 def init_db() -> None:
     Base.metadata.create_all(bind=engine)
+    with engine.begin() as conn:
+        _migrate_scans_table(conn)
 
 
 def get_db() -> Generator[Session, None, None]:
