@@ -42,8 +42,6 @@ Analisi comparativa tra i PDF di riferimento (stile Pentest Tools) e il report a
 - [ ] **B7 – Campo "found_by" nei finding**: ogni scanner popola `found_by` nel finding dict
   - es. "Nikto – Passive Detection", "Nuclei – Active Testing"
 - [ ] **B8 – Campo "method" e "parameters"**: i finding includono metodo HTTP e parametri usati nell'evidence dove applicabile
-- [ ] **B9 – Database schema update**: aggiungere colonne a `Scan`:
-  - `tests_performed`, `urls_spidered`, `injection_points`, `http_requests_total`, `avg_response_time_ms`, `redirect_from`
 - [ ] **B10 – Passaggio metadata al report generator**: `generate_report()` riceve le nuove stats per le sezioni A15/A16/A17
 
 ---
@@ -141,11 +139,10 @@ Analisi comparativa tra i PDF di riferimento (stile Pentest Tools) e il report a
 
 ## Ordine di implementazione consigliato
 
-1. **B9** → DB schema (base per tutto il resto)
-2. **B1–B8** → process tracking (redirect, stats, found_by)
-3. **A1–A18** → tutti i miglioramenti del report PDF
-4. **D1–D5** → enrichment OWASP 2025, EPSS, CISA KEV
-5. **C1** → WPScan (priorità massima tra i nuovi scanner)
-6. **C2–C5** → wafw00f, testssl, theHarvester, Arjun
-7. **C6–C9** → DalFox, httpx, Katana, NoSQLMap
-8. **E1–E4** → scan types e configurazione
+1. **B1–B8** → process tracking (redirect, stats, found_by)
+2. **A1–A18** → tutti i miglioramenti del report PDF
+3. **D1–D5** → enrichment OWASP 2025, EPSS, CISA KEV
+4. **C1** → WPScan (priorità massima tra i nuovi scanner)
+5. **C2–C5** → wafw00f, testssl, theHarvester, Arjun
+6. **C6–C9** → DalFox, httpx, Katana, NoSQLMap
+7. **E1–E4** → scan types e configurazione
