@@ -34,6 +34,7 @@ from scanners import (
     CommixScanner,
     AcunetixScanner,
     NessusScanner,
+    WpscanScanner,
 )
 
 
@@ -60,8 +61,9 @@ SCANNERS_MAP = {
     "commix": CommixScanner,
     "acunetix": AcunetixScanner,
     "nessus": NessusScanner,
+    "wpscan": WpscanScanner,
 }
-SCAN_TYPE_CHOICES = ["full", *SCANNERS_MAP.keys()]
+SCAN_TYPE_CHOICES = ["full", "wordpress", *SCANNERS_MAP.keys()]
 
 @dataclass
 class ScanResult:
@@ -309,6 +311,8 @@ def get_scanner_classes(scan_type: str) -> List[type]:
     scan_type = scan_type.lower().strip()
     if scan_type == "full":
         return list(SCANNERS_MAP.values())
+    if scan_type == "wordpress":
+        return [WpscanScanner]
     if scan_type in SCANNERS_MAP:
         return [SCANNERS_MAP[scan_type]]
     raise ScanValidationError("Tipo di scansione non supportato.")

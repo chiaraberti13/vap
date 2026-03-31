@@ -141,6 +141,8 @@ class Settings:
         "VAP_NESSUS_VULNERABILITIES_ENDPOINT", "/vulnerabilities"
     )
     nessus_timeout_seconds: int = int(os.getenv("VAP_NESSUS_TIMEOUT", "20"))
+    wpscan_api_token: str = os.getenv("VAP_WPSCAN_API_TOKEN", "")
+    wpscan_enumerate: str = os.getenv("VAP_WPSCAN_ENUMERATE", "vp,vt,u,t,cb,dbe")
     nvd_api_base_url: str = os.getenv("VAP_NVD_API_BASE_URL", "https://services.nvd.nist.gov/rest/json/cves/2.0")
     nvd_api_key: str = os.getenv("VAP_NVD_API_KEY", "")
     nvd_timeout_seconds: int = int(os.getenv("VAP_NVD_TIMEOUT", "10"))

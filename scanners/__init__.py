@@ -18,6 +18,7 @@ from .wapiti_scanner import WapitiScanner
 from .commix_scanner import CommixScanner
 from .acunetix_scanner import AcunetixScanner
 from .nessus_scanner import NessusScanner
+from .wpscan_scanner import WpscanScanner
 
 __all__ = [
     "NucleiScanner",
@@ -34,4 +35,5 @@ __all__ = [
     "CommixScanner",
     "AcunetixScanner",
     "NessusScanner",
+    "WpscanScanner",
 ]

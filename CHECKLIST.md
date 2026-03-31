@@ -50,13 +50,6 @@ Analisi comparativa tra i PDF di riferimento (stile Pentest Tools) e il report a
 
 ### Priorità Alta
 
-- [ ] **C1 – WPScan** (`scanners/wpscan_scanner.py`)
-  - Scanner WordPress specifico
-  - Rileva: theme vulnerabilities (CVE), plugin vulnerabilities, wp-cron esposto, users enumeration, config backups, DB exports
-  - Tool: `wpscan --url {target} --format json`
-  - Richiede: `VAP_WPSCAN_API_TOKEN` in config
-  - Attivato per `scan_type=wordpress`
-
 - [ ] **C2 – wafw00f** (`scanners/wafw00f_scanner.py`)
   - WAF detection e fingerprinting
   - Output: tipo di WAF rilevato, bypass hints
