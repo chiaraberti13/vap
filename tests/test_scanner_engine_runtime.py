@@ -4,6 +4,7 @@ import json
 from types import SimpleNamespace
 
 import pytest
+from requests import RequestException
 
 import scanner_engine
 
@@ -49,7 +50,10 @@ def test_collect_findings_applies_max_limit(monkeypatch):
     findings = scanner_engine._collect_findings(
         [{"findings": [{"id": 1}, {"id": 2}]}, {"findings": [{"id": 3}]}]
     )
-    assert findings == [{"id": 1}, {"id": 2}]
+    assert findings == [
+        {"id": 1, "found_by": "Active Testing"},
+        {"id": 2, "found_by": "Active Testing"},
+    ]
 
 
 def test_run_scanner_success(monkeypatch):
@@ -124,6 +128,7 @@ def test_serialize_findings_and_cli_parser(monkeypatch, tmp_path):
             started_at=scanner_engine.datetime.now(scanner_engine.timezone.utc),
             completed_at=scanner_engine.datetime.now(scanner_engine.timezone.utc),
             findings=[{"ok": True}],
+            metadata={"tests_performed": 1},
         ),
     )
 
@@ -150,10 +155,16 @@ def test_run_scan_full_uses_validate_target(monkeypatch):
     )
     monkeypatch.setattr(scanner_engine, "validate_target", lambda target: f"ok-{target}")
     monkeypatch.setattr(scanner_engine, "enrich_findings", lambda findings: findings)
+    monkeypatch.setattr(
+        scanner_engine,
+        "detect_target_redirect",
+        lambda _target: {"validated_target": "ok-example.com", "redirect_from": "http://example.com"},
+    )
 
     result = scanner_engine.run_scan("example.com", "full")
     assert result.target == "ok-example.com"
     assert result.scan_type == "full"
+    assert result.metadata["redirect_from"] == "http://example.com"
 
 
 def test_validate_nmap_target_rejects_bad_range_octet():
@@ -164,3 +175,31 @@ def test_validate_nmap_target_rejects_bad_range_octet():
 def test_validate_nmap_target_rejects_bad_cidr():
     with pytest.raises(scanner_engine.ScanValidationError):
         scanner_engine.validate_nmap_target("10.0.0.0/99")
+
+
+def test_compute_scan_stats_collects_counters():
+    results = [
+        {"findings": [{"id": 1}], "tests_performed": 5, "http_requests_total": 9, "avg_response_time_ms": 100},
+        {"findings": [{"id": 2}], "http_requests_total": 3, "avg_response_time_ms": 50},
+    ]
+    findings = [
+        {"evidence_url": "https://example.com/a", "parameters": ["q"], "method": "GET"},
+        {"affected_url": "https://example.com/b", "parameters": {"id": "1"}},
+    ]
+    stats = scanner_engine._compute_scan_stats(results, findings)
+    assert stats["tests_performed"] == 6
+    assert stats["urls_spidered"] == 2
+    assert stats["injection_points"] == 2
+    assert stats["http_requests_total"] == 12
+    assert stats["avg_response_time_ms"] == 75.0
+
+
+def test_detect_target_redirect_handles_request_exception(monkeypatch):
+    monkeypatch.setattr(
+        scanner_engine.requests,
+        "get",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(RequestException("no network")),
+    )
+    result = scanner_engine.detect_target_redirect("example.com")
+    assert result["validated_target"] == "example.com"
+    assert result["redirect_from"] == ""

@@ -14,6 +14,7 @@ from typing import Any, Dict, List
 from urllib.parse import urlparse
 
 import bleach
+import requests
 import validators
 
 from config import settings
@@ -70,6 +71,7 @@ class ScanResult:
     started_at: datetime
     completed_at: datetime
     findings: List[Dict[str, Any]]
+    metadata: Dict[str, Any]
 
 
 class ScanValidationError(ValueError):
@@ -97,6 +99,39 @@ def validate_target(target: str) -> str:
             raise ScanValidationError("IP non valido.") from exc
 
     return target
+
+
+def detect_target_redirect(target: str) -> Dict[str, str]:
+    """Detect HTTP->HTTPS redirect and keep traceability metadata."""
+    parsed = urlparse(target if target.startswith("http") else f"http://{target}")
+    if not parsed.hostname:
+        return {"validated_target": target}
+
+    original_target = target
+    normalized_target = target if target.startswith("http") else f"http://{target}"
+    redirect_from = ""
+
+    try:
+        response = requests.get(
+            normalized_target,
+            timeout=5,
+            allow_redirects=True,
+            headers={"User-Agent": "VAP-Redirect-Detector/1.0"},
+        )
+        final_url = response.url or normalized_target
+        if (
+            normalized_target.startswith("http://")
+            and final_url.startswith("https://")
+            and final_url != normalized_target
+        ):
+            redirect_from = normalized_target
+            validated_target = final_url
+        else:
+            validated_target = original_target
+    except requests.RequestException:
+        validated_target = original_target
+
+    return {"validated_target": validated_target, "redirect_from": redirect_from}
 
 
 def validate_nmap_target(target: str) -> str:
@@ -183,8 +218,57 @@ def _collect_findings(results: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
             if tool_name and not finding.get("tool"):
                 finding = dict(finding)
                 finding["tool"] = tool_name
+            finding.setdefault("found_by", f"{tool_name.title()} – Active Testing" if tool_name else "Active Testing")
             findings.append(finding)
     return findings[: settings.max_findings]
+
+
+def _compute_scan_stats(results: List[Dict[str, Any]], findings: List[Dict[str, Any]]) -> Dict[str, Any]:
+    tests_performed = 0
+    urls: set[str] = set()
+    injection_points = 0
+    http_requests_total = 0
+    response_times: List[float] = []
+
+    for result in results:
+        result_findings = result.get("findings", [])
+        tests_performed += int(result.get("tests_performed") or len(result_findings))
+        http_requests_total += int(result.get("http_requests_total") or 0)
+
+        avg_ms = result.get("avg_response_time_ms")
+        if isinstance(avg_ms, (int, float)) and avg_ms >= 0:
+            response_times.append(float(avg_ms))
+
+    for finding in findings:
+        evidence_url = finding.get("evidence_url") or finding.get("url") or finding.get("affected_url")
+        if isinstance(evidence_url, str) and evidence_url:
+            urls.add(evidence_url)
+
+        method = finding.get("method")
+        parameters = finding.get("parameters")
+        if method and not isinstance(method, str):
+            finding["method"] = str(method)
+        if parameters and not isinstance(parameters, (list, dict, str)):
+            finding["parameters"] = str(parameters)
+
+        if isinstance(parameters, list):
+            injection_points += len(parameters)
+        elif isinstance(parameters, dict):
+            injection_points += len(parameters.keys())
+        elif isinstance(parameters, str) and parameters.strip():
+            injection_points += 1
+
+    avg_response_time_ms = round(sum(response_times) / len(response_times), 2) if response_times else None
+    if not http_requests_total:
+        http_requests_total = tests_performed
+
+    return {
+        "tests_performed": tests_performed,
+        "urls_spidered": len(urls),
+        "injection_points": injection_points,
+        "http_requests_total": http_requests_total,
+        "avg_response_time_ms": avg_response_time_ms,
+    }
 
 
 def _scanner_label(scanner_cls: type) -> str:
@@ -243,8 +327,12 @@ def run_scan(target: str, scan_type: str) -> ScanResult:
 
     if scan_type == "nmap":
         validated_target = validate_nmap_target(target)
+        redirect_from = ""
     else:
         validated_target = validate_target(target)
+        redirect_data = detect_target_redirect(validated_target)
+        validated_target = redirect_data["validated_target"]
+        redirect_from = redirect_data["redirect_from"]
 
     started_at = datetime.now(timezone.utc)
     results: List[Dict[str, Any]] = []
@@ -260,6 +348,8 @@ def run_scan(target: str, scan_type: str) -> ScanResult:
 
     findings = _collect_findings(results)
     findings = enrich_findings(findings)
+    metadata = _compute_scan_stats(results, findings)
+    metadata["redirect_from"] = redirect_from
     completed_at = datetime.now(timezone.utc)
 
     return ScanResult(
@@ -269,6 +359,7 @@ def run_scan(target: str, scan_type: str) -> ScanResult:
         started_at=started_at,
         completed_at=completed_at,
         findings=findings,
+        metadata=metadata,
     )
 
 
@@ -309,6 +400,7 @@ def main() -> int:
         "started_at": scan_result.started_at.isoformat(),
         "completed_at": scan_result.completed_at.isoformat(),
         "findings": scan_result.findings,
+        "metadata": scan_result.metadata,
     }
     serialized = json.dumps(payload, ensure_ascii=False, indent=2)
 
