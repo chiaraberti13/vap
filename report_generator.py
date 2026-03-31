@@ -23,7 +23,7 @@ from reportlab.platypus import (
     Table,
     TableStyle,
 )
-from reportlab.graphics.shapes import Drawing, Rect, String
+from reportlab.graphics.shapes import Drawing
 from reportlab.graphics.charts.barcharts import VerticalBarChart
 from reportlab.graphics.charts.piecharts import Pie
 
@@ -56,7 +56,7 @@ SEVERITY_BG: Dict[str, colors.Color] = {
 
 SEVERITY_ORDER = ("critical", "high", "medium", "low", "info")
 
-OWASP_TOP10 = [
+OWASP_TOP10_2021 = [
     "A01:2021 - Broken Access Control",
     "A02:2021 - Cryptographic Failures",
     "A03:2021 - Injection",
@@ -67,6 +67,30 @@ OWASP_TOP10 = [
     "A08:2021 - Software and Data Integrity Failures",
     "A09:2021 - Security Logging and Monitoring Failures",
     "A10:2021 - Server-Side Request Forgery",
+]
+OWASP_TOP10_2017 = [
+    "A1:2017 - Injection",
+    "A2:2017 - Broken Authentication",
+    "A3:2017 - Sensitive Data Exposure",
+    "A4:2017 - XML External Entities (XXE)",
+    "A5:2017 - Broken Access Control",
+    "A6:2017 - Security Misconfiguration",
+    "A7:2017 - Cross-Site Scripting (XSS)",
+    "A8:2017 - Insecure Deserialization",
+    "A9:2017 - Using Components with Known Vulnerabilities",
+    "A10:2017 - Insufficient Logging & Monitoring",
+]
+OWASP_TOP10_2025 = [
+    "A01:2025 - Broken Access Control",
+    "A02:2025 - Cryptographic Failures",
+    "A03:2025 - Injection",
+    "A04:2025 - Insecure Design",
+    "A05:2025 - Security Misconfiguration",
+    "A06:2025 - Vulnerable Components",
+    "A07:2025 - Identification and Authentication Failures",
+    "A08:2025 - Software and Data Integrity Failures",
+    "A09:2025 - Security Logging and Monitoring Failures",
+    "A10:2025 - Server-Side Request Forgery",
 ]
 
 PAGE_W, PAGE_H = A4
@@ -106,13 +130,17 @@ class ReportDocTemplate(BaseDocTemplate):
         canvas.setFillColor(BRAND_DARK)
         canvas.rect(0, h - bar_h, w, bar_h, stroke=0, fill=1)
 
-        # VAP icon badge
+        # VAP icon badge (restyling)
         ix, iy = L_MARGIN, h - bar_h + 0.22 * cm
         canvas.setFillColor(BRAND_BLUE)
         canvas.roundRect(ix, iy, 0.9 * cm, 0.9 * cm, 3, stroke=0, fill=1)
+        canvas.setStrokeColor(colors.white)
+        canvas.setLineWidth(1.0)
+        canvas.line(ix + 0.2 * cm, iy + 0.65 * cm, ix + 0.45 * cm, iy + 0.35 * cm)
+        canvas.line(ix + 0.45 * cm, iy + 0.35 * cm, ix + 0.7 * cm, iy + 0.7 * cm)
         canvas.setFont("Helvetica-Bold", 7)
         canvas.setFillColor(colors.white)
-        canvas.drawCentredString(ix + 0.45 * cm, iy + 0.3 * cm, "VAP")
+        canvas.drawCentredString(ix + 0.45 * cm, iy + 0.08 * cm, "VAP")
 
         canvas.setFont("Helvetica-Bold", 10)
         canvas.setFillColor(colors.white)
@@ -228,6 +256,7 @@ def _build_summary(
     start_time: Optional[datetime],
     end_time: Optional[datetime],
     total_findings: int,
+    tests_performed: Optional[int],
     ss: Any,
 ) -> Table:
     """Three-column summary card: risk level | risk ratings | scan info."""
@@ -260,18 +289,17 @@ def _build_summary(
     rating_rows: List[List[Any]] = [
         [Paragraph("Risk ratings:", ss["BodyMuted"]), Paragraph("", ss["BodyMuted"])],
     ]
+    max_count = max([counts.get(s, 0) for s in SEVERITY_ORDER] + [1])
     for sev in SEVERITY_ORDER:
         cnt = counts.get(sev, 0)
         c = SEVERITY_COLORS[sev]
-        dot = Table([[""]], colWidths=[0.35 * cm], rowHeights=[0.35 * cm])
-        dot.setStyle(TableStyle([
-            ("BACKGROUND",    (0, 0), (0, 0), c),
-            ("TOPPADDING",    (0, 0), (-1, -1), 0),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
-            ("LEFTPADDING",   (0, 0), (-1, -1), 0),
-            ("RIGHTPADDING",  (0, 0), (-1, -1), 0),
-        ]))
-        row_inner = Table([[dot, Paragraph(sev.title(), ss["Small"])]], colWidths=[0.55 * cm, 2.5 * cm])
+        bar_width = max(0.5, (cnt / max_count) * 2.5)
+        bar_fill = Table([[""]], colWidths=[bar_width * cm], rowHeights=[0.2 * cm])
+        bar_fill.setStyle(TableStyle([("BACKGROUND", (0, 0), (0, 0), c)]))
+        row_inner = Table(
+            [[Paragraph(sev.title(), ss["Small"]), bar_fill]],
+            colWidths=[1.0 * cm, 2.5 * cm],
+        )
         row_inner.setStyle(TableStyle([
             ("VALIGN",        (0, 0), (-1, -1), "MIDDLE"),
             ("TOPPADDING",    (0, 0), (-1, -1), 0),
@@ -318,6 +346,7 @@ def _build_summary(
         ("Scan duration:", duration_str),
         ("Scan type:",     scan_type),
         ("Findings:",      str(total_findings)),
+        ("Tests performed:", str(tests_performed) if tests_performed is not None else "—"),
         ("Scan status:",   "Completed"),
     ]
     info_data: List[List[Any]] = [
@@ -387,6 +416,17 @@ def _build_finding_card(finding: Dict[str, Any], ss: Any) -> List[Any]:
     owasp_tags = [str(t) for t in tags if "owasp" in str(t).lower()]
     cvss_score = finding.get("cvss_score")
     cve_list  = list(finding.get("cve") or [])
+    found_by = html_escape(str(finding.get("found_by", "") or ""))
+    method = html_escape(str(finding.get("method", "") or ""))
+    parameters = finding.get("parameters")
+    parameters_str = ", ".join(str(p) for p in parameters) if isinstance(parameters, list) else str(parameters or "")
+    parameters_str = html_escape(parameters_str)
+    owasp_2017 = finding.get("owasp_2017")
+    owasp_2021 = finding.get("owasp_2021")
+    owasp_2025 = finding.get("owasp_2025")
+    epss_score = finding.get("epss_score")
+    epss_percentile = finding.get("epss_percentile")
+    cisa_kev = finding.get("cisa_kev")
 
     STRIP_W   = 0.35 * cm
     INNER_W   = CONTENT_W - STRIP_W
@@ -397,7 +437,7 @@ def _build_finding_card(finding: Dict[str, Any], ss: Any) -> List[Any]:
     sev_badge = _badge(sev.upper(), sev_color, ss, col_w=2.0 * cm)
 
     title_left = Paragraph(
-        f'<font size="11" color="{sev_hex}">■</font> '
+        f'<font size="11" color="{sev_hex}">⚑</font> '
         f'<b><font color="#2563eb">{title_str}</font></b>',
         ss["FindingTitle"],
     )
@@ -432,11 +472,15 @@ def _build_finding_card(finding: Dict[str, Any], ss: Any) -> List[Any]:
         ev_table = Table(
             [
                 [Paragraph("URL", ss["TableHeader"]),
+                 Paragraph("Method", ss["TableHeader"]),
+                 Paragraph("Parameters", ss["TableHeader"]),
                  Paragraph("Evidence", ss["TableHeader"])],
                 [Paragraph(url_str or "—", ss["TableCell"]),
+                 Paragraph(method or "—", ss["TableCell"]),
+                 Paragraph(parameters_str or "—", ss["TableCell"]),
                  Paragraph(evidence or "—", ss["TableCell"])],
             ],
-            colWidths=[INNER_W * 0.38 - 16, INNER_W * 0.62 - 16],
+            colWidths=[INNER_W * 0.28 - 16, INNER_W * 0.12, INNER_W * 0.2, INNER_W * 0.4 - 16],
         )
         ev_table.setStyle(TableStyle([
             ("BACKGROUND",    (0, 0), (-1, 0), SECTION_BG),
@@ -464,6 +508,9 @@ def _build_finding_card(finding: Dict[str, Any], ss: Any) -> List[Any]:
     if rec:
         body_rows.append([Paragraph("<b>Recommendation:</b>", ss["SmallBold"])])
         body_rows.append([Paragraph(rec, ss["Small"])])
+    if found_by:
+        body_rows.append([Paragraph("<b>Found by:</b>", ss["SmallBold"])])
+        body_rows.append([Paragraph(found_by, ss["Small"])])
 
     if references:
         refs_joined = "<br/>".join(
@@ -476,20 +523,79 @@ def _build_finding_card(finding: Dict[str, Any], ss: Any) -> List[Any]:
     # Classification
     classify_lines: List[str] = []
     if cve_list:
-        classify_lines.append("CVE: " + " | ".join(str(c) for c in cve_list[:3]))
+        classify_lines.append("CVE: " + " | ".join(str(c) for c in cve_list[:5]))
     if cwe_list:
         classify_lines.append("CWE: " + " | ".join(str(c) for c in cwe_list[:3]))
-    if owasp_tags:
-        classify_lines.append(
-            "OWASP Top 10: " + " | ".join(str(t) for t in owasp_tags[:3])
-        )
+    if owasp_2017:
+        classify_lines.append(f"OWASP 2017: {owasp_2017}")
+    if owasp_2021 or owasp_tags:
+        classify_lines.append(f"OWASP 2021: {owasp_2021 or ' | '.join(str(t) for t in owasp_tags[:3])}")
+    if owasp_2025:
+        classify_lines.append(f"OWASP 2025: {owasp_2025}")
+    if cisa_kev is not None:
+        classify_lines.append(f"CISA KEV: {bool(cisa_kev)}")
     if cvss_score is not None:
         classify_lines.append(f"CVSS v3.1 Score: {cvss_score}")
+    if epss_score is not None:
+        classify_lines.append(f"EPSS score: {epss_score}")
+    if epss_percentile is not None:
+        classify_lines.append(f"EPSS percentile: {epss_percentile}")
 
     if classify_lines:
         body_rows.append([Paragraph("<b>Classification:</b>", ss["SmallBold"])])
         for line in classify_lines:
             body_rows.append([Paragraph(html_escape(line), ss["Small"])])
+
+    if cve_list:
+        cve_rows = [[
+            Paragraph("CVE", ss["TableHeader"]),
+            Paragraph("CVSS", ss["TableHeader"]),
+            Paragraph("EPSS score", ss["TableHeader"]),
+            Paragraph("EPSS percentile", ss["TableHeader"]),
+            Paragraph("Summary", ss["TableHeader"]),
+        ]]
+        cve_details = finding.get("cve_details") or {}
+        for cve in cve_list[:8]:
+            details = cve_details.get(str(cve), {})
+            summary = str(details.get("summary", "—"))
+            fixed_in = details.get("fixed_in_version")
+            if fixed_in:
+                summary += f" | Fixed in version: {fixed_in}"
+            cve_rows.append([
+                Paragraph(html_escape(str(cve)), ss["TableCell"]),
+                Paragraph(html_escape(str(details.get("cvss", cvss_score or "—"))), ss["TableCell"]),
+                Paragraph(html_escape(str(details.get("epss_score", epss_score or "—"))), ss["TableCell"]),
+                Paragraph(html_escape(str(details.get("epss_percentile", epss_percentile or "—"))), ss["TableCell"]),
+                Paragraph(html_escape(summary), ss["TableCell"]),
+            ])
+        cve_table = Table(cve_rows, colWidths=[2.4 * cm, 1.2 * cm, 1.8 * cm, 2.0 * cm, INNER_W - 7.4 * cm - 16])
+        cve_table.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), SECTION_BG),
+            ("BOX", (0, 0), (-1, -1), 0.5, BORDER_COLOR),
+            ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, ROW_ALT]),
+        ]))
+        body_rows.append([Spacer(1, 4)])
+        body_rows.append([Paragraph("<b>CVE details:</b>", ss["SmallBold"])])
+        body_rows.append([cve_table])
+
+    technologies = finding.get("technologies") or []
+    if technologies:
+        tech_rows = [[Paragraph("Software", ss["TableHeader"]), Paragraph("Version", ss["TableHeader"]), Paragraph("Category", ss["TableHeader"])]]
+        for tech in technologies[:20]:
+            tech_rows.append([
+                Paragraph(html_escape(str(tech.get("software", "—"))), ss["TableCell"]),
+                Paragraph(html_escape(str(tech.get("version", "—"))), ss["TableCell"]),
+                Paragraph(html_escape(str(tech.get("category", "—"))), ss["TableCell"]),
+            ])
+        tech_table = Table(tech_rows, colWidths=[(INNER_W - 16) * 0.4, (INNER_W - 16) * 0.2, (INNER_W - 16) * 0.4])
+        tech_table.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), SECTION_BG),
+            ("BOX", (0, 0), (-1, -1), 0.5, BORDER_COLOR),
+            ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, ROW_ALT]),
+        ]))
+        body_rows.append([Spacer(1, 4)])
+        body_rows.append([Paragraph("<b>Detected technologies:</b>", ss["SmallBold"])])
+        body_rows.append([tech_table])
 
     body_rows.append([Spacer(1, 4)])
 
@@ -562,9 +668,13 @@ def _build_charts(counts: Counter) -> Drawing:
 
 
 # ── OWASP mapping ─────────────────────────────────────────────────────────────
-def _map_owasp(findings: List[Dict[str, Any]]) -> Counter:
+def _map_owasp(findings: List[Dict[str, Any]], field_name: str = "owasp_2021") -> Counter:
     mapping: Counter = Counter()
     for finding in findings:
+        mapped_value = finding.get(field_name)
+        if mapped_value:
+            mapping[str(mapped_value)] += 1
+            continue
         tags = [str(t).lower() for t in (finding.get("tags") or []) if t]
         owasp_tag = next((t for t in tags if t.startswith("owasp")), "")
         if owasp_tag:
@@ -590,9 +700,16 @@ def generate_report(
     findings: List[Dict[str, Any]],
     start_time: Optional[datetime] = None,
     end_time: Optional[datetime] = None,
+    redirect_from: Optional[str] = None,
+    tests_performed: Optional[int] = None,
+    scan_parameters: Optional[Dict[str, Any]] = None,
+    scan_coverage: Optional[Dict[str, List[str]]] = None,
+    scan_stats: Optional[Dict[str, Any]] = None,
 ) -> Path:
     generated_at = datetime.now(timezone.utc)
-    report_name = f"scan_{scan_id}_{generated_at.strftime('%Y%m%d_%H%M%S')}.pdf"
+    safe_scan = "".join(ch if ch.isalnum() else "_" for ch in (scan_type or "scan")).strip("_")
+    safe_target = "".join(ch if ch.isalnum() else "_" for ch in (target or "target")).strip("_")
+    report_name = f"{safe_scan}-{safe_target}-{generated_at.strftime('%Y%m%d-%H%M')}.pdf"
     report_path = settings.reports_dir / report_name
 
     doc = ReportDocTemplate(str(report_path), target=target)
@@ -612,7 +729,12 @@ def generate_report(
 
     # ── Cover / title ──────────────────────────────────────────────────
     story.append(Spacer(1, 0.5 * cm))
-    story.append(Paragraph("Website Vulnerability Scanner Report", ss["ReportTitle"]))
+    title_by_scan = {
+        "wordpress": "WordPress Scanner with WPScan Report",
+        "light": "Light Website Vulnerability Scanner Report",
+        "deep": "Deep Website Vulnerability Scanner Report",
+    }
+    story.append(Paragraph(title_by_scan.get(str(scan_type).lower(), "Website Vulnerability Scanner Report"), ss["ReportTitle"]))
     story.append(Spacer(1, 6))
 
     # Target URL line
@@ -622,6 +744,33 @@ def generate_report(
             ss["TargetURL"],
         )
     )
+    if redirect_from:
+        story.append(
+            Paragraph(
+                f'<font color="#6b7280">Target added due to a redirect from {html_escape(redirect_from)}</font>',
+                ss["BodyMuted"],
+            )
+        )
+    scan_type_notes = {
+        "light": "Light scan did not check for SQLi, XSS, Command Injection, XXE and other deep active checks.",
+        "wordpress": "WordPress scan focuses on WP core/themes/plugins and may not fully cover custom application logic.",
+    }
+    note = scan_type_notes.get(str(scan_type).lower())
+    if note:
+        banner = Table(
+            [[Paragraph(f"<b>Scan type notice:</b> {html_escape(note)}", ss["Small"])]],
+            colWidths=[CONTENT_W],
+        )
+        banner.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#ffedd5")),
+            ("BOX", (0, 0), (-1, -1), 0.5, colors.HexColor("#fb923c")),
+            ("LEFTPADDING", (0, 0), (-1, -1), 8),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 8),
+            ("TOPPADDING", (0, 0), (-1, -1), 6),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+        ]))
+        story.append(Spacer(1, 6))
+        story.append(banner)
     story.append(Spacer(1, 4))
     story.append(
         Paragraph(
@@ -638,7 +787,7 @@ def generate_report(
     story.append(
         _build_summary(
             counts, risk_level, target, scan_type,
-            start_time, end_time, len(findings), ss,
+            start_time, end_time, len(findings), tests_performed, ss,
         )
     )
 
@@ -649,16 +798,22 @@ def generate_report(
         story.append(Spacer(1, 8))
 
     # ── OWASP mapping ──────────────────────────────────────────────────
-    owasp_counts = _map_owasp(findings)
-    if owasp_counts:
-        story.append(Paragraph("OWASP Top 10 Mapping", ss["SectionHeader"]))
+    owasp_sets = [
+        ("OWASP Top 10 Mapping (2021)", OWASP_TOP10_2021, "owasp_2021"),
+        ("OWASP Top 10 Mapping (2017)", OWASP_TOP10_2017, "owasp_2017"),
+        ("OWASP Top 10 Mapping (2025)", OWASP_TOP10_2025, "owasp_2025"),
+    ]
+    for section_title, owasp_categories, field_name in owasp_sets:
+        owasp_counts = _map_owasp(findings, field_name=field_name)
+        if not owasp_counts:
+            continue
+        story.append(Paragraph(section_title, ss["SectionHeader"]))
         owasp_rows = [
             [Paragraph("Category", ss["TableHeader"]),
              Paragraph("Count", ss["TableHeader"])],
         ]
-        for entry in OWASP_TOP10:
+        for entry in owasp_categories:
             cnt = owasp_counts.get(entry, 0)
-            row_bg = ROW_ALT if len(owasp_rows) % 2 == 0 else colors.white
             owasp_rows.append([
                 Paragraph(entry, ss["TableCell"]),
                 Paragraph(str(cnt), ss["TableCell"]),
@@ -696,6 +851,46 @@ def generate_report(
     else:
         for finding in sorted_findings:
             story.extend(_build_finding_card(finding, ss))
+
+    if scan_coverage:
+        story.append(PageBreak())
+        story.append(Paragraph("Scan coverage information", ss["SectionHeader"]))
+        for coverage_key, tests in scan_coverage.items():
+            story.append(Paragraph(f"<b>{html_escape(str(coverage_key))}</b>", ss["SmallBold"]))
+            for test_name in tests:
+                story.append(Paragraph(f"✓ {html_escape(str(test_name))}", ss["Small"]))
+
+    if scan_parameters:
+        story.append(Spacer(1, 8))
+        story.append(Paragraph("Scan parameters", ss["SectionHeader"]))
+        params_rows = [[Paragraph("Parameter", ss["TableHeader"]), Paragraph("Value", ss["TableHeader"])]]
+        for key, value in scan_parameters.items():
+            params_rows.append([Paragraph(html_escape(str(key)), ss["TableCell"]), Paragraph(html_escape(str(value)), ss["TableCell"])])
+        params_table = Table(params_rows, colWidths=[5.0 * cm, CONTENT_W - 5.0 * cm])
+        params_table.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), SECTION_BG),
+            ("BOX", (0, 0), (-1, -1), 0.5, BORDER_COLOR),
+        ]))
+        story.append(params_table)
+
+    if scan_stats:
+        story.append(Spacer(1, 8))
+        story.append(Paragraph("Scan stats", ss["SectionHeader"]))
+        stats_rows = [[Paragraph("Metric", ss["TableHeader"]), Paragraph("Value", ss["TableHeader"])]]
+        labels = {
+            "urls_spidered": "URLs spidered",
+            "unique_injection_points": "Unique injection points",
+            "total_http_requests": "Total HTTP requests",
+            "average_response_time": "Average response time",
+        }
+        for key, label in labels.items():
+            stats_rows.append([Paragraph(label, ss["TableCell"]), Paragraph(html_escape(str(scan_stats.get(key, "—"))), ss["TableCell"])])
+        stats_table = Table(stats_rows, colWidths=[6.0 * cm, CONTENT_W - 6.0 * cm])
+        stats_table.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), SECTION_BG),
+            ("BOX", (0, 0), (-1, -1), 0.5, BORDER_COLOR),
+        ]))
+        story.append(stats_table)
 
     doc.build(story)
     return report_path
