@@ -139,9 +139,8 @@ Analisi comparativa tra i PDF di riferimento (stile Pentest Tools) e il report a
 
 ## Ordine di implementazione consigliato
 
-1. **A1–A18** → tutti i miglioramenti del report PDF
-2. **D1–D5** → enrichment OWASP 2025, EPSS, CISA KEV
-3. **C1** → WPScan (priorità massima tra i nuovi scanner)
-4. **C2–C5** → wafw00f, testssl, theHarvester, Arjun
-5. **C6–C9** → DalFox, httpx, Katana, NoSQLMap
-6. **E1–E4** → scan types e configurazione
+1. **D1–D5** → enrichment OWASP 2025, EPSS, CISA KEV
+2. **C1** → WPScan (priorità massima tra i nuovi scanner)
+3. **C2–C5** → wafw00f, testssl, theHarvester, Arjun
+4. **C6–C9** → DalFox, httpx, Katana, NoSQLMap
+5. **E1–E4** → scan types e configurazione
