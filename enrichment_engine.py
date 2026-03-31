@@ -7,7 +7,7 @@ import json
 import re
 import shutil
 import subprocess
-from typing import Any, Dict, Iterable, List, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 import requests
 
@@ -325,6 +325,56 @@ KEYWORD_MITRE_MAPPING: List[Tuple[re.Pattern[str], Dict[str, Any]]] = [
     ),
 ]
 
+OWASP_2021_MAPPING: Dict[str, str] = {
+    "CWE-22": "A01:2021 - Broken Access Control",
+    "CWE-79": "A03:2021 - Injection",
+    "CWE-89": "A03:2021 - Injection",
+    "CWE-94": "A03:2021 - Injection",
+    "CWE-77": "A03:2021 - Injection",
+    "CWE-78": "A03:2021 - Injection",
+    "CWE-200": "A02:2021 - Cryptographic Failures",
+    "CWE-312": "A02:2021 - Cryptographic Failures",
+    "CWE-319": "A02:2021 - Cryptographic Failures",
+    "CWE-326": "A02:2021 - Cryptographic Failures",
+    "CWE-611": "A05:2021 - Security Misconfiguration",
+    "CWE-306": "A07:2021 - Identification and Authentication Failures",
+    "CWE-307": "A07:2021 - Identification and Authentication Failures",
+    "CWE-601": "A10:2021 - Server-Side Request Forgery",
+}
+
+OWASP_2017_MAPPING: Dict[str, str] = {
+    "CWE-89": "A1:2017 - Injection",
+    "CWE-77": "A1:2017 - Injection",
+    "CWE-78": "A1:2017 - Injection",
+    "CWE-79": "A7:2017 - Cross-Site Scripting (XSS)",
+    "CWE-200": "A3:2017 - Sensitive Data Exposure",
+    "CWE-312": "A3:2017 - Sensitive Data Exposure",
+    "CWE-319": "A3:2017 - Sensitive Data Exposure",
+    "CWE-611": "A4:2017 - XML External Entities (XXE)",
+    "CWE-22": "A5:2017 - Broken Access Control",
+    "CWE-284": "A5:2017 - Broken Access Control",
+    "CWE-285": "A5:2017 - Broken Access Control",
+    "CWE-306": "A2:2017 - Broken Authentication",
+    "CWE-307": "A2:2017 - Broken Authentication",
+}
+
+OWASP_2025_MAPPING: Dict[str, str] = {
+    "CWE-22": "A01:2025 - Broken Access Control",
+    "CWE-79": "A03:2025 - Injection",
+    "CWE-89": "A03:2025 - Injection",
+    "CWE-94": "A03:2025 - Injection",
+    "CWE-77": "A03:2025 - Injection",
+    "CWE-78": "A03:2025 - Injection",
+    "CWE-200": "A02:2025 - Cryptographic Failures",
+    "CWE-312": "A02:2025 - Cryptographic Failures",
+    "CWE-319": "A02:2025 - Cryptographic Failures",
+    "CWE-326": "A02:2025 - Cryptographic Failures",
+    "CWE-611": "A05:2025 - Security Misconfiguration",
+    "CWE-306": "A07:2025 - Identification and Authentication Failures",
+    "CWE-307": "A07:2025 - Identification and Authentication Failures",
+    "CWE-601": "A10:2025 - Server-Side Request Forgery",
+}
+
 
 @dataclass
 class EnrichmentSummary:
@@ -337,6 +387,7 @@ def enrich_findings(findings: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     summary = EnrichmentSummary()
 
     _apply_cve_enrichment(enriched, summary)
+    _apply_owasp_mapping(enriched)
     _apply_mitre_mapping(enriched)
     _apply_false_positive_model(enriched)
     _apply_correlation(enriched)
@@ -357,11 +408,14 @@ def _apply_cve_enrichment(findings: List[Dict[str, Any]], summary: EnrichmentSum
 
     nvd_payload = _fetch_nvd_metadata(cves)
     exploitdb_payload = _fetch_exploitdb_metadata(cves)
+    epss_payload = _fetch_epss_metadata(cves)
+    kev_catalog = _fetch_cisa_kev_catalog()
 
     for finding in findings:
         finding_cves = [cve for cve in finding.get("cve", []) if isinstance(cve, str)]
         nvd_items = [nvd_payload[cve] for cve in finding_cves if cve in nvd_payload]
         exploit_items = [exploitdb_payload[cve] for cve in finding_cves if cve in exploitdb_payload]
+        cve_details = []
 
         if nvd_items:
             summary.nvd_hits += 1
@@ -374,6 +428,38 @@ def _apply_cve_enrichment(findings: List[Dict[str, Any]], summary: EnrichmentSum
             finding["cve_verified"] = True
         elif finding_cves:
             finding["cve_verified"] = False
+
+        for cve in finding_cves:
+            nvd = nvd_payload.get(cve, {})
+            epss = epss_payload.get(cve, {})
+            kev = kev_catalog.get(cve, {})
+            detail: Dict[str, Any] = {"cve": cve}
+            if nvd:
+                detail.update(nvd)
+            if epss:
+                detail.update(epss)
+            if kev:
+                detail["cisa_kev"] = True
+                detail["cisa_kev_date_added"] = kev.get("dateAdded")
+                detail["cisa_kev_due_date"] = kev.get("dueDate")
+                detail["cisa_kev_known_ransomware"] = kev.get("knownRansomwareCampaignUse")
+            else:
+                detail["cisa_kev"] = False
+            cve_details.append(detail)
+
+        if cve_details:
+            finding["cve_details"] = cve_details
+            epss_scores = [float(item["epss_score"]) for item in cve_details if item.get("epss_score") is not None]
+            epss_percentiles = [
+                float(item["epss_percentile"])
+                for item in cve_details
+                if item.get("epss_percentile") is not None
+            ]
+            if epss_scores:
+                finding["epss_score"] = max(epss_scores)
+            if epss_percentiles:
+                finding["epss_percentile"] = max(epss_percentiles)
+            finding["cisa_kev"] = any(bool(item.get("cisa_kev")) for item in cve_details)
 
 
 def _extract_cves(findings: Iterable[Dict[str, Any]]) -> List[str]:
@@ -431,8 +517,98 @@ def _fetch_nvd_metadata(cves: List[str]) -> Dict[str, Dict[str, Any]]:
             "description": description,
             "cvss_score": cvss_score,
             "cvss_vector": cvss_vector,
+            "fixed_in_version": _extract_fixed_in_version(cve_item),
+            "references": _extract_nvd_references(cve_item),
             "source": "NVD",
         }
+    return results
+
+
+def _extract_fixed_in_version(cve_item: Dict[str, Any]) -> Optional[str]:
+    configurations = cve_item.get("configurations", []) if isinstance(cve_item, dict) else []
+    for config in configurations:
+        nodes = config.get("nodes", []) if isinstance(config, dict) else []
+        for node in nodes:
+            cpe_matches = node.get("cpeMatch", []) if isinstance(node, dict) else []
+            for match in cpe_matches:
+                if not isinstance(match, dict):
+                    continue
+                if match.get("versionEndExcluding"):
+                    return str(match["versionEndExcluding"])
+                if match.get("versionEndIncluding"):
+                    return str(match["versionEndIncluding"])
+    return None
+
+
+def _extract_nvd_references(cve_item: Dict[str, Any]) -> List[str]:
+    references = cve_item.get("references", []) if isinstance(cve_item, dict) else []
+    urls: List[str] = []
+    for ref in references:
+        if isinstance(ref, dict) and ref.get("url"):
+            urls.append(str(ref["url"]))
+    return urls
+
+
+def _fetch_epss_metadata(cves: List[str]) -> Dict[str, Dict[str, Any]]:
+    if not settings.enable_live_scans or not cves:
+        return {}
+
+    try:
+        response = requests.get(
+            "https://api.first.org/data/v1/epss",
+            params={"cve": ",".join(cves)},
+            timeout=settings.nvd_timeout_seconds,
+        )
+        response.raise_for_status()
+    except requests.RequestException:
+        return {}
+
+    payload = response.json()
+    results: Dict[str, Dict[str, Any]] = {}
+    for item in payload.get("data", []) if isinstance(payload, dict) else []:
+        if not isinstance(item, dict):
+            continue
+        cve = str(item.get("cve", "")).strip()
+        if not cve:
+            continue
+        try:
+            epss_score = float(item.get("epss")) if item.get("epss") is not None else None
+        except (TypeError, ValueError):
+            epss_score = None
+        try:
+            percentile = float(item.get("percentile")) if item.get("percentile") is not None else None
+        except (TypeError, ValueError):
+            percentile = None
+        results[cve] = {
+            "epss_score": epss_score,
+            "epss_percentile": percentile,
+            "epss_date": item.get("date"),
+        }
+    return results
+
+
+def _fetch_cisa_kev_catalog() -> Dict[str, Dict[str, Any]]:
+    if not settings.enable_live_scans:
+        return {}
+
+    try:
+        response = requests.get(
+            "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json",
+            timeout=settings.nvd_timeout_seconds,
+        )
+        response.raise_for_status()
+    except requests.RequestException:
+        return {}
+
+    payload = response.json()
+    results: Dict[str, Dict[str, Any]] = {}
+    vulnerabilities = payload.get("vulnerabilities", []) if isinstance(payload, dict) else []
+    for item in vulnerabilities:
+        if not isinstance(item, dict):
+            continue
+        cve_id = str(item.get("cveID", "")).strip()
+        if cve_id:
+            results[cve_id] = item
     return results
 
 
@@ -490,6 +666,26 @@ def _apply_mitre_mapping(findings: List[Dict[str, Any]]) -> None:
         if techniques:
             unique = {(tech["technique_id"], tech["technique_name"]): tech for tech in techniques}
             finding["mitre_attack"] = list(unique.values())
+
+
+def _apply_owasp_mapping(findings: List[Dict[str, Any]]) -> None:
+    for finding in findings:
+        if finding.get("owasp_2017") and finding.get("owasp_2021") and finding.get("owasp_2025"):
+            continue
+        cwe_list = [str(cwe).upper() for cwe in finding.get("cwe", []) if cwe]
+        for cwe in cwe_list:
+            if not finding.get("owasp_2017") and OWASP_2017_MAPPING.get(cwe):
+                finding["owasp_2017"] = OWASP_2017_MAPPING[cwe]
+            if not finding.get("owasp_2021") and OWASP_2021_MAPPING.get(cwe):
+                finding["owasp_2021"] = OWASP_2021_MAPPING[cwe]
+            if not finding.get("owasp_2025") and OWASP_2025_MAPPING.get(cwe):
+                finding["owasp_2025"] = OWASP_2025_MAPPING[cwe]
+            if (
+                finding.get("owasp_2017")
+                and finding.get("owasp_2021")
+                and finding.get("owasp_2025")
+            ):
+                break
 
 
 def _apply_false_positive_model(findings: List[Dict[str, Any]]) -> None:
