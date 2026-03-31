@@ -17,6 +17,8 @@ from enrichment_engine import enrich_findings
 from report_generator import generate_report
 from scanner_engine import (
     ScanValidationError,
+    _compute_scan_stats,
+    detect_target_redirect,
     get_scanner_classes,
     run_single_scanner,
     serialize_findings,
@@ -127,8 +129,13 @@ def finalize_scan(self, results: List[Dict[str, Any]], scan_id: int, target: str
             if tool_name and not finding.get("tool"):
                 finding = dict(finding)
                 finding["tool"] = tool_name
+            finding.setdefault("found_by", f"{tool_name.title()} – Active Testing" if tool_name else "Active Testing")
             findings.append(finding)
     findings = enrich_findings(findings)
+    stats = _compute_scan_stats(results, findings)
+    redirect_from = ""
+    if scan_type.lower() != "nmap":
+        redirect_from = detect_target_redirect(target).get("redirect_from", "")
 
     with SessionLocal() as db:
         scan = db.query(Scan).filter(Scan.id == scan_id).first()
@@ -143,6 +150,12 @@ def finalize_scan(self, results: List[Dict[str, Any]], scan_id: int, target: str
         scan.status = "completed"
         scan.progress = 100
         scan.findings_json = serialize_findings(findings)
+        scan.tests_performed = stats["tests_performed"]
+        scan.urls_spidered = stats["urls_spidered"]
+        scan.injection_points = stats["injection_points"]
+        scan.http_requests_total = stats["http_requests_total"]
+        scan.avg_response_time_ms = stats["avg_response_time_ms"]
+        scan.redirect_from = redirect_from or None
 
         try:
             report_path = generate_report(
@@ -241,7 +254,14 @@ def run_scan_in_process(scan_id: int, scan_type: str, target: str) -> None:
     findings: List[Dict[str, Any]] = []
     for r in results:
         findings.extend(r.get("findings", []))
+    for finding in findings:
+        tool_name = finding.get("tool", "")
+        finding.setdefault("found_by", f"{tool_name.title()} – Active Testing" if tool_name else "Active Testing")
     findings = enrich_findings(findings)
+    stats = _compute_scan_stats(results, findings)
+    redirect_from = ""
+    if scan_type.lower() != "nmap":
+        redirect_from = detect_target_redirect(target).get("redirect_from", "")
 
     with SessionLocal() as db:
         scan = db.query(Scan).filter(Scan.id == scan_id).first()
@@ -255,6 +275,12 @@ def run_scan_in_process(scan_id: int, scan_type: str, target: str) -> None:
         scan.status = "completed"
         scan.progress = 100
         scan.findings_json = serialize_findings(findings)
+        scan.tests_performed = stats["tests_performed"]
+        scan.urls_spidered = stats["urls_spidered"]
+        scan.injection_points = stats["injection_points"]
+        scan.http_requests_total = stats["http_requests_total"]
+        scan.avg_response_time_ms = stats["avg_response_time_ms"]
+        scan.redirect_from = redirect_from or None
         try:
             report_path = generate_report(
                 scan.id, target, scan_type, findings,
