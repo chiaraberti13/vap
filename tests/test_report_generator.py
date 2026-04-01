@@ -1,4 +1,8 @@
-from report_generator import _owasp_classification_lines
+from report_generator import (
+    _is_technology_finding,
+    _owasp_classification_lines,
+    _technology_category_icon,
+)
 
 
 def test_owasp_classification_lines_includes_all_versions_with_fallbacks():
@@ -24,3 +28,15 @@ def test_owasp_classification_lines_prefers_explicit_values():
         "OWASP 2021: A03:2021 - Injection",
         "OWASP 2025: A03:2025 - Injection",
     ]
+
+
+def test_technology_category_icon_defaults_and_known_mapping():
+    assert _technology_category_icon("Web Server") == "🖥️"
+    assert _technology_category_icon("Unknown Category") == "🔧"
+
+
+def test_is_technology_finding_matches_whatweb_tool_or_title():
+    assert _is_technology_finding({"tool": "WhatWeb"}) is True
+    assert _is_technology_finding({"title": "Tecnologie rilevate"}) is True
+    assert _is_technology_finding({"title": "Generic issue", "tags": ["technology"]}) is True
+    assert _is_technology_finding({"title": "Generic issue", "tool": "nikto"}) is False
