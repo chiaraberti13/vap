@@ -213,6 +213,17 @@ def _scan_type_label(scan_type: str) -> str:
     return labels.get(normalized, normalized or "unknown")
 
 
+def _report_title(scan_type: str) -> str:
+    titles = {
+        "wordpress": "WordPress Scanner with WPScan Report",
+        "light": "Light Website Vulnerability Scanner Report",
+        "deep": "Deep Website Vulnerability Scanner Report",
+        "full": "Full Website Vulnerability Scanner Report",
+    }
+    normalized = str(scan_type).strip().lower()
+    return titles.get(normalized, "Website Vulnerability Scanner Report")
+
+
 def _build_styles() -> Any:
     ss = getSampleStyleSheet()
 
@@ -740,12 +751,7 @@ def generate_report(
 
     # ── Cover / title ──────────────────────────────────────────────────
     story.append(Spacer(1, 0.5 * cm))
-    title_by_scan = {
-        "wordpress": "WordPress Scanner with WPScan Report",
-        "light": "Light Website Vulnerability Scanner Report",
-        "deep": "Deep Website Vulnerability Scanner Report",
-    }
-    story.append(Paragraph(title_by_scan.get(str(scan_type).lower(), "Website Vulnerability Scanner Report"), ss["ReportTitle"]))
+    story.append(Paragraph(_report_title(scan_type), ss["ReportTitle"]))
     story.append(Spacer(1, 6))
 
     # Target URL line
