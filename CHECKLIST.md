@@ -6,7 +6,6 @@ Analisi comparativa tra i PDF di riferimento (stile Pentest Tools) e il report a
 
 ## A. LAYOUT E VISUAL DEL REPORT (`report_generator.py`)
 
-- [ ] **A10 – EPSS score**: aggiungere EPSS score e EPSS percentile nella tabella CVE dei finding
 - [ ] **A11 – Campo "Found by"**: aggiungere metodo di detection per ogni finding
   - es. "Passive Detection", "Aggressive Detection", "Active Testing"
 - [ ] **A12 – Tabella evidence estesa**: aggiungere colonne "Method" (GET/POST) e "Parameters" alla tabella URL/Evidence quando disponibili
