@@ -6,8 +6,6 @@ Analisi comparativa tra i PDF di riferimento (stile Pentest Tools) e il report a
 
 ## A. LAYOUT E VISUAL DEL REPORT (`report_generator.py`)
 
-- [ ] **A4 – Banner avviso scan type**: banner arancione in cima al report con note sui limiti del tipo di scan
-  - es. "Light scan did not check for SQLi, XSS, Command Injection, XXE..."
 - [ ] **A5 – Risk ratings con barre orizzontali**: sostituire i pallini colorati con barre orizzontali proporzionali al count (come nel riferimento)
 - [ ] **A6 – Campo "Tests performed"**: aggiungere nel panel Scan information il conteggio dei test eseguiti
 - [ ] **A7 – Flag icon nei finding**: sostituire il quadratino `■` con icona flag `▶` / `⚑` prima del titolo
