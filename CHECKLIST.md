@@ -6,7 +6,6 @@ Analisi comparativa tra i PDF di riferimento (stile Pentest Tools) e il report a
 
 ## A. LAYOUT E VISUAL DEL REPORT (`report_generator.py`)
 
-- [ ] **A14 – CVE table strutturata**: per finding con CVE, tabella con colonne CVE | CVSS | EPSS score | EPSS percentile | Summary (incluso "Fixed in version" e reference URLs)
 - [ ] **A15 – Sezione "Scan coverage information"**: lista completa in fondo al report dei test eseguiti con ✓, raggruppati per porta/categoria
 - [ ] **A16 – Sezione "Scan parameters"**: sezione con parametri usati (target, scan_type, authentication, detection_mode, enumerate_*)
 - [ ] **A17 – Sezione "Scan stats"**: statistiche di scan (URLs spidered, unique injection points, total HTTP requests, average response time)
