@@ -2,6 +2,7 @@ from report_generator import (
     _is_technology_finding,
     _owasp_classification_lines,
     _technology_category_icon,
+    _sorted_scan_coverage,
 )
 
 
@@ -40,3 +41,18 @@ def test_is_technology_finding_matches_whatweb_tool_or_title():
     assert _is_technology_finding({"title": "Tecnologie rilevate"}) is True
     assert _is_technology_finding({"title": "Generic issue", "tags": ["technology"]}) is True
     assert _is_technology_finding({"title": "Generic issue", "tool": "nikto"}) is False
+
+
+
+def test_sorted_scan_coverage_orders_ports_and_deduplicates_tests():
+    coverage = {
+        "Categoria Web": ["Nikto headers", "Nikto headers", ""],
+        "Porta 443": ["TLS check", "HTTP security headers"],
+        "Porta 80": ["Redirect probe"],
+    }
+
+    assert _sorted_scan_coverage(coverage) == [
+        ("Porta 80", ["Redirect probe"]),
+        ("Porta 443", ["HTTP security headers", "TLS check"]),
+        ("Categoria Web", ["Nikto headers"]),
+    ]

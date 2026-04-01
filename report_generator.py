@@ -851,6 +851,27 @@ def _map_owasp(findings: List[Dict[str, Any]], field_name: str = "owasp_2021") -
     return mapping
 
 
+
+
+def _sorted_scan_coverage(scan_coverage: Dict[str, List[str]]) -> List[Tuple[str, List[str]]]:
+    """Return stable, de-duplicated scan coverage grouped by port/category."""
+
+    def _group_sort_key(group_name: str) -> Tuple[int, int, str]:
+        raw = str(group_name).strip().lower()
+        if raw.startswith("porta"):
+            digits = "".join(ch for ch in raw if ch.isdigit())
+            if digits:
+                return (0, int(digits), raw)
+        return (1, 0, raw)
+
+    normalized: List[Tuple[str, List[str]]] = []
+    for coverage_key, tests in scan_coverage.items():
+        key = str(coverage_key).strip() or "Categoria non specificata"
+        unique_tests = sorted({str(test).strip() for test in (tests or []) if str(test).strip()})
+        normalized.append((key, unique_tests))
+
+    return sorted(normalized, key=lambda item: _group_sort_key(item[0]))
+
 # ── Main entry point ──────────────────────────────────────────────────────────
 def generate_report(
     scan_id: int,
@@ -1019,14 +1040,6 @@ def generate_report(
         for finding in sorted_findings:
             story.extend(_build_finding_card(finding, ss))
 
-    if scan_coverage:
-        story.append(PageBreak())
-        story.append(Paragraph("Scan coverage information", ss["SectionHeader"]))
-        for coverage_key, tests in scan_coverage.items():
-            story.append(Paragraph(f"<b>{html_escape(str(coverage_key))}</b>", ss["SmallBold"]))
-            for test_name in tests:
-                story.append(Paragraph(f"✓ {html_escape(str(test_name))}", ss["Small"]))
-
     if scan_parameters:
         story.append(Spacer(1, 8))
         story.append(Paragraph("Scan parameters", ss["SectionHeader"]))
@@ -1058,6 +1071,38 @@ def generate_report(
             ("BOX", (0, 0), (-1, -1), 0.5, BORDER_COLOR),
         ]))
         story.append(stats_table)
+
+    if scan_coverage:
+        story.append(PageBreak())
+        story.append(Paragraph("Scan coverage information", ss["SectionHeader"]))
+        story.append(Paragraph("Lista completa dei test eseguiti, raggruppati per porta/categoria.", ss["Small"]))
+        story.append(Spacer(1, 6))
+
+        coverage_rows = [[
+            Paragraph("Porta / Categoria", ss["TableHeader"]),
+            Paragraph("Test eseguiti", ss["TableHeader"]),
+        ]]
+        for coverage_key, tests in _sorted_scan_coverage(scan_coverage):
+            tests_text = "<br/>".join(
+                f"✓ {html_escape(test_name)}" for test_name in tests
+            ) or "✓ Nessun test registrato"
+            coverage_rows.append([
+                Paragraph(html_escape(coverage_key), ss["TableCell"]),
+                Paragraph(tests_text, ss["TableCell"]),
+            ])
+
+        coverage_table = Table(coverage_rows, colWidths=[6.0 * cm, CONTENT_W - 6.0 * cm])
+        coverage_table.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), SECTION_BG),
+            ("BOX", (0, 0), (-1, -1), 0.5, BORDER_COLOR),
+            ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, ROW_ALT]),
+            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            ("LEFTPADDING", (0, 0), (-1, -1), 8),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 8),
+            ("TOPPADDING", (0, 0), (-1, -1), 6),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+        ]))
+        story.append(coverage_table)
 
     doc.build(story)
     return report_path
