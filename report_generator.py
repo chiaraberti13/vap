@@ -477,8 +477,9 @@ def _build_finding_card(finding: Dict[str, Any], ss: Any) -> List[Any]:
 
     sev_badge = _badge(sev.upper(), sev_color, ss, col_w=2.0 * cm)
 
+    finding_title_icon = "⚑"
     title_left = Paragraph(
-        f'<font size="11" color="{sev_hex}">⚑</font> '
+        f'<font size="11" color="{sev_hex}">{finding_title_icon}</font> '
         f'<b><font color="#2563eb">{title_str}</font></b>',
         ss["FindingTitle"],
     )
