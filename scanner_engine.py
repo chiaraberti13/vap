@@ -39,6 +39,10 @@ from scanners import (
     TestsslScanner,
     TheHarvesterScanner,
     ArjunScanner,
+    DalfoxScanner,
+    HttpxScanner,
+    KatanaScanner,
+    NosqlmapScanner,
 )
 
 
@@ -70,6 +74,10 @@ SCANNERS_MAP = {
     "testssl": TestsslScanner,
     "theharvester": TheHarvesterScanner,
     "arjun": ArjunScanner,
+    "dalfox": DalfoxScanner,
+    "httpx": HttpxScanner,
+    "katana": KatanaScanner,
+    "nosqlmap": NosqlmapScanner,
 }
 SCAN_TYPE_CHOICES = ["full", "wordpress", *SCANNERS_MAP.keys()]
 
