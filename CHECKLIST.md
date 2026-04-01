@@ -131,5 +131,3 @@ Analisi comparativa tra i PDF di riferimento (stile Pentest Tools) e il report a
 ---
 
 ## Ordine di implementazione consigliato
-
-2. **E1–E4** → scan types e configurazione

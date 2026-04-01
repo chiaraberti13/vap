@@ -129,6 +129,8 @@ templates = Jinja2Templates(directory="templates")
 
 SCAN_TYPES = [
     "full",
+    "light",
+    "wordpress",
     "nuclei",
     "nmap",
     "whatweb",

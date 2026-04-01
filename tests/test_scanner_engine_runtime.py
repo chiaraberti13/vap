@@ -81,11 +81,20 @@ def test_run_scanner_error_mapping(monkeypatch, scanner_cls, error_type, expecte
 
 def test_get_scanner_classes_and_single_scanner(monkeypatch):
     monkeypatch.setattr(scanner_engine, "SCANNERS_MAP", {"dummy": DummyScanner})
+    monkeypatch.setattr(
+        scanner_engine,
+        "SCAN_TYPE_PROFILES",
+        {"light": ["dummy"], "wordpress": ["dummy"]},
+    )
 
     full = scanner_engine.get_scanner_classes("full")
     only = scanner_engine.get_scanner_classes("dummy")
+    light = scanner_engine.get_scanner_classes("light")
+    wordpress = scanner_engine.get_scanner_classes("wordpress")
     assert full == [DummyScanner]
     assert only == [DummyScanner]
+    assert light == [DummyScanner]
+    assert wordpress == [DummyScanner]
 
     result = scanner_engine.run_single_scanner("dummy", "target")
     assert result["status"] == "completed"
