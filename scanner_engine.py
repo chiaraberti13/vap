@@ -300,7 +300,27 @@ def _scanner_label(scanner_cls: type) -> str:
 def _run_scanner(scanner_cls: type, target: str) -> Dict[str, Any]:
     scanner = scanner_cls(enable_live_scans=settings.enable_live_scans)
     try:
-        return scanner.run(target)
+        result = scanner.run(target)
+        if not isinstance(result, dict):
+            return {
+                "tool": _scanner_label(scanner_cls),
+                "status": "error",
+                "error_type": "invalid_result",
+                "message": "scanner returned invalid payload",
+                "findings": [],
+                "tests_performed": 0,
+            }
+
+        findings = result.get("findings")
+        if not isinstance(findings, list):
+            findings = []
+            result["findings"] = findings
+
+        tests_performed = result.get("tests_performed")
+        if not isinstance(tests_performed, int) or tests_performed < 0:
+            result["tests_performed"] = len(findings)
+
+        return result
     except TimeoutError as exc:
         return {
             "tool": _scanner_label(scanner_cls),
