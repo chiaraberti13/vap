@@ -6,8 +6,6 @@ Analisi comparativa tra i PDF di riferimento (stile Pentest Tools) e il report a
 
 ## A. LAYOUT E VISUAL DEL REPORT (`report_generator.py`)
 
-- [ ] **A1 – Filename dinamico**: cambiare da `scan_{id}_{datetime}.pdf` a `{ScanType}-{target}-{datetime}.pdf`
-  - es. `WordPress_Scanner-https___www.chiaraberti.cloud-20260329-1617.pdf`
 - [ ] **A2 – Titolo dinamico**: il titolo del report varia in base al `scan_type`
   - es. "Website Vulnerability Scanner Report", "WordPress Scanner with WPScan Report"
 - [ ] **A3 – Target box**: card evidenziata con `✓ https://target` + riga "Target added due to a redirect from http://..." quando rilevato redirect
