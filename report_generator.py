@@ -754,20 +754,32 @@ def generate_report(
     story.append(Paragraph(_report_title(scan_type), ss["ReportTitle"]))
     story.append(Spacer(1, 6))
 
-    # Target URL line
-    story.append(
+    # Target URL highlighted card
+    target_rows: List[List[Any]] = [[
         Paragraph(
             f'✓ <font color="#2563eb"><b>{html_escape(target)}</b></font>',
             ss["TargetURL"],
         )
-    )
+    ]]
     if redirect_from:
-        story.append(
+        target_rows.append([
             Paragraph(
                 f'<font color="#6b7280">Target added due to a redirect from {html_escape(redirect_from)}</font>',
                 ss["BodyMuted"],
             )
-        )
+        ])
+
+    target_card = Table(target_rows, colWidths=[CONTENT_W])
+    target_card.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#f0f9ff")),
+        ("BOX", (0, 0), (-1, -1), 0.8, colors.HexColor("#93c5fd")),
+        ("LINEBEFORE", (0, 0), (0, -1), 2.5, BRAND_BLUE),
+        ("LEFTPADDING", (0, 0), (-1, -1), 10),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 10),
+        ("TOPPADDING", (0, 0), (-1, -1), 8),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+    ]))
+    story.append(target_card)
     scan_type_notes = {
         "light": "Light scan did not check for SQLi, XSS, Command Injection, XXE and other deep active checks.",
         "wordpress": "WordPress scan focuses on WP core/themes/plugins and may not fully cover custom application logic.",
