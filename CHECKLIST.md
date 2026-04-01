@@ -6,7 +6,6 @@ Analisi comparativa tra i PDF di riferimento (stile Pentest Tools) e il report a
 
 ## A. LAYOUT E VISUAL DEL REPORT (`report_generator.py`)
 
-- [ ] **A17 – Sezione "Scan stats"**: statistiche di scan (URLs spidered, unique injection points, total HTTP requests, average response time)
 - [ ] **A18 – Logo/branding**: migliorare il logo VAP nell'header (da badge testo a icona più professionale)
 
 ---
