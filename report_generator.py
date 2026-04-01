@@ -1088,6 +1088,30 @@ def generate_report(
         story.append(Spacer(1, 8))
         story.append(Paragraph("Scan stats", ss["SectionHeader"]))
         stats_rows = [[Paragraph("Metric", ss["TableHeader"]), Paragraph("Value", ss["TableHeader"])]]
+
+        def _format_stat_value(metric_key: str) -> str:
+            key_aliases = {
+                "average_response_time": ["average_response_time", "avg_response_time"],
+                "urls_spidered": ["urls_spidered"],
+                "unique_injection_points": ["unique_injection_points"],
+                "total_http_requests": ["total_http_requests"],
+            }
+            aliases = key_aliases.get(metric_key, [metric_key])
+            value = next((scan_stats.get(alias) for alias in aliases if alias in scan_stats), None)
+            if value is None:
+                return "—"
+
+            if metric_key == "average_response_time":
+                try:
+                    numeric_value = float(value)
+                    return f"{numeric_value:.3f} s"
+                except (TypeError, ValueError):
+                    return str(value)
+
+            if isinstance(value, float):
+                return f"{value:.2f}"
+            return str(value)
+
         labels = {
             "urls_spidered": "URLs spidered",
             "unique_injection_points": "Unique injection points",
@@ -1095,11 +1119,21 @@ def generate_report(
             "average_response_time": "Average response time",
         }
         for key, label in labels.items():
-            stats_rows.append([Paragraph(label, ss["TableCell"]), Paragraph(html_escape(str(scan_stats.get(key, "—"))), ss["TableCell"])])
+            stats_rows.append([
+                Paragraph(label, ss["TableCell"]),
+                Paragraph(html_escape(_format_stat_value(key)), ss["TableCell"]),
+            ])
+
         stats_table = Table(stats_rows, colWidths=[6.0 * cm, CONTENT_W - 6.0 * cm])
         stats_table.setStyle(TableStyle([
             ("BACKGROUND", (0, 0), (-1, 0), SECTION_BG),
             ("BOX", (0, 0), (-1, -1), 0.5, BORDER_COLOR),
+            ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, ROW_ALT]),
+            ("LEFTPADDING", (0, 0), (-1, -1), 8),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 8),
+            ("TOPPADDING", (0, 0), (-1, -1), 6),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+            ("ALIGN", (1, 0), (1, -1), "CENTER"),
         ]))
         story.append(stats_table)
 
