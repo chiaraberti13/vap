@@ -430,6 +430,21 @@ def _build_summary(
 
 
 # ── Finding card ──────────────────────────────────────────────────────────────
+
+def _owasp_classification_lines(
+    owasp_2017: Any,
+    owasp_2021: Any,
+    owasp_2025: Any,
+    owasp_tags: List[str],
+) -> List[str]:
+    """Build OWASP classification lines with explicit 2017/2021/2025 coverage."""
+    fallback_2021 = " | ".join(str(t) for t in owasp_tags[:3]) if owasp_tags else "Non classificato"
+    return [
+        f"OWASP 2017: {owasp_2017 or 'Non classificato'}",
+        f"OWASP 2021: {owasp_2021 or fallback_2021}",
+        f"OWASP 2025: {owasp_2025 or 'Non classificato'}",
+    ]
+
 def _build_finding_card(finding: Dict[str, Any], ss: Any) -> List[Any]:
     """Return a list of flowables that form a finding card."""
     sev = str(finding.get("severity", "info")).lower()
@@ -568,12 +583,7 @@ def _build_finding_card(finding: Dict[str, Any], ss: Any) -> List[Any]:
         classify_lines.append("CVE: " + " | ".join(str(c) for c in cve_list[:5]))
     if cwe_list:
         classify_lines.append("CWE: " + " | ".join(str(c) for c in cwe_list[:3]))
-    if owasp_2017:
-        classify_lines.append(f"OWASP 2017: {owasp_2017}")
-    if owasp_2021 or owasp_tags:
-        classify_lines.append(f"OWASP 2021: {owasp_2021 or ' | '.join(str(t) for t in owasp_tags[:3])}")
-    if owasp_2025:
-        classify_lines.append(f"OWASP 2025: {owasp_2025}")
+    classify_lines.extend(_owasp_classification_lines(owasp_2017, owasp_2021, owasp_2025, owasp_tags))
     if cisa_kev is not None:
         classify_lines.append(f"CISA KEV: {bool(cisa_kev)}")
     if cvss_score is not None:
