@@ -130,21 +130,41 @@ class ReportDocTemplate(BaseDocTemplate):
         canvas.setFillColor(BRAND_DARK)
         canvas.rect(0, h - bar_h, w, bar_h, stroke=0, fill=1)
 
-        # VAP icon badge (restyling)
-        ix, iy = L_MARGIN, h - bar_h + 0.22 * cm
+        # VAP logo mark (professional shield + pulse styling)
+        ix, iy = L_MARGIN, h - bar_h + 0.16 * cm
+        logo_w, logo_h = 1.1 * cm, 1.1 * cm
+
         canvas.setFillColor(BRAND_BLUE)
-        canvas.roundRect(ix, iy, 0.9 * cm, 0.9 * cm, 3, stroke=0, fill=1)
-        canvas.setStrokeColor(colors.white)
-        canvas.setLineWidth(1.0)
-        canvas.line(ix + 0.2 * cm, iy + 0.65 * cm, ix + 0.45 * cm, iy + 0.35 * cm)
-        canvas.line(ix + 0.45 * cm, iy + 0.35 * cm, ix + 0.7 * cm, iy + 0.7 * cm)
-        canvas.setFont("Helvetica-Bold", 7)
+        canvas.roundRect(ix, iy, logo_w, logo_h, 4, stroke=0, fill=1)
+
+        canvas.setFillColor(colors.Color(1, 1, 1, alpha=0.15))
+        canvas.roundRect(ix + 0.08 * cm, iy + 0.66 * cm, 0.94 * cm, 0.34 * cm, 3, stroke=0, fill=1)
+
+        shield_points = [
+            ix + 0.55 * cm, iy + 0.90 * cm,
+            ix + 0.30 * cm, iy + 0.77 * cm,
+            ix + 0.30 * cm, iy + 0.48 * cm,
+            ix + 0.55 * cm, iy + 0.30 * cm,
+            ix + 0.80 * cm, iy + 0.48 * cm,
+            ix + 0.80 * cm, iy + 0.77 * cm,
+        ]
         canvas.setFillColor(colors.white)
-        canvas.drawCentredString(ix + 0.45 * cm, iy + 0.08 * cm, "VAP")
+        canvas.setStrokeColor(colors.white)
+        canvas.setLineWidth(0.8)
+        shield_path = canvas.beginPath()
+        shield_path.moveTo(shield_points[0], shield_points[1])
+        for idx in range(2, len(shield_points), 2):
+            shield_path.lineTo(shield_points[idx], shield_points[idx + 1])
+        shield_path.close()
+        canvas.drawPath(shield_path, stroke=1, fill=0)
+
+        canvas.setLineWidth(1.0)
+        canvas.line(ix + 0.40 * cm, iy + 0.60 * cm, ix + 0.50 * cm, iy + 0.52 * cm)
+        canvas.line(ix + 0.50 * cm, iy + 0.52 * cm, ix + 0.68 * cm, iy + 0.68 * cm)
 
         canvas.setFont("Helvetica-Bold", 10)
         canvas.setFillColor(colors.white)
-        canvas.drawString(ix + 1.1 * cm, h - bar_h + 0.48 * cm,
+        canvas.drawString(ix + 1.35 * cm, h - bar_h + 0.48 * cm,
                           "Vulnerability Assessment Platform")
 
         canvas.setFont("Helvetica", 8)
