@@ -219,6 +219,30 @@ def _format_epss_percentile(value: Any) -> str:
     return f"{parsed:.2f}%"
 
 
+def _format_cve_summary(details: Dict[str, Any], fallback_references: List[Any]) -> str:
+    summary_parts: List[str] = []
+
+    summary_text = str(details.get("summary", "—")).strip() or "—"
+    summary_parts.append(summary_text)
+
+    fixed_in = str(details.get("fixed_in_version", "") or "").strip()
+    if fixed_in:
+        summary_parts.append(f"Fixed in version: {fixed_in}")
+
+    cve_references = details.get("references") or []
+    if not isinstance(cve_references, list):
+        cve_references = [cve_references]
+
+    reference_values = [str(ref).strip() for ref in cve_references if str(ref).strip()]
+    if not reference_values:
+        reference_values = [str(ref).strip() for ref in fallback_references if str(ref).strip()]
+
+    if reference_values:
+        summary_parts.append("References: " + ", ".join(reference_values[:3]))
+
+    return " | ".join(summary_parts)
+
+
 
 def _color_hex(c: colors.Color) -> str:
     return "#{:02x}{:02x}{:02x}".format(
@@ -693,10 +717,7 @@ def _build_finding_card(finding: Dict[str, Any], ss: Any) -> List[Any]:
         cve_details = finding.get("cve_details") or {}
         for cve in cve_list[:8]:
             details = cve_details.get(str(cve), {})
-            summary = str(details.get("summary", "—"))
-            fixed_in = details.get("fixed_in_version")
-            if fixed_in:
-                summary += f" | Fixed in version: {fixed_in}"
+            summary = _format_cve_summary(details, references)
             cve_rows.append([
                 Paragraph(html_escape(str(cve)), ss["TableCell"]),
                 Paragraph(html_escape(str(details.get("cvss", cvss_score or "—"))), ss["TableCell"]),
