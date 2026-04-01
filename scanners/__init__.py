@@ -23,6 +23,10 @@ from .wafw00f_scanner import Wafw00fScanner
 from .testssl_scanner import TestsslScanner
 from .theharvester_scanner import TheHarvesterScanner
 from .arjun_scanner import ArjunScanner
+from .dalfox_scanner import DalfoxScanner
+from .httpx_scanner import HttpxScanner
+from .katana_scanner import KatanaScanner
+from .nosqlmap_scanner import NosqlmapScanner
 
 __all__ = [
     "NucleiScanner",
@@ -44,4 +48,8 @@ __all__ = [
     "TestsslScanner",
     "TheHarvesterScanner",
     "ArjunScanner",
+    "DalfoxScanner",
+    "HttpxScanner",
+    "KatanaScanner",
+    "NosqlmapScanner",
 ]
