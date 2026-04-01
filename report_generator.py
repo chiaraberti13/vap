@@ -246,6 +246,45 @@ def _resolve_found_by(finding: Dict[str, Any]) -> str:
     return f"{tool_name.title()} – {detection_label}"
 
 
+
+
+def _technology_category_icon(category: str) -> str:
+    """Return an emoji icon for known technology categories."""
+    normalized = str(category or "").strip().lower()
+    icon_map = {
+        "web server": "🖥️",
+        "server": "🖥️",
+        "programming language": "💻",
+        "language": "💻",
+        "javascript framework": "🧩",
+        "framework": "🧩",
+        "cms": "📰",
+        "database": "🗄️",
+        "cdn": "🌐",
+        "os": "⚙️",
+        "operating system": "⚙️",
+        "analytics": "📊",
+        "security": "🛡️",
+    }
+    for key, icon in icon_map.items():
+        if key in normalized:
+            return icon
+    return "🔧"
+
+
+def _is_technology_finding(finding: Dict[str, Any]) -> bool:
+    """Identify findings that represent detected technologies (e.g. WhatWeb)."""
+    title = str(finding.get("title", "") or "").lower()
+    tool = str(finding.get("tool", "") or "").lower()
+    tags = [str(t).lower() for t in (finding.get("tags") or []) if t]
+    return (
+        "whatweb" in tool
+        or "tecnolog" in title
+        or "technology" in title
+        or any("whatweb" in tag or "technology" in tag for tag in tags)
+    )
+
+
 def _scan_type_label(scan_type: str) -> str:
     labels = {
         "light": "Light (surface checks only)",
@@ -676,13 +715,15 @@ def _build_finding_card(finding: Dict[str, Any], ss: Any) -> List[Any]:
         body_rows.append([cve_table])
 
     technologies = finding.get("technologies") or []
-    if technologies:
+    if technologies and _is_technology_finding(finding):
         tech_rows = [[Paragraph("Software", ss["TableHeader"]), Paragraph("Version", ss["TableHeader"]), Paragraph("Category", ss["TableHeader"])]]
         for tech in technologies[:20]:
+            category = str(tech.get("category", "—"))
+            category_with_icon = f"{_technology_category_icon(category)} {category}"
             tech_rows.append([
                 Paragraph(html_escape(str(tech.get("software", "—"))), ss["TableCell"]),
                 Paragraph(html_escape(str(tech.get("version", "—"))), ss["TableCell"]),
-                Paragraph(html_escape(str(tech.get("category", "—"))), ss["TableCell"]),
+                Paragraph(html_escape(category_with_icon), ss["TableCell"]),
             ])
         tech_table = Table(tech_rows, colWidths=[(INNER_W - 16) * 0.4, (INNER_W - 16) * 0.2, (INNER_W - 16) * 0.4])
         tech_table.setStyle(TableStyle([
