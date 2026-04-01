@@ -226,6 +226,26 @@ def _color_hex(c: colors.Color) -> str:
     )
 
 
+def _resolve_found_by(finding: Dict[str, Any]) -> str:
+    """Return a stable human-readable detection source for a finding."""
+    explicit_found_by = str(finding.get("found_by", "") or "").strip()
+    if explicit_found_by:
+        return explicit_found_by
+
+    tool_name = str(finding.get("tool", "") or "").strip()
+    if not tool_name:
+        return "Active Testing"
+
+    detection_mode = str(finding.get("detection_mode", "") or "").strip().lower()
+    mode_labels = {
+        "passive": "Passive Detection",
+        "aggressive": "Aggressive Detection",
+        "active": "Active Testing",
+    }
+    detection_label = mode_labels.get(detection_mode, "Active Testing")
+    return f"{tool_name.title()} – {detection_label}"
+
+
 def _scan_type_label(scan_type: str) -> str:
     labels = {
         "light": "Light (surface checks only)",
@@ -496,7 +516,7 @@ def _build_finding_card(finding: Dict[str, Any], ss: Any) -> List[Any]:
     owasp_tags = [str(t) for t in tags if "owasp" in str(t).lower()]
     cvss_score = finding.get("cvss_score")
     cve_list  = list(finding.get("cve") or [])
-    found_by = html_escape(str(finding.get("found_by", "") or ""))
+    found_by = html_escape(_resolve_found_by(finding))
     method = html_escape(str(finding.get("method", "") or ""))
     parameters = finding.get("parameters")
     parameters_str = ", ".join(str(p) for p in parameters) if isinstance(parameters, list) else str(parameters or "")
@@ -589,9 +609,8 @@ def _build_finding_card(finding: Dict[str, Any], ss: Any) -> List[Any]:
     if rec:
         body_rows.append([Paragraph("<b>Recommendation:</b>", ss["SmallBold"])])
         body_rows.append([Paragraph(rec, ss["Small"])])
-    if found_by:
-        body_rows.append([Paragraph("<b>Found by:</b>", ss["SmallBold"])])
-        body_rows.append([Paragraph(found_by, ss["Small"])])
+    body_rows.append([Paragraph("<b>Found by:</b>", ss["SmallBold"])])
+    body_rows.append([Paragraph(found_by, ss["Small"])])
 
     if references:
         refs_joined = "<br/>".join(
