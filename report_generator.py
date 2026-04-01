@@ -872,6 +872,35 @@ def _sorted_scan_coverage(scan_coverage: Dict[str, List[str]]) -> List[Tuple[str
 
     return sorted(normalized, key=lambda item: _group_sort_key(item[0]))
 
+
+def _scan_parameters_rows(
+    target: str,
+    scan_type: str,
+    scan_parameters: Optional[Dict[str, Any]],
+) -> List[Tuple[str, str]]:
+    """Return ordered scan parameters required by the report specification."""
+    params = scan_parameters or {}
+    def _stringify(value: Any, fallback: str = "—") -> str:
+        if value is None:
+            return fallback
+        text = str(value).strip()
+        return text if text else fallback
+
+    rows: List[Tuple[str, str]] = [
+        ("target", _stringify(params.get("target", target))),
+        ("scan_type", _stringify(params.get("scan_type", scan_type))),
+        ("authentication", _stringify(params.get("authentication"))),
+        ("detection_mode", _stringify(params.get("detection_mode"))),
+    ]
+
+    enumerate_keys = sorted(
+        key for key in params.keys() if str(key).lower().startswith("enumerate_")
+    )
+    for key in enumerate_keys:
+        rows.append((str(key), _stringify(params.get(key))))
+
+    return rows
+
 # ── Main entry point ──────────────────────────────────────────────────────────
 def generate_report(
     scan_id: int,
@@ -1040,18 +1069,20 @@ def generate_report(
         for finding in sorted_findings:
             story.extend(_build_finding_card(finding, ss))
 
-    if scan_parameters:
-        story.append(Spacer(1, 8))
-        story.append(Paragraph("Scan parameters", ss["SectionHeader"]))
-        params_rows = [[Paragraph("Parameter", ss["TableHeader"]), Paragraph("Value", ss["TableHeader"])]]
-        for key, value in scan_parameters.items():
-            params_rows.append([Paragraph(html_escape(str(key)), ss["TableCell"]), Paragraph(html_escape(str(value)), ss["TableCell"])])
-        params_table = Table(params_rows, colWidths=[5.0 * cm, CONTENT_W - 5.0 * cm])
-        params_table.setStyle(TableStyle([
-            ("BACKGROUND", (0, 0), (-1, 0), SECTION_BG),
-            ("BOX", (0, 0), (-1, -1), 0.5, BORDER_COLOR),
-        ]))
-        story.append(params_table)
+    story.append(Spacer(1, 8))
+    story.append(Paragraph("Scan parameters", ss["SectionHeader"]))
+    params_rows = [[Paragraph("Parameter", ss["TableHeader"]), Paragraph("Value", ss["TableHeader"])]]
+    for key, value in _scan_parameters_rows(target, scan_type, scan_parameters):
+        params_rows.append([
+            Paragraph(html_escape(str(key)), ss["TableCell"]),
+            Paragraph(html_escape(str(value)), ss["TableCell"]),
+        ])
+    params_table = Table(params_rows, colWidths=[5.0 * cm, CONTENT_W - 5.0 * cm])
+    params_table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), SECTION_BG),
+        ("BOX", (0, 0), (-1, -1), 0.5, BORDER_COLOR),
+    ]))
+    story.append(params_table)
 
     if scan_stats:
         story.append(Spacer(1, 8))
