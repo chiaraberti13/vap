@@ -79,7 +79,11 @@ SCANNERS_MAP = {
     "katana": KatanaScanner,
     "nosqlmap": NosqlmapScanner,
 }
-SCAN_TYPE_CHOICES = ["full", "wordpress", *SCANNERS_MAP.keys()]
+SCAN_TYPE_PROFILES = {
+    "light": ["whatweb", "nikto", "nmap", "httpx"],
+    "wordpress": ["wpscan", "whatweb", "nikto", "nuclei", "nmap", "wafw00f"],
+}
+SCAN_TYPE_CHOICES = ["full", "light", "wordpress", *SCANNERS_MAP.keys()]
 
 @dataclass
 class ScanResult:
@@ -327,8 +331,9 @@ def get_scanner_classes(scan_type: str) -> List[type]:
     scan_type = scan_type.lower().strip()
     if scan_type == "full":
         return list(SCANNERS_MAP.values())
-    if scan_type == "wordpress":
-        return [WpscanScanner]
+    if scan_type in SCAN_TYPE_PROFILES:
+        scanner_names = SCAN_TYPE_PROFILES[scan_type]
+        return [SCANNERS_MAP[name] for name in scanner_names if name in SCANNERS_MAP]
     if scan_type in SCANNERS_MAP:
         return [SCANNERS_MAP[scan_type]]
     raise ScanValidationError("Tipo di scansione non supportato.")

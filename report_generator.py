@@ -202,6 +202,17 @@ def _color_hex(c: colors.Color) -> str:
     )
 
 
+def _scan_type_label(scan_type: str) -> str:
+    labels = {
+        "light": "Light (surface checks only)",
+        "deep": "Deep (active + passive)",
+        "wordpress": "WordPress – Passive/Targeted",
+        "full": "Full (all enabled scanners)",
+    }
+    normalized = str(scan_type).strip().lower()
+    return labels.get(normalized, normalized or "unknown")
+
+
 def _build_styles() -> Any:
     ss = getSampleStyleSheet()
 
@@ -344,7 +355,7 @@ def _build_summary(
         ("Start time:",    start_str),
         ("Finish time:",   end_str),
         ("Scan duration:", duration_str),
-        ("Scan type:",     scan_type),
+        ("Scan type:",     _scan_type_label(scan_type)),
         ("Findings:",      str(total_findings)),
         ("Tests performed:", str(tests_performed) if tests_performed is not None else "—"),
         ("Scan status:",   "Completed"),
@@ -776,7 +787,7 @@ def generate_report(
         Paragraph(
             f'<font color="#6b7280">Report generated: '
             f'{generated_at.strftime("%b %d, %Y / %H:%M UTC")}  ·  '
-            f'Scan type: {html_escape(scan_type)}</font>',
+            f'Scan type: {html_escape(_scan_type_label(scan_type))}</font>',
             ss["BodyMuted"],
         )
     )

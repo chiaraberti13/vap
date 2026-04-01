@@ -17,7 +17,14 @@ def test_wpscan_returns_simulated_when_live_disabled():
 
 def test_get_scanner_classes_supports_wordpress_scan_type():
     classes = scanner_engine.get_scanner_classes("wordpress")
-    assert classes == [scanner_engine.WpscanScanner]
+    assert classes == [
+        scanner_engine.WpscanScanner,
+        scanner_engine.WhatWebScanner,
+        scanner_engine.NiktoScanner,
+        scanner_engine.NucleiScanner,
+        scanner_engine.NmapScanner,
+        scanner_engine.Wafw00fScanner,
+    ]
 
 
 def test_wpscan_extracts_component_and_user_findings():
