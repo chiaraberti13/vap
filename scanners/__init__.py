@@ -19,6 +19,10 @@ from .commix_scanner import CommixScanner
 from .acunetix_scanner import AcunetixScanner
 from .nessus_scanner import NessusScanner
 from .wpscan_scanner import WpscanScanner
+from .wafw00f_scanner import Wafw00fScanner
+from .testssl_scanner import TestsslScanner
+from .theharvester_scanner import TheHarvesterScanner
+from .arjun_scanner import ArjunScanner
 
 __all__ = [
     "NucleiScanner",
@@ -36,4 +40,8 @@ __all__ = [
     "AcunetixScanner",
     "NessusScanner",
     "WpscanScanner",
+    "Wafw00fScanner",
+    "TestsslScanner",
+    "TheHarvesterScanner",
+    "ArjunScanner",
 ]
