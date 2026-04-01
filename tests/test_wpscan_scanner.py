@@ -23,7 +23,16 @@ def test_get_scanner_classes_supports_wordpress_scan_type():
 def test_wpscan_extracts_component_and_user_findings():
     scanner = WpscanScanner(enable_live_scans=False)
     payload = {
-        "version": {"number": "6.5.1"},
+        "version": {
+            "number": "6.5.1",
+            "vulnerabilities": [
+                {
+                    "title": "WordPress core SQL Injection",
+                    "cve": ["CVE-2026-9999"],
+                    "references": {"url": ["https://example.com/core-cve"]},
+                }
+            ],
+        },
         "plugins": {
             "contact-form-7": {
                 "version": {"number": "5.8"},
@@ -43,6 +52,7 @@ def test_wpscan_extracts_component_and_user_findings():
 
     titles = [item["title"] for item in findings]
     assert any("WordPress 6.5.1" in title for title in titles)
+    assert any("Core WordPress vulnerabile" in title for title in titles)
     assert any("Plugin vulnerabile" in title for title in titles)
     assert any("User enumeration" in title for title in titles)
 

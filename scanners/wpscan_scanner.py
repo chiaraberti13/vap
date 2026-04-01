@@ -132,9 +132,42 @@ class WpscanScanner:
 
         findings.extend(self._extract_component_findings(payload.get("plugins"), component="plugin"))
         findings.extend(self._extract_component_findings(payload.get("themes"), component="theme"))
+        findings.extend(self._extract_core_vulnerability_findings(version))
         findings.extend(self._extract_interesting_findings(payload.get("interesting_findings")))
         findings.extend(self._extract_users_findings(payload.get("users")))
 
+        return findings
+
+    def _extract_core_vulnerability_findings(self, version: Dict[str, Any]) -> List[Dict[str, Any]]:
+        if not isinstance(version, dict):
+            return []
+
+        vulnerabilities = version.get("vulnerabilities")
+        if not isinstance(vulnerabilities, list) or not vulnerabilities:
+            return []
+
+        findings: List[Dict[str, Any]] = []
+        version_number = str(version.get("number") or "non disponibile")
+        for vuln in vulnerabilities:
+            if not isinstance(vuln, dict):
+                continue
+            title = vuln.get("title") or "Vulnerabilità del core WordPress rilevata"
+            references = vuln.get("references") if isinstance(vuln.get("references"), dict) else {}
+            url_refs = references.get("url") if isinstance(references.get("url"), list) else []
+            cves = vuln.get("cve") if isinstance(vuln.get("cve"), list) else []
+            findings.append(
+                {
+                    "tool": "wpscan",
+                    "title": "Core WordPress vulnerabile",
+                    "severity": "high",
+                    "description": f"{title}. Versione rilevata: {version_number}.",
+                    "recommendation": "Aggiornare immediatamente WordPress core all'ultima versione stabile.",
+                    "affected_component": "core:wordpress",
+                    "cve": cves,
+                    "references": url_refs,
+                    "found_by": "WPScan – Active Testing",
+                }
+            )
         return findings
 
     def _extract_component_findings(self, components: Any, component: str) -> List[Dict[str, Any]]:
