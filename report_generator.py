@@ -754,6 +754,27 @@ def generate_report(
     story.append(Paragraph(_report_title(scan_type), ss["ReportTitle"]))
     story.append(Spacer(1, 6))
 
+    scan_type_notes = {
+        "light": "Light scan did not check for SQLi, XSS, Command Injection, XXE and other deep active checks.",
+        "wordpress": "WordPress scan focuses on WP core/themes/plugins and may not fully cover custom application logic.",
+    }
+    note = scan_type_notes.get(str(scan_type).lower())
+    if note:
+        banner = Table(
+            [[Paragraph(f"<b>Scan type notice:</b> {html_escape(note)}", ss["Small"])]],
+            colWidths=[CONTENT_W],
+        )
+        banner.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#ffedd5")),
+            ("BOX", (0, 0), (-1, -1), 0.5, colors.HexColor("#fb923c")),
+            ("LEFTPADDING", (0, 0), (-1, -1), 8),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 8),
+            ("TOPPADDING", (0, 0), (-1, -1), 6),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+        ]))
+        story.append(Spacer(1, 6))
+        story.append(banner)
+
     # Target URL highlighted card
     target_rows: List[List[Any]] = [[
         Paragraph(
@@ -780,26 +801,6 @@ def generate_report(
         ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
     ]))
     story.append(target_card)
-    scan_type_notes = {
-        "light": "Light scan did not check for SQLi, XSS, Command Injection, XXE and other deep active checks.",
-        "wordpress": "WordPress scan focuses on WP core/themes/plugins and may not fully cover custom application logic.",
-    }
-    note = scan_type_notes.get(str(scan_type).lower())
-    if note:
-        banner = Table(
-            [[Paragraph(f"<b>Scan type notice:</b> {html_escape(note)}", ss["Small"])]],
-            colWidths=[CONTENT_W],
-        )
-        banner.setStyle(TableStyle([
-            ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#ffedd5")),
-            ("BOX", (0, 0), (-1, -1), 0.5, colors.HexColor("#fb923c")),
-            ("LEFTPADDING", (0, 0), (-1, -1), 8),
-            ("RIGHTPADDING", (0, 0), (-1, -1), 8),
-            ("TOPPADDING", (0, 0), (-1, -1), 6),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
-        ]))
-        story.append(Spacer(1, 6))
-        story.append(banner)
     story.append(Spacer(1, 4))
     story.append(
         Paragraph(
