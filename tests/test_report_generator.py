@@ -1,6 +1,7 @@
 from report_generator import (
     _is_technology_finding,
     _owasp_classification_lines,
+    _scan_parameters_rows,
     _technology_category_icon,
     _sorted_scan_coverage,
 )
@@ -55,4 +56,22 @@ def test_sorted_scan_coverage_orders_ports_and_deduplicates_tests():
         ("Porta 80", ["Redirect probe"]),
         ("Porta 443", ["HTTP security headers", "TLS check"]),
         ("Categoria Web", ["Nikto headers"]),
+    ]
+
+
+def test_scan_parameters_rows_prioritizes_required_fields_and_enumerate_flags():
+    params = {
+        "authentication": "token",
+        "detection_mode": "passive",
+        "enumerate_plugins": True,
+        "enumerate_users": False,
+    }
+
+    assert _scan_parameters_rows("https://target.local", "wordpress", params) == [
+        ("target", "https://target.local"),
+        ("scan_type", "wordpress"),
+        ("authentication", "token"),
+        ("detection_mode", "passive"),
+        ("enumerate_plugins", "True"),
+        ("enumerate_users", "False"),
     ]
