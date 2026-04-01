@@ -35,6 +35,10 @@ from scanners import (
     AcunetixScanner,
     NessusScanner,
     WpscanScanner,
+    Wafw00fScanner,
+    TestsslScanner,
+    TheHarvesterScanner,
+    ArjunScanner,
 )
 
 
@@ -62,6 +66,10 @@ SCANNERS_MAP = {
     "acunetix": AcunetixScanner,
     "nessus": NessusScanner,
     "wpscan": WpscanScanner,
+    "wafw00f": Wafw00fScanner,
+    "testssl": TestsslScanner,
+    "theharvester": TheHarvesterScanner,
+    "arjun": ArjunScanner,
 }
 SCAN_TYPE_CHOICES = ["full", "wordpress", *SCANNERS_MAP.keys()]
 

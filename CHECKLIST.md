@@ -132,6 +132,5 @@ Analisi comparativa tra i PDF di riferimento (stile Pentest Tools) e il report a
 
 ## Ordine di implementazione consigliato
 
-1. **C2–C5** → wafw00f, testssl, theHarvester, Arjun
-2. **C6–C9** → DalFox, httpx, Katana, NoSQLMap
-3. **E1–E4** → scan types e configurazione
+1. **C6–C9** → DalFox, httpx, Katana, NoSQLMap
+2. **E1–E4** → scan types e configurazione
