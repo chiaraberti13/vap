@@ -6,7 +6,6 @@ Analisi comparativa tra i PDF di riferimento (stile Pentest Tools) e il report a
 
 ## A. LAYOUT E VISUAL DEL REPORT (`report_generator.py`)
 
-- [ ] **A12 – Tabella evidence estesa**: aggiungere colonne "Method" (GET/POST) e "Parameters" alla tabella URL/Evidence quando disponibili
 - [ ] **A13 – Technology table**: per finding di tipo "tecnologie rilevate" (WhatWeb), tabella con colonne Software/Version + Category (con icone se possibile)
 - [ ] **A14 – CVE table strutturata**: per finding con CVE, tabella con colonne CVE | CVSS | EPSS score | EPSS percentile | Summary (incluso "Fixed in version" e reference URLs)
 - [ ] **A15 – Sezione "Scan coverage information"**: lista completa in fondo al report dei test eseguiti con ✓, raggruppati per porta/categoria
