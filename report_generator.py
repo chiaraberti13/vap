@@ -312,15 +312,34 @@ def _build_summary(
         [Paragraph("Risk ratings:", ss["BodyMuted"]), Paragraph("", ss["BodyMuted"])],
     ]
     max_count = max([counts.get(s, 0) for s in SEVERITY_ORDER] + [1])
+    bar_track_w = 2.8  # cm
     for sev in SEVERITY_ORDER:
         cnt = counts.get(sev, 0)
         c = SEVERITY_COLORS[sev]
-        bar_width = max(0.5, (cnt / max_count) * 2.5)
-        bar_fill = Table([[""]], colWidths=[bar_width * cm], rowHeights=[0.2 * cm])
-        bar_fill.setStyle(TableStyle([("BACKGROUND", (0, 0), (0, 0), c)]))
+        fill_ratio = cnt / max_count if max_count else 0
+        fill_w = bar_track_w * fill_ratio
+        empty_w = max(0.0, bar_track_w - fill_w)
+        if fill_w <= 0:
+            fill_w = 0.001
+        if empty_w <= 0:
+            empty_w = 0.001
+        bar_fill = Table(
+            [["", ""]],
+            colWidths=[fill_w * cm, empty_w * cm],
+            rowHeights=[0.22 * cm],
+        )
+        bar_fill.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (0, 0), c),
+            ("BACKGROUND", (1, 0), (1, 0), colors.HexColor("#e5e7eb")),
+            ("BOX",        (0, 0), (-1, -1), 0.25, BORDER_COLOR),
+            ("LEFTPADDING",   (0, 0), (-1, -1), 0),
+            ("RIGHTPADDING",  (0, 0), (-1, -1), 0),
+            ("TOPPADDING",    (0, 0), (-1, -1), 0),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+        ]))
         row_inner = Table(
             [[Paragraph(sev.title(), ss["Small"]), bar_fill]],
-            colWidths=[1.0 * cm, 2.5 * cm],
+            colWidths=[1.0 * cm, bar_track_w * cm],
         )
         row_inner.setStyle(TableStyle([
             ("VALIGN",        (0, 0), (-1, -1), "MIDDLE"),
