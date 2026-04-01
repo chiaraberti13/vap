@@ -6,7 +6,6 @@ Analisi comparativa tra i PDF di riferimento (stile Pentest Tools) e il report a
 
 ## A. LAYOUT E VISUAL DEL REPORT (`report_generator.py`)
 
-- [ ] **A5 – Risk ratings con barre orizzontali**: sostituire i pallini colorati con barre orizzontali proporzionali al count (come nel riferimento)
 - [ ] **A6 – Campo "Tests performed"**: aggiungere nel panel Scan information il conteggio dei test eseguiti
 - [ ] **A7 – Flag icon nei finding**: sostituire il quadratino `■` con icona flag `▶` / `⚑` prima del titolo
 - [ ] **A8 – OWASP multi-versione**: mostrare mapping per OWASP **2017, 2021 e 2025** nella classificazione (non solo 2021)
