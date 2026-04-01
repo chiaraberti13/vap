@@ -195,6 +195,30 @@ def _cvss_rating(score: float) -> str:
         return "HIGH"
     return "CRITICAL"
 
+def _format_epss_score(value: Any) -> str:
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError):
+        return "—"
+    if parsed < 0:
+        return "—"
+    return f"{parsed:.6f}".rstrip("0").rstrip(".")
+
+
+def _format_epss_percentile(value: Any) -> str:
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError):
+        return "—"
+    if parsed < 0:
+        return "—"
+    if parsed <= 1:
+        parsed *= 100
+    if parsed > 100:
+        return "—"
+    return f"{parsed:.2f}%"
+
+
 
 def _color_hex(c: colors.Color) -> str:
     return "#{:02x}{:02x}{:02x}".format(
@@ -588,10 +612,12 @@ def _build_finding_card(finding: Dict[str, Any], ss: Any) -> List[Any]:
         classify_lines.append(f"CISA KEV: {bool(cisa_kev)}")
     if cvss_score is not None:
         classify_lines.append(f"CVSS v3.1 Score: {cvss_score}")
-    if epss_score is not None:
-        classify_lines.append(f"EPSS score: {epss_score}")
-    if epss_percentile is not None:
-        classify_lines.append(f"EPSS percentile: {epss_percentile}")
+    formatted_epss_score = _format_epss_score(epss_score)
+    formatted_epss_percentile = _format_epss_percentile(epss_percentile)
+    if formatted_epss_score != "—":
+        classify_lines.append(f"EPSS score: {formatted_epss_score}")
+    if formatted_epss_percentile != "—":
+        classify_lines.append(f"EPSS percentile: {formatted_epss_percentile}")
 
     if classify_lines:
         body_rows.append([Paragraph("<b>Classification:</b>", ss["SmallBold"])])
@@ -616,8 +642,8 @@ def _build_finding_card(finding: Dict[str, Any], ss: Any) -> List[Any]:
             cve_rows.append([
                 Paragraph(html_escape(str(cve)), ss["TableCell"]),
                 Paragraph(html_escape(str(details.get("cvss", cvss_score or "—"))), ss["TableCell"]),
-                Paragraph(html_escape(str(details.get("epss_score", epss_score or "—"))), ss["TableCell"]),
-                Paragraph(html_escape(str(details.get("epss_percentile", epss_percentile or "—"))), ss["TableCell"]),
+                Paragraph(html_escape(_format_epss_score(details.get("epss_score", epss_score))), ss["TableCell"]),
+                Paragraph(html_escape(_format_epss_percentile(details.get("epss_percentile", epss_percentile))), ss["TableCell"]),
                 Paragraph(html_escape(summary), ss["TableCell"]),
             ])
         cve_table = Table(cve_rows, colWidths=[2.4 * cm, 1.2 * cm, 1.8 * cm, 2.0 * cm, INNER_W - 7.4 * cm - 16])
