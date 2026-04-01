@@ -11,7 +11,6 @@ Analisi comparativa tra i PDF di riferimento (stile Pentest Tools) e il report a
 
 ## B. PROCESSO DI SCAN (`scanner_engine.py`, `tasks.py`)
 
-- [ ] **B1 – Redirect detection**: rilevare e registrare redirect HTTP→HTTPS durante la validazione del target, salvarlo come metadata
 - [ ] **B2 – Tracking "tests_performed"**: ogni scanner restituisce il conteggio dei test eseguiti; aggregare il totale nel `ScanResult`
 - [ ] **B3 – Tracking "urls_spidered"**: raccogliere e sommare gli URL analizzati dai vari scanner
 - [ ] **B4 – Tracking "unique_injection_points"**: raccogliere il conteggio dei parametri/injection point trovati
