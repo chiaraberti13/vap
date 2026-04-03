@@ -162,6 +162,14 @@ def finalize_scan(self, results: List[Dict[str, Any]], scan_id: int, target: str
                 scan.id, target, scan_type, findings,
                 start_time=scan.created_at,
                 end_time=scan.completed_at,
+                redirect_from=scan.redirect_from,
+                tests_performed=scan.tests_performed,
+                scan_stats={
+                    "urls_spidered": scan.urls_spidered,
+                    "unique_injection_points": scan.injection_points,
+                    "total_http_requests": scan.http_requests_total,
+                    "average_response_time": scan.avg_response_time_ms,
+                },
             )
         except Exception as exc:
             scan.status = "report_failed"
@@ -286,6 +294,14 @@ def run_scan_in_process(scan_id: int, scan_type: str, target: str) -> None:
                 scan.id, target, scan_type, findings,
                 start_time=scan.created_at,
                 end_time=scan.completed_at,
+                redirect_from=scan.redirect_from,
+                tests_performed=scan.tests_performed,
+                scan_stats={
+                    "urls_spidered": scan.urls_spidered,
+                    "unique_injection_points": scan.injection_points,
+                    "total_http_requests": scan.http_requests_total,
+                    "average_response_time": scan.avg_response_time_ms,
+                },
             )
             scan.report_path = str(report_path)
             _append_log(scan, "Report PDF generato.")
