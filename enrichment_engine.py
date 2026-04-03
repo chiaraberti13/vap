@@ -417,6 +417,7 @@ def _apply_cve_enrichment(findings: List[Dict[str, Any]], summary: EnrichmentSum
         return
 
     nvd_payload = _fetch_nvd_metadata(cves)
+    wpvulndb_payload = _fetch_wpvulndb_metadata(cves)
     exploitdb_payload = _fetch_exploitdb_metadata(cves)
     epss_payload = _fetch_epss_metadata(cves)
     kev_catalog = _fetch_cisa_kev_catalog()
@@ -441,11 +442,19 @@ def _apply_cve_enrichment(findings: List[Dict[str, Any]], summary: EnrichmentSum
 
         for cve in finding_cves:
             nvd = nvd_payload.get(cve, {})
+            wpvulndb = wpvulndb_payload.get(cve, {})
             epss = epss_payload.get(cve, {})
             kev = kev_catalog.get(cve, {})
             detail: Dict[str, Any] = {"cve": cve}
             if nvd:
                 detail.update(nvd)
+            if wpvulndb:
+                if not detail.get("fixed_in_version") and wpvulndb.get("fixed_in_version"):
+                    detail["fixed_in_version"] = wpvulndb["fixed_in_version"]
+                if not detail.get("references") and wpvulndb.get("references"):
+                    detail["references"] = wpvulndb["references"]
+                if not detail.get("source"):
+                    detail["source"] = wpvulndb.get("source", "WPVulnDB")
             if epss:
                 detail.update(epss)
             if kev:
@@ -534,6 +543,46 @@ def _fetch_nvd_metadata(cves: List[str]) -> Dict[str, Dict[str, Any]]:
     return results
 
 
+def _fetch_wpvulndb_metadata(cves: List[str]) -> Dict[str, Dict[str, Any]]:
+    if not settings.enable_live_scans or not cves:
+        return {}
+
+    wpscan_token = getattr(settings, "wpscan_api_token", "")
+    if not wpscan_token:
+        return {}
+
+    api_base_url = str(getattr(settings, "wpscan_api_base_url", "https://wpscan.com/api/v3")).rstrip("/")
+    results: Dict[str, Dict[str, Any]] = {}
+    headers = {"Authorization": f"Token token={wpscan_token}"}
+
+    for cve in cves:
+        cve_key = str(cve).strip().lower()
+        if not cve_key:
+            continue
+        try:
+            response = requests.get(
+                f"{api_base_url}/vulnerabilities/{cve_key}",
+                headers=headers,
+                timeout=settings.nvd_timeout_seconds,
+            )
+            response.raise_for_status()
+        except requests.RequestException:
+            continue
+
+        payload = response.json()
+        fixed_in_version = _extract_wpvulndb_fixed_in(payload)
+        references = _extract_wpvulndb_references(payload)
+        if not fixed_in_version and not references:
+            continue
+
+        results[cve] = {
+            "fixed_in_version": fixed_in_version,
+            "references": references,
+            "source": "WPVulnDB",
+        }
+    return results
+
+
 def _extract_fixed_in_version(cve_item: Dict[str, Any]) -> Optional[str]:
     configurations = cve_item.get("configurations", []) if isinstance(cve_item, dict) else []
     for config in configurations:
@@ -548,6 +597,46 @@ def _extract_fixed_in_version(cve_item: Dict[str, Any]) -> Optional[str]:
                 if match.get("versionEndIncluding"):
                     return str(match["versionEndIncluding"])
     return None
+
+
+def _extract_wpvulndb_fixed_in(payload: Any) -> Optional[str]:
+    if isinstance(payload, dict):
+        for key in ("fixed_in", "fixed_in_version", "patched_in", "patched_version"):
+            value = payload.get(key)
+            if isinstance(value, str) and value.strip():
+                return value.strip()
+        for value in payload.values():
+            fixed = _extract_wpvulndb_fixed_in(value)
+            if fixed:
+                return fixed
+    elif isinstance(payload, list):
+        for item in payload:
+            fixed = _extract_wpvulndb_fixed_in(item)
+            if fixed:
+                return fixed
+    return None
+
+
+def _extract_wpvulndb_references(payload: Any) -> List[str]:
+    urls: List[str] = []
+    if isinstance(payload, dict):
+        for key, value in payload.items():
+            key_lc = str(key).lower()
+            if key_lc in {"url", "urls"} and isinstance(value, str) and value.strip():
+                urls.append(value.strip())
+            elif key_lc in {"url", "urls"} and isinstance(value, list):
+                for item in value:
+                    if isinstance(item, str) and item.strip():
+                        urls.append(item.strip())
+            elif key_lc in {"references", "reference"}:
+                urls.extend(_extract_wpvulndb_references(value))
+            elif isinstance(value, (dict, list)):
+                urls.extend(_extract_wpvulndb_references(value))
+    elif isinstance(payload, list):
+        for item in payload:
+            urls.extend(_extract_wpvulndb_references(item))
+
+    return sorted({url for url in urls if url})
 
 
 def _extract_nvd_references(cve_item: Dict[str, Any]) -> List[str]:

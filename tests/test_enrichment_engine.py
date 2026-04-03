@@ -133,3 +133,66 @@ def test_enrich_findings_adds_epss_kev_and_fixed_version(monkeypatch):
     assert enriched[0]["epss_percentile"] == 0.99
     assert enriched[0]["cisa_kev"] is True
     assert enriched[0]["cve_details"][0]["fixed_in_version"] == "2.4.1"
+
+
+def test_enrich_findings_uses_wpvulndb_fixed_version_when_nvd_missing(monkeypatch):
+    monkeypatch.setattr(
+        enrichment_engine,
+        "settings",
+        SimpleNamespace(
+            enable_live_scans=True,
+            nvd_api_key="token",
+            nvd_api_base_url="https://nvd.local/cves",
+            nvd_timeout_seconds=2,
+            nvd_max_cves=10,
+            exploitdb_searchsploit_path="missing",
+            exploitdb_max_cves=10,
+            exploitdb_timeout_seconds=2,
+            wpscan_api_token="wp-token",
+            wpscan_api_base_url="https://wpscan.local/api/v3",
+            false_positive_medium_threshold=0.4,
+            false_positive_high_threshold=0.7,
+        ),
+    )
+    monkeypatch.setattr(enrichment_engine, "shutil", SimpleNamespace(which=lambda _: None))
+    monkeypatch.setattr(enrichment_engine, "_apply_false_positive_model", lambda findings: None)
+    monkeypatch.setattr(enrichment_engine, "_apply_mitre_mapping", lambda findings: None)
+    monkeypatch.setattr(enrichment_engine, "_apply_correlation", lambda findings: None)
+
+    def _fake_get(url, **kwargs):
+        if "nvd.local" in url:
+            return _FakeResponse(
+                {
+                    "vulnerabilities": [
+                        {
+                            "cve": {
+                                "descriptions": [{"lang": "en", "value": "desc"}],
+                                "metrics": {"cvssMetricV31": [{"cvssData": {"baseScore": 7.3, "vectorString": "V"}}]},
+                                "references": [{"url": "https://nvd.local/ref"}],
+                            }
+                        }
+                    ]
+                }
+            )
+        if "wpscan.local" in url:
+            return _FakeResponse(
+                {
+                    "vulnerability": {
+                        "fixed_in": "5.9.4",
+                        "references": {"url": ["https://wpscan.com/vulnerability/example"]},
+                    }
+                }
+            )
+        if "api.first.org" in url:
+            return _FakeResponse({"data": []})
+        if "known_exploited_vulnerabilities" in url:
+            return _FakeResponse({"vulnerabilities": []})
+        raise AssertionError(f"URL inatteso: {url}")
+
+    monkeypatch.setattr(enrichment_engine.requests, "get", _fake_get)
+
+    findings = [{"title": "test", "cve": ["CVE-2024-9999"], "cwe": []}]
+    enriched = enrichment_engine.enrich_findings(findings)
+
+    assert enriched[0]["cve_verified"] is True
+    assert enriched[0]["cve_details"][0]["fixed_in_version"] == "5.9.4"
