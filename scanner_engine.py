@@ -245,7 +245,32 @@ def _collect_findings(results: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     return findings[: settings.max_findings]
 
 
-def _compute_scan_stats(results: List[Dict[str, Any]], findings: List[Dict[str, Any]]) -> Dict[str, Any]:
+def _measure_target_avg_response_time_ms(target: str, samples: int = 3, timeout: int = 5) -> float | None:
+    normalized_target = target if target.startswith(("http://", "https://")) else f"http://{target}"
+    durations_ms: List[float] = []
+
+    for _ in range(max(1, samples)):
+        try:
+            response = requests.get(
+                normalized_target,
+                timeout=timeout,
+                allow_redirects=True,
+                headers={"User-Agent": "VAP-Response-Time-Probe/1.0"},
+            )
+            durations_ms.append(float(response.elapsed.total_seconds() * 1000))
+        except requests.RequestException:
+            continue
+
+    if not durations_ms:
+        return None
+    return round(sum(durations_ms) / len(durations_ms), 2)
+
+
+def _compute_scan_stats(
+    results: List[Dict[str, Any]],
+    findings: List[Dict[str, Any]],
+    target: str | None = None,
+) -> Dict[str, Any]:
     tests_performed = 0
     urls: set[str] = set()
     urls_spidered_total = 0
@@ -303,6 +328,8 @@ def _compute_scan_stats(results: List[Dict[str, Any]], findings: List[Dict[str, 
             unique_injection_points.add(f"{base_context}|{parameters.strip()}")
 
     avg_response_time_ms = round(sum(response_times) / len(response_times), 2) if response_times else None
+    if avg_response_time_ms is None and target:
+        avg_response_time_ms = _measure_target_avg_response_time_ms(target)
     if not http_requests_total:
         http_requests_total = tests_performed
 
@@ -418,7 +445,7 @@ def run_scan(target: str, scan_type: str) -> ScanResult:
 
     findings = _collect_findings(results)
     findings = enrich_findings(findings)
-    metadata = _compute_scan_stats(results, findings)
+    metadata = _compute_scan_stats(results, findings, target=validated_target)
     metadata["redirect_from"] = redirect_from
     completed_at = datetime.now(timezone.utc)
 

@@ -218,6 +218,13 @@ def test_compute_scan_stats_supports_total_http_requests_alias():
     assert stats["total_http_requests"] == 7
 
 
+def test_compute_scan_stats_probes_target_when_scanners_do_not_provide_response_time(monkeypatch):
+    monkeypatch.setattr(scanner_engine, "_measure_target_avg_response_time_ms", lambda *_args, **_kwargs: 123.45)
+    results = [{"findings": [], "tests_performed": 2, "http_requests_total": 4}]
+    stats = scanner_engine._compute_scan_stats(results, findings=[], target="example.com")
+    assert stats["avg_response_time_ms"] == 123.45
+
+
 def test_detect_target_redirect_handles_request_exception(monkeypatch):
     monkeypatch.setattr(
         scanner_engine.requests,

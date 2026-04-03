@@ -132,7 +132,7 @@ def finalize_scan(self, results: List[Dict[str, Any]], scan_id: int, target: str
             finding.setdefault("found_by", f"{tool_name.title()} – Active Testing" if tool_name else "Active Testing")
             findings.append(finding)
     findings = enrich_findings(findings)
-    stats = _compute_scan_stats(results, findings)
+    stats = _compute_scan_stats(results, findings, target=target)
     redirect_from = ""
     if scan_type.lower() != "nmap":
         redirect_from = detect_target_redirect(target).get("redirect_from", "")
@@ -258,7 +258,7 @@ def run_scan_in_process(scan_id: int, scan_type: str, target: str) -> None:
         tool_name = finding.get("tool", "")
         finding.setdefault("found_by", f"{tool_name.title()} – Active Testing" if tool_name else "Active Testing")
     findings = enrich_findings(findings)
-    stats = _compute_scan_stats(results, findings)
+    stats = _compute_scan_stats(results, findings, target=target)
     redirect_from = ""
     if scan_type.lower() != "nmap":
         redirect_from = detect_target_redirect(target).get("redirect_from", "")
