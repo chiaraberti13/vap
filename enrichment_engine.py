@@ -563,23 +563,24 @@ def _fetch_epss_metadata(cves: List[str]) -> Dict[str, Dict[str, Any]]:
     if not settings.enable_live_scans or not cves:
         return {}
 
-    try:
-        response = requests.get(
-            "https://api.first.org/data/v1/epss",
-            params={"cve": ",".join(cves)},
-            timeout=settings.nvd_timeout_seconds,
-        )
-        response.raise_for_status()
-    except requests.RequestException:
-        return {}
-
-    payload = response.json()
     results: Dict[str, Dict[str, Any]] = {}
-    for item in payload.get("data", []) if isinstance(payload, dict) else []:
-        if not isinstance(item, dict):
+    for cve in cves:
+        try:
+            response = requests.get(
+                "https://api.first.org/data/v1/epss",
+                params={"cve": cve},
+                timeout=settings.nvd_timeout_seconds,
+            )
+            response.raise_for_status()
+        except requests.RequestException:
             continue
-        cve = str(item.get("cve", "")).strip()
-        if not cve:
+
+        payload = response.json()
+        entries = payload.get("data", []) if isinstance(payload, dict) else []
+        if not entries:
+            continue
+        item = entries[0]
+        if not isinstance(item, dict):
             continue
         try:
             epss_score = float(item.get("epss")) if item.get("epss") is not None else None

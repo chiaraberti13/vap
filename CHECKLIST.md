@@ -23,7 +23,6 @@ Analisi comparativa tra i PDF di riferimento (stile Pentest Tools) e il report a
 
 ## D. ENRICHMENT E CLASSIFICAZIONE (`enrichment_engine.py`)
 
-- [ ] **D3 – EPSS score lookup**: integrare chiamata all'API FIRST EPSS (`https://api.first.org/data/v1/epss?cve={cve_id}`) per ogni CVE trovato
 - [ ] **D4 – CISA KEV lookup**: verificare le CVE nel catalogo CISA KEV (JSON pubblico) e flaggarle come "Known Exploited"
 - [ ] **D5 – "Fixed in version" enrichment**: per CVE legate a componenti (WP theme, plugin, library), aggiungere `fixed_in_version` dai dati NVD/WPVulnDB
 
