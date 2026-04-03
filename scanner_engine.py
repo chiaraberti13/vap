@@ -79,6 +79,14 @@ SCANNERS_MAP = {
     "katana": KatanaScanner,
     "nosqlmap": NosqlmapScanner,
 }
+TOOL_DISPLAY_NAMES = {
+    "wpscan": "WPScan",
+    "wafw00f": "wafw00f",
+    "testssl": "testssl.sh",
+    "theharvester": "theHarvester",
+    "httpx": "httpx",
+    "nosqlmap": "NoSQLMap",
+}
 SCAN_TYPE_PROFILES = {
     "light": ["whatweb", "nikto", "nmap", "httpx"],
     "wordpress": ["wpscan", "whatweb", "nikto", "nuclei", "nmap", "wafw00f"],
@@ -237,10 +245,14 @@ def _collect_findings(results: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     for result in results:
         tool_name = result.get("tool", "")
         for finding in result.get("findings", []):
+            finding = dict(finding)
             if tool_name and not finding.get("tool"):
-                finding = dict(finding)
                 finding["tool"] = tool_name
-            finding.setdefault("found_by", f"{tool_name.title()} – Active Testing" if tool_name else "Active Testing")
+            if tool_name:
+                display_name = TOOL_DISPLAY_NAMES.get(tool_name.lower(), tool_name.title())
+                finding.setdefault("found_by", f"{display_name} – Active Testing")
+            else:
+                finding.setdefault("found_by", "Active Testing")
             findings.append(finding)
     return findings[: settings.max_findings]
 
