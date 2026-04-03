@@ -89,6 +89,31 @@ def test_dalfox_extract_findings():
     )
     assert findings
     assert findings[0]["severity"] == "high"
+    assert findings[0]["title"] == "Reflected XSS rilevato sul parametro 'q'"
+
+
+def test_dalfox_extract_findings_dom_xss_and_dedup():
+    scanner = DalfoxScanner(enable_live_scans=False)
+    findings = scanner._extract_findings(
+        [
+            {
+                "evidence": "javascript:alert(document.domain)",
+                "param": "redirect",
+                "method": "post",
+                "type": "dom",
+            },
+            {
+                "evidence": "javascript:alert(document.domain)",
+                "param": "redirect",
+                "method": "POST",
+                "type": "dom",
+            },
+        ]
+    )
+    assert len(findings) == 1
+    assert findings[0]["severity"] == "medium"
+    assert findings[0]["method"] == "POST"
+    assert findings[0]["title"] == "DOM-based XSS rilevato sul parametro 'redirect'"
 
 
 def test_httpx_extract_findings():
