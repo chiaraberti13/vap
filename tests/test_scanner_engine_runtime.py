@@ -207,7 +207,15 @@ def test_compute_scan_stats_collects_counters():
     assert stats["injection_points"] == 2
     assert stats["unique_injection_points"] == 2
     assert stats["http_requests_total"] == 12
+    assert stats["total_http_requests"] == 12
     assert stats["avg_response_time_ms"] == 75.0
+
+
+def test_compute_scan_stats_supports_total_http_requests_alias():
+    results = [{"findings": [], "tests_performed": 1, "total_http_requests": 7}]
+    stats = scanner_engine._compute_scan_stats(results, findings=[])
+    assert stats["http_requests_total"] == 7
+    assert stats["total_http_requests"] == 7
 
 
 def test_detect_target_redirect_handles_request_exception(monkeypatch):
