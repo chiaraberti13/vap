@@ -6,7 +6,7 @@ import json
 import shutil
 import subprocess
 from tempfile import NamedTemporaryFile
-from typing import Any, Dict, List
+from typing import Any, ClassVar, Dict, List
 
 from config import settings
 
@@ -14,6 +14,38 @@ from config import settings
 @dataclass
 class TestsslScanner:
     enable_live_scans: bool = False
+    _ID_RULES: ClassVar[Dict[str, Dict[str, str]]] = {
+        "ssl": {
+            "title": "Protocollo SSL obsoleto abilitato",
+            "severity": "high",
+            "recommendation": "Disabilitare SSLv2/SSLv3 e mantenere solo TLS moderni (>= TLS 1.2).",
+        },
+        "tlsv1": {
+            "title": "Protocollo TLS legacy abilitato",
+            "severity": "medium",
+            "recommendation": "Disabilitare TLS 1.0/1.1 e forzare TLS 1.2/1.3.",
+        },
+        "cipher": {
+            "title": "Cipher suite debole rilevata",
+            "severity": "high",
+            "recommendation": "Rimuovere cipher deboli (EXPORT, DES/3DES, RC4, NULL, aNULL).",
+        },
+        "cert_expired": {
+            "title": "Certificato TLS scaduto",
+            "severity": "high",
+            "recommendation": "Rinnovare immediatamente il certificato con una CA affidabile.",
+        },
+        "cert_selfsigned": {
+            "title": "Certificato self-signed in uso",
+            "severity": "medium",
+            "recommendation": "Sostituire con certificato firmato da una CA attendibile.",
+        },
+        "hsts": {
+            "title": "HSTS assente o non sicuro",
+            "severity": "medium",
+            "recommendation": "Abilitare HSTS con max-age adeguato e includeSubDomains/preload se applicabile.",
+        },
+    }
 
     def run(self, target: str) -> Dict[str, Any]:
         if not self.enable_live_scans:
@@ -94,15 +126,27 @@ class TestsslScanner:
                 continue
             finding_text = str(row.get("finding") or "Misconfiguration TLS rilevata")
             finding_id = str(row.get("id") or "")
+            rule = self._match_rule(finding_id, finding_text)
+            mapped_severity = rule.get("severity", severity)
             findings.append(
                 {
                     "tool": "testssl",
-                    "title": f"TLS issue: {finding_id or 'generic'}",
-                    "severity": "high" if severity == "critical" else severity,
+                    "title": rule.get("title", f"TLS issue: {finding_id or 'generic'}"),
+                    "severity": "high" if mapped_severity == "critical" else mapped_severity,
                     "description": finding_text,
-                    "recommendation": "Applicare hardening TLS secondo OWASP TLS Cheat Sheet.",
+                    "recommendation": rule.get(
+                        "recommendation", "Applicare hardening TLS secondo OWASP TLS Cheat Sheet."
+                    ),
                     "found_by": "testssl.sh – Active Testing",
                     "tags": ["tls", "ssl", "crypto"],
                 }
             )
         return findings
+
+    def _match_rule(self, finding_id: str, finding_text: str) -> Dict[str, str]:
+        normalized_id = finding_id.lower()
+        normalized_text = finding_text.lower()
+        for pattern, rule in self._ID_RULES.items():
+            if pattern in normalized_id or pattern in normalized_text:
+                return rule
+        return {}

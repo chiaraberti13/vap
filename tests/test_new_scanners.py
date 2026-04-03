@@ -35,7 +35,17 @@ def test_testssl_extract_findings():
     scanner = TestsslScanner(enable_live_scans=False)
     findings = scanner._extract_findings([{"id": "TLSv1", "severity": "high", "finding": "Protocollo debole"}])
     assert findings
-    assert findings[0]["severity"] == "high"
+    assert findings[0]["severity"] == "medium"
+    assert findings[0]["title"] == "Protocollo TLS legacy abilitato"
+
+
+def test_testssl_extract_findings_maps_hsts():
+    scanner = TestsslScanner(enable_live_scans=False)
+    findings = scanner._extract_findings(
+        [{"id": "hsts", "severity": "low", "finding": "strict-transport-security header missing"}]
+    )
+    assert findings
+    assert findings[0]["title"] == "HSTS assente o non sicuro"
 
 
 def test_theharvester_extract_findings():
