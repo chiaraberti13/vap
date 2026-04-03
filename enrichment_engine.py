@@ -360,6 +360,8 @@ OWASP_2017_MAPPING: Dict[str, str] = {
 
 OWASP_2025_MAPPING: Dict[str, str] = {
     "CWE-22": "A01:2025 - Broken Access Control",
+    "CWE-284": "A01:2025 - Broken Access Control",
+    "CWE-285": "A01:2025 - Broken Access Control",
     "CWE-79": "A03:2025 - Injection",
     "CWE-89": "A03:2025 - Injection",
     "CWE-94": "A03:2025 - Injection",
@@ -369,9 +371,17 @@ OWASP_2025_MAPPING: Dict[str, str] = {
     "CWE-312": "A02:2025 - Cryptographic Failures",
     "CWE-319": "A02:2025 - Cryptographic Failures",
     "CWE-326": "A02:2025 - Cryptographic Failures",
+    "CWE-602": "A04:2025 - Insecure Design",
+    "CWE-799": "A04:2025 - Insecure Design",
     "CWE-611": "A05:2025 - Security Misconfiguration",
+    "CWE-16": "A05:2025 - Security Misconfiguration",
+    "CWE-1104": "A06:2025 - Vulnerable and Outdated Components",
     "CWE-306": "A07:2025 - Identification and Authentication Failures",
     "CWE-307": "A07:2025 - Identification and Authentication Failures",
+    "CWE-352": "A08:2025 - Software and Data Integrity Failures",
+    "CWE-494": "A08:2025 - Software and Data Integrity Failures",
+    "CWE-778": "A09:2025 - Security Logging and Monitoring Failures",
+    "CWE-117": "A09:2025 - Security Logging and Monitoring Failures",
     "CWE-601": "A10:2025 - Server-Side Request Forgery",
 }
 

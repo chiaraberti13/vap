@@ -23,7 +23,6 @@ Analisi comparativa tra i PDF di riferimento (stile Pentest Tools) e il report a
 
 ## D. ENRICHMENT E CLASSIFICAZIONE (`enrichment_engine.py`)
 
-- [ ] **D1 – OWASP 2025 mapping**: aggiungere dizionario `OWASP_2025_MAPPING` con categorie A01-A10 2025 e popolare il campo nei finding
 - [ ] **D2 – OWASP 2017 mapping**: aggiungere dizionario `OWASP_2017_MAPPING` per retrocompatibilità
 - [ ] **D3 – EPSS score lookup**: integrare chiamata all'API FIRST EPSS (`https://api.first.org/data/v1/epss?cve={cve_id}`) per ogni CVE trovato
 - [ ] **D4 – CISA KEV lookup**: verificare le CVE nel catalogo CISA KEV (JSON pubblico) e flaggarle come "Known Exploited"
