@@ -128,6 +128,31 @@ def test_get_scanner_classes_and_single_scanner(monkeypatch):
         scanner_engine.run_single_scanner("missing", "target")
 
 
+def test_light_nikto_scanner_keeps_only_header_findings(monkeypatch):
+    def fake_run(self, _target):
+        return {
+            "tool": "nikto",
+            "status": "simulated",
+            "findings": [
+                {"title": "Missing HTTP Security Headers", "description": "CSP/HSTS absent"},
+                {"title": "Backup file exposed", "description": "database.sql.bak reachable"},
+            ],
+        }
+
+    monkeypatch.setattr(scanner_engine.NiktoScanner, "run", fake_run)
+    scanner = scanner_engine.LightNiktoScanner(enable_live_scans=False)
+
+    result = scanner.run("example.com")
+    assert len(result["findings"]) == 1
+    assert "header" in result["findings"][0]["title"].lower()
+
+
+def test_light_nmap_scanner_forces_quick_profile():
+    scanner = scanner_engine.LightNmapScanner(enable_live_scans=False)
+    assert scanner._profile_args("full") == ["-T4", "-F"]
+    assert scanner._profile_args("stealth") == ["-T4", "-F"]
+
+
 def test_run_scan_nmap_path(monkeypatch):
     monkeypatch.setattr(scanner_engine, "SCANNERS_MAP", {"nmap": DummyScanner})
     monkeypatch.setattr(
