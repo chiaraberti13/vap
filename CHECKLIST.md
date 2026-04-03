@@ -19,11 +19,6 @@ Analisi comparativa tra i PDF di riferimento (stile Pentest Tools) e il report a
 
 ### Priorità Media
 
-- [ ] **C8 – Katana** (`scanners/katana_scanner.py`)
-  - Web crawler per mappare tutti gli endpoint e URL del target
-  - Fornisce i dati per la stat "URLs spidered"
-  - Tool: `katana -u {target} -json`
-
 - [ ] **C9 – NoSQLMap** (`scanners/nosqlmap_scanner.py`)
   - NoSQL injection detection (MongoDB, CouchDB, Redis)
   - Tool: `nosqlmap` via subprocess

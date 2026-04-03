@@ -59,11 +59,19 @@ class KatanaScanner:
 
         payload = self._parse_json_lines(completed.stdout)
         findings = self._extract_findings(payload)
+        unique_spidered_urls = {
+            endpoint
+            for row in payload
+            if isinstance(row, dict)
+            for endpoint in [str((row.get("request") or {}).get("endpoint") or "").strip()]
+            if endpoint
+        }
+
         return {
             "tool": "katana",
             "status": "executed" if completed.returncode == 0 else "completed_with_warnings",
             "findings": findings[: settings.max_findings],
-            "urls_spidered": len({row.get('request', {}).get('endpoint') for row in payload if isinstance(row, dict)}),
+            "urls_spidered": len(unique_spidered_urls),
         }
 
     def _parse_json_lines(self, raw: str) -> List[Dict[str, Any]]:
