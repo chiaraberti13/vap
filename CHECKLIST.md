@@ -27,7 +27,6 @@ Analisi comparativa tra i PDF di riferimento (stile Pentest Tools) e il report a
 
 ## E. SCAN TYPES E CONFIGURAZIONE (`config.py`)
 
-- [ ] **E1 – Scan type "wordpress"**: definire scan type specifico che attiva WPScan + WhatWeb + Nikto + Nuclei (template WP) + Nmap + wafw00f
 - [ ] **E2 – Scan type "light"**: scan limitato a WhatWeb + Nikto (headers only) + Nmap (top ports) + httpx, con banner nel report sui limiti
 - [ ] **E3 – Parametri WPScan in config**: aggiungere `VAP_WPSCAN_API_TOKEN`, `VAP_WPSCAN_ENUMERATE` (plugins, themes, users, timthumbs, config_backups, db_exports)
 - [ ] **E4 – Scan type label nel report**: il campo `scan_type` nel panel mostra info aggiuntive (es. "Light", "Deep", "WordPress – Passive")
