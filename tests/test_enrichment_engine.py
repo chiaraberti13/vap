@@ -41,6 +41,31 @@ def test_enrich_findings_adds_owasp_mappings_without_live_calls(monkeypatch):
     assert enriched[0]["owasp_2025"] == "A03:2025 - Injection"
 
 
+def test_enrich_findings_adds_owasp_2025_non_injection_category(monkeypatch):
+    monkeypatch.setattr(
+        enrichment_engine,
+        "settings",
+        SimpleNamespace(
+            enable_live_scans=False,
+            nvd_api_key="",
+            exploitdb_searchsploit_path="searchsploit",
+            exploitdb_max_cves=10,
+            nvd_max_cves=10,
+            nvd_timeout_seconds=2,
+            false_positive_medium_threshold=0.4,
+            false_positive_high_threshold=0.7,
+        ),
+    )
+    monkeypatch.setattr(enrichment_engine, "_apply_false_positive_model", lambda findings: None)
+    monkeypatch.setattr(enrichment_engine, "_apply_mitre_mapping", lambda findings: None)
+    monkeypatch.setattr(enrichment_engine, "_apply_correlation", lambda findings: None)
+
+    findings = [{"title": "Rate limiting missing", "cwe": ["CWE-799"], "cve": []}]
+    enriched = enrichment_engine.enrich_findings(findings)
+
+    assert enriched[0]["owasp_2025"] == "A04:2025 - Insecure Design"
+
+
 def test_enrich_findings_adds_epss_kev_and_fixed_version(monkeypatch):
     monkeypatch.setattr(
         enrichment_engine,
