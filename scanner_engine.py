@@ -58,6 +58,45 @@ class WordpressNucleiScanner(NucleiScanner):
         super().__init__(enable_live_scans=enable_live_scans, template_profile="wordpress")
 
 
+class LightNiktoScanner(NiktoScanner):
+    """Nikto variant for light profile: keep only HTTP header checks."""
+
+    HEADER_KEYWORDS = (
+        "header",
+        "headers",
+        "csp",
+        "hsts",
+        "x-frame-options",
+        "x-content-type-options",
+        "referrer-policy",
+        "permissions-policy",
+    )
+
+    def run(self, target: str) -> Dict[str, Any]:
+        result = super().run(target)
+        findings = result.get("findings")
+        if not isinstance(findings, list):
+            return result
+        result["findings"] = [
+            finding for finding in findings if self._is_header_finding(finding)
+        ]
+        return result
+
+    def _is_header_finding(self, finding: Dict[str, Any]) -> bool:
+        payload = " ".join(
+            str(finding.get(field, "")).lower()
+            for field in ("title", "description", "evidence", "recommendation")
+        )
+        return any(keyword in payload for keyword in self.HEADER_KEYWORDS)
+
+
+class LightNmapScanner(NmapScanner):
+    """Nmap variant for light profile: always top ports."""
+
+    def _profile_args(self, _profile: str) -> List[str]:
+        return super()._profile_args("quick")
+
+
 SCANNERS_MAP = {
     "nuclei": NucleiScanner,
     "nmap": NmapScanner,
@@ -93,9 +132,11 @@ TOOL_DISPLAY_NAMES = {
 }
 PROFILE_SCANNERS_MAP = {
     "nuclei_wordpress": WordpressNucleiScanner,
+    "nikto_headers": LightNiktoScanner,
+    "nmap_top_ports": LightNmapScanner,
 }
 SCAN_TYPE_PROFILES = {
-    "light": ["whatweb", "nikto", "nmap", "httpx"],
+    "light": ["whatweb", "nikto_headers", "nmap_top_ports", "httpx"],
     "wordpress": ["wpscan", "whatweb", "nikto", "nuclei_wordpress", "nmap", "wafw00f"],
 }
 SCAN_TYPE_CHOICES = ["full", "light", "wordpress", *SCANNERS_MAP.keys()]

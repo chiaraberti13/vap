@@ -962,7 +962,11 @@ def generate_report(
     story.append(Spacer(1, 6))
 
     scan_type_notes = {
-        "light": "Light scan did not check for SQLi, XSS, Command Injection, XXE and other deep active checks.",
+        "light": (
+            "Light scan executed only WhatWeb, Nikto (HTTP security headers only), "
+            "Nmap (top ports) and httpx. SQLi, XSS, Command Injection, XXE and other deep active "
+            "checks were not performed."
+        ),
         "wordpress": "WordPress scan focuses on WP core/themes/plugins and may not fully cover custom application logic.",
     }
     note = scan_type_notes.get(str(scan_type).lower())
