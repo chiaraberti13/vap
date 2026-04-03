@@ -259,7 +259,10 @@ def _compute_scan_stats(results: List[Dict[str, Any]], findings: List[Dict[str, 
         scanner_urls_spidered = result.get("urls_spidered")
         if isinstance(scanner_urls_spidered, (int, float)) and scanner_urls_spidered >= 0:
             urls_spidered_total += int(scanner_urls_spidered)
-        http_requests_total += int(result.get("http_requests_total") or 0)
+        scanner_http_requests = result.get("http_requests_total")
+        if scanner_http_requests is None:
+            scanner_http_requests = result.get("total_http_requests")
+        http_requests_total += int(scanner_http_requests or 0)
 
         avg_ms = result.get("avg_response_time_ms")
         if isinstance(avg_ms, (int, float)) and avg_ms >= 0:
@@ -310,6 +313,7 @@ def _compute_scan_stats(results: List[Dict[str, Any]], findings: List[Dict[str, 
         "injection_points": injection_points,
         "unique_injection_points": injection_points,
         "http_requests_total": http_requests_total,
+        "total_http_requests": http_requests_total,
         "avg_response_time_ms": avg_response_time_ms,
     }
 
