@@ -4,11 +4,6 @@ Analisi comparativa tra i PDF di riferimento (stile Pentest Tools) e il report a
 
 ---
 
-## A. LAYOUT E VISUAL DEL REPORT (`report_generator.py`)
-
-
----
-
 ## B. PROCESSO DI SCAN (`scanner_engine.py`, `tasks.py`)
 
 ---

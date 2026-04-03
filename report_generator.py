@@ -112,6 +112,7 @@ class ReportDocTemplate(BaseDocTemplate):
             bottomMargin=B_MARGIN,
         )
         self.target = target
+        self.generated_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
         frame = Frame(
             L_MARGIN, B_MARGIN,
             CONTENT_W, PAGE_H - T_MARGIN - B_MARGIN,
@@ -171,6 +172,10 @@ class ReportDocTemplate(BaseDocTemplate):
         canvas.setFillColor(colors.HexColor("#94a3b8"))
         canvas.drawRightString(w - R_MARGIN, h - bar_h + 0.48 * cm,
                                f"Target: {self.target}")
+        canvas.setFont("Helvetica", 7)
+        canvas.setFillColor(colors.HexColor("#cbd5e1"))
+        canvas.drawRightString(w - R_MARGIN, h - bar_h + 0.18 * cm,
+                               f"Generated: {self.generated_at}")
 
         # ── Footer ────────────────────────────────────────────────────
         canvas.setStrokeColor(BORDER_COLOR)
@@ -179,6 +184,7 @@ class ReportDocTemplate(BaseDocTemplate):
                     w - R_MARGIN, B_MARGIN - 0.25 * cm)
         canvas.setFont("Helvetica", 7)
         canvas.setFillColor(TEXT_MUTED)
+        canvas.drawString(L_MARGIN, 0.55 * cm, "Classificazione: Internal")
         canvas.drawCentredString(w / 2, 0.55 * cm, f"Pagina {doc.page}")
 
         canvas.restoreState()
