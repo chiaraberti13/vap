@@ -11,7 +11,6 @@ Analisi comparativa tra i PDF di riferimento (stile Pentest Tools) e il report a
 
 ## B. PROCESSO DI SCAN (`scanner_engine.py`, `tasks.py`)
 
-- [ ] **B6 – Tracking "avg_response_time"**: calcolare e salvare il tempo medio di risposta del target
 - [ ] **B7 – Campo "found_by" nei finding**: ogni scanner popola `found_by` nel finding dict
   - es. "Nikto – Passive Detection", "Nuclei – Active Testing"
 - [ ] **B8 – Campo "method" e "parameters"**: i finding includono metodo HTTP e parametri usati nell'evidence dove applicabile
