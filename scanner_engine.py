@@ -248,6 +248,7 @@ def _collect_findings(results: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 def _compute_scan_stats(results: List[Dict[str, Any]], findings: List[Dict[str, Any]]) -> Dict[str, Any]:
     tests_performed = 0
     urls: set[str] = set()
+    urls_spidered_total = 0
     injection_points = 0
     http_requests_total = 0
     response_times: List[float] = []
@@ -255,6 +256,9 @@ def _compute_scan_stats(results: List[Dict[str, Any]], findings: List[Dict[str, 
     for result in results:
         result_findings = result.get("findings", [])
         tests_performed += int(result.get("tests_performed") or len(result_findings))
+        scanner_urls_spidered = result.get("urls_spidered")
+        if isinstance(scanner_urls_spidered, (int, float)) and scanner_urls_spidered >= 0:
+            urls_spidered_total += int(scanner_urls_spidered)
         http_requests_total += int(result.get("http_requests_total") or 0)
 
         avg_ms = result.get("avg_response_time_ms")
@@ -286,7 +290,7 @@ def _compute_scan_stats(results: List[Dict[str, Any]], findings: List[Dict[str, 
 
     return {
         "tests_performed": tests_performed,
-        "urls_spidered": len(urls),
+        "urls_spidered": urls_spidered_total or len(urls),
         "injection_points": injection_points,
         "http_requests_total": http_requests_total,
         "avg_response_time_ms": avg_response_time_ms,
