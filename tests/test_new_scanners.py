@@ -62,6 +62,24 @@ def test_arjun_extract_findings():
     findings = scanner._extract_findings({"params": ["id", "q"]}, "https://example.com")
     assert findings
     assert findings[0]["parameters"] == ["id", "q"]
+    assert findings[0]["endpoint"] == "https://example.com"
+
+
+def test_arjun_extract_findings_with_payload_list():
+    scanner = ArjunScanner(enable_live_scans=False)
+    findings = scanner._extract_findings(
+        [{"url": "https://example.com", "params": ["search", "debug"]}],
+        "https://example.com",
+    )
+    assert findings
+    assert findings[0]["parameters"] == ["search", "debug"]
+
+
+def test_arjun_extract_findings_with_target_key_normalization():
+    scanner = ArjunScanner(enable_live_scans=False)
+    findings = scanner._extract_findings({"https://example.com/": ["page"]}, "https://example.com")
+    assert findings
+    assert findings[0]["parameters"] == ["page"]
 
 
 def test_dalfox_extract_findings():

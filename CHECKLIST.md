@@ -17,10 +17,6 @@ Analisi comparativa tra i PDF di riferimento (stile Pentest Tools) e il report a
 
 ### Priorità Alta
 
-- [ ] **C5 – Arjun** (`scanners/arjun_scanner.py`)
-  - HTTP parameter discovery: trova parametri nascosti/non documentati
-  - Tool: `arjun -u {target} --json -o {output}`
-
 ### Priorità Media
 
 - [ ] **C6 – DalFox** (`scanners/dalfox_scanner.py`)
