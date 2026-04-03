@@ -11,8 +11,6 @@ Analisi comparativa tra i PDF di riferimento (stile Pentest Tools) e il report a
 
 ## B. PROCESSO DI SCAN (`scanner_engine.py`, `tasks.py`)
 
-- [ ] **B10 – Passaggio metadata al report generator**: `generate_report()` riceve le nuove stats per le sezioni A15/A16/A17
-
 ---
 
 ## C. NUOVI SCANNER DA AGGIUNGERE (`scanners/`)
