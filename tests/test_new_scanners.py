@@ -125,6 +125,23 @@ def test_httpx_extract_findings():
     assert any("Header di sicurezza mancanti" in finding["title"] for finding in findings)
 
 
+def test_httpx_extract_findings_redirect_and_error_status():
+    scanner = HttpxScanner(enable_live_scans=False)
+    findings = scanner._extract_findings(
+        [
+            {
+                "url": "https://example.com/login",
+                "status_code": 302,
+                "header": {"Location": "https://example.com/auth"},
+                "tech": [],
+            },
+            {"url": "https://example.com/api", "status_code": 500, "header": {}, "tech": []},
+        ]
+    )
+    assert any(finding["title"] == "Redirect chain rilevata" for finding in findings)
+    assert any("status anomalo (500)" in finding["title"] for finding in findings)
+
+
 def test_katana_extract_findings():
     scanner = KatanaScanner(enable_live_scans=False)
     findings = scanner._extract_findings(

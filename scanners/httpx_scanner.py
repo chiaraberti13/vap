@@ -84,6 +84,7 @@ class HttpxScanner:
             return []
 
         findings: List[Dict[str, Any]] = []
+        seen_urls: set[str] = set()
         for row in payload:
             if not isinstance(row, dict):
                 continue
@@ -91,8 +92,12 @@ class HttpxScanner:
             status_code = row.get("status_code")
             tech = row.get("tech") if isinstance(row.get("tech"), list) else []
             headers = row.get("header") if isinstance(row.get("header"), dict) else {}
+            location = str(headers.get("location") or headers.get("Location") or "").strip()
             if not url:
                 continue
+            if url in seen_urls:
+                continue
+            seen_urls.add(url)
 
             missing_headers = [
                 h for h in ["content-security-policy", "strict-transport-security", "x-frame-options"]
@@ -111,6 +116,37 @@ class HttpxScanner:
                         "recommendation": "Configurare gli header HTTP security baseline raccomandati da OWASP.",
                         "found_by": "httpx – Passive Detection",
                         "tags": ["headers", "hardening"],
+                    }
+                )
+
+            if isinstance(status_code, int) and status_code >= 400:
+                findings.append(
+                    {
+                        "tool": "httpx",
+                        "title": f"Endpoint risponde con status anomalo ({status_code})",
+                        "severity": "medium" if status_code >= 500 else "low",
+                        "description": (
+                            f"L'URL {url} ha restituito HTTP {status_code}, possibile endpoint instabile o non gestito."
+                        ),
+                        "evidence_url": url,
+                        "recommendation": "Verificare handler applicativi, routing e gestione errori custom.",
+                        "found_by": "httpx – Passive Detection",
+                        "tags": ["status-code", "reliability"],
+                    }
+                )
+
+            if isinstance(status_code, int) and 300 <= status_code < 400 and location:
+                findings.append(
+                    {
+                        "tool": "httpx",
+                        "title": "Redirect chain rilevata",
+                        "severity": "info",
+                        "description": f"L'endpoint {url} effettua redirect ({status_code}) verso {location}.",
+                        "evidence_url": url,
+                        "redirect_to": location,
+                        "recommendation": "Confermare che i redirect non espongano open-redirect o downgrade HTTP.",
+                        "found_by": "httpx – Passive Detection",
+                        "tags": ["redirect", "hardening"],
                     }
                 )
 

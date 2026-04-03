@@ -19,10 +19,6 @@ Analisi comparativa tra i PDF di riferimento (stile Pentest Tools) e il report a
 
 ### Priorità Media
 
-- [ ] **C7 – httpx** (`scanners/httpx_scanner.py`)
-  - Web probing avanzato: fingerprinting headers, status codes, redirect chains, tech detection
-  - Tool: `httpx -u {target} -json`
-
 - [ ] **C8 – Katana** (`scanners/katana_scanner.py`)
   - Web crawler per mappare tutti gli endpoint e URL del target
   - Fornisce i dati per la stat "URLs spidered"
