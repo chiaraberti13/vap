@@ -17,11 +17,6 @@ Analisi comparativa tra i PDF di riferimento (stile Pentest Tools) e il report a
 
 ### Priorità Alta
 
-- [ ] **C3 – testssl.sh** (`scanners/testssl_scanner.py`)
-  - Analisi SSL/TLS approfondita
-  - Rileva: cipher deboli, protocolli obsoleti (SSLv3/TLS1.0/1.1), cert scaduti/self-signed, HSTS mancante
-  - Tool: `testssl.sh --jsonfile {output} {target}`
-
 - [ ] **C4 – theHarvester** (`scanners/theharvester_scanner.py`)
   - OSINT: raccoglie email, subdomain, IP, hostname da fonti pubbliche
   - Tool: `theHarvester -d {domain} -b all -f {output}`
