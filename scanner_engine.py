@@ -246,6 +246,7 @@ def _collect_findings(results: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         tool_name = result.get("tool", "")
         for finding in result.get("findings", []):
             finding = dict(finding)
+            _normalize_finding_http_context(finding)
             if tool_name and not finding.get("tool"):
                 finding["tool"] = tool_name
             if tool_name:
@@ -255,6 +256,56 @@ def _collect_findings(results: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
                 finding.setdefault("found_by", "Active Testing")
             findings.append(finding)
     return findings[: settings.max_findings]
+
+
+def _normalize_finding_http_context(finding: Dict[str, Any]) -> None:
+    method = finding.get("method")
+    if isinstance(method, str):
+        method = method.strip().upper()
+    elif method:
+        method = str(method).strip().upper()
+    else:
+        method = None
+    if method:
+        finding["method"] = method
+
+    if "parameters" not in finding and finding.get("parameter"):
+        finding["parameters"] = [str(finding["parameter"]).strip()]
+
+    parameters = finding.get("parameters")
+    normalized_parameters: List[str] = []
+    if isinstance(parameters, str):
+        normalized_parameters = [param.strip() for param in parameters.split(",") if param.strip()]
+    elif isinstance(parameters, list):
+        normalized_parameters = [str(param).strip() for param in parameters if str(param).strip()]
+    elif isinstance(parameters, dict):
+        normalized_parameters = [str(param).strip() for param in parameters.keys() if str(param).strip()]
+    elif parameters:
+        normalized_parameters = [str(parameters).strip()]
+
+    if normalized_parameters:
+        finding["parameters"] = normalized_parameters
+
+    evidence = finding.get("evidence")
+    if not isinstance(evidence, str):
+        return
+
+    evidence = evidence.strip()
+    if not evidence:
+        return
+
+    context_parts: List[str] = []
+    if method:
+        context_parts.append(f"Metodo HTTP: {method}")
+    if normalized_parameters:
+        context_parts.append(f"Parametri: {', '.join(normalized_parameters)}")
+    if not context_parts:
+        return
+
+    context_line = " | ".join(context_parts)
+    if context_line in evidence:
+        return
+    finding["evidence"] = f"{context_line}\n{evidence}"
 
 
 def _measure_target_avg_response_time_ms(target: str, samples: int = 3, timeout: int = 5) -> float | None:
