@@ -56,6 +56,28 @@ def test_collect_findings_applies_max_limit(monkeypatch):
     ]
 
 
+def test_collect_findings_normalizes_method_parameters_and_evidence(monkeypatch):
+    monkeypatch.setattr(scanner_engine, "settings", SimpleNamespace(max_findings=10, enable_live_scans=False))
+    findings = scanner_engine._collect_findings(
+        [
+            {
+                "tool": "sqlmap",
+                "findings": [
+                    {
+                        "title": "SQLi",
+                        "method": "post",
+                        "parameter": "id",
+                        "evidence": "Payload di test inviato al target",
+                    }
+                ],
+            }
+        ]
+    )
+    assert findings[0]["method"] == "POST"
+    assert findings[0]["parameters"] == ["id"]
+    assert "Metodo HTTP: POST | Parametri: id" in findings[0]["evidence"]
+
+
 def test_run_scanner_success(monkeypatch):
     monkeypatch.setattr(scanner_engine, "settings", SimpleNamespace(enable_live_scans=True, max_findings=100))
     result = scanner_engine._run_scanner(DummyScanner, "example.com")

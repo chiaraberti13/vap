@@ -11,7 +11,6 @@ Analisi comparativa tra i PDF di riferimento (stile Pentest Tools) e il report a
 
 ## B. PROCESSO DI SCAN (`scanner_engine.py`, `tasks.py`)
 
-- [ ] **B8 – Campo "method" e "parameters"**: i finding includono metodo HTTP e parametri usati nell'evidence dove applicabile
 - [ ] **B10 – Passaggio metadata al report generator**: `generate_report()` riceve le nuove stats per le sezioni A15/A16/A17
 
 ---
