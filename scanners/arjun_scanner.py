@@ -7,6 +7,7 @@ import shutil
 import subprocess
 from tempfile import NamedTemporaryFile
 from typing import Any, Dict, List
+from urllib.parse import urlparse
 
 from config import settings
 
@@ -80,11 +81,7 @@ class ArjunScanner:
             return {}
 
     def _extract_findings(self, payload: Any, target: str) -> List[Dict[str, Any]]:
-        if not isinstance(payload, dict):
-            return []
-        params = payload.get(target) if isinstance(payload.get(target), list) else []
-        if not params:
-            params = payload.get("params") if isinstance(payload.get("params"), list) else []
+        params = self._extract_params(payload, target)
         clean_params = [str(p) for p in params if isinstance(p, str) and p.strip()]
         if not clean_params:
             return []
@@ -97,9 +94,48 @@ class ArjunScanner:
                     "Arjun ha rilevato parametri potenzialmente sensibili che aumentano la superficie di attacco."
                 ),
                 "parameters": clean_params,
+                "endpoint": target,
                 "method": "GET",
                 "recommendation": "Applicare allowlist dei parametri e validazione server-side.",
                 "found_by": "Arjun – Active Testing",
                 "tags": ["parameter-discovery", "input-validation"],
             }
         ]
+
+    def _extract_params(self, payload: Any, target: str) -> List[Any]:
+        if isinstance(payload, dict):
+            target_candidates = self._build_target_candidates(target)
+            for candidate in target_candidates:
+                if isinstance(payload.get(candidate), list):
+                    return payload[candidate]
+            if isinstance(payload.get("params"), list):
+                return payload["params"]
+
+        if isinstance(payload, list):
+            collected_params: List[Any] = []
+            for entry in payload:
+                if isinstance(entry, dict) and isinstance(entry.get("params"), list):
+                    collected_params.extend(entry["params"])
+            return collected_params
+
+        return []
+
+    def _build_target_candidates(self, target: str) -> List[str]:
+        parsed = urlparse(target if "://" in target else f"http://{target}")
+        candidates = [target]
+
+        if parsed.scheme and parsed.netloc:
+            normalized = f"{parsed.scheme}://{parsed.netloc}{parsed.path or ''}"
+            candidates.extend([normalized, normalized.rstrip("/")])
+            if not parsed.path:
+                candidates.append(f"{parsed.scheme}://{parsed.netloc}/")
+            candidates.append(parsed.netloc)
+        elif parsed.path:
+            candidates.append(parsed.path.rstrip("/"))
+
+        unique_candidates: List[str] = []
+        for candidate in candidates:
+            cleaned = candidate.strip()
+            if cleaned and cleaned not in unique_candidates:
+                unique_candidates.append(cleaned)
+        return unique_candidates
