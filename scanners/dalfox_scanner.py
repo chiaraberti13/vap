@@ -6,7 +6,7 @@ import json
 import shutil
 import subprocess
 from tempfile import NamedTemporaryFile
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Set, Tuple
 
 from config import settings
 
@@ -41,7 +41,16 @@ class DalfoxScanner:
             }
 
         with NamedTemporaryFile(mode="w+", suffix=".json") as output_file:
-            command = ["dalfox", "url", target, "--format", "json", "--output", output_file.name]
+            command = [
+                "dalfox",
+                "url",
+                target,
+                "--format",
+                "json",
+                "--output",
+                output_file.name,
+                "--silence",
+            ]
             try:
                 completed = subprocess.run(
                     command,
@@ -80,10 +89,13 @@ class DalfoxScanner:
             return []
 
     def _extract_findings(self, payload: Any) -> List[Dict[str, Any]]:
+        if isinstance(payload, dict):
+            payload = [payload]
         if not isinstance(payload, list):
             return []
 
         findings: List[Dict[str, Any]] = []
+        seen_findings: Set[Tuple[str, str, str]] = set()
         for row in payload:
             if not isinstance(row, dict):
                 continue
@@ -91,18 +103,44 @@ class DalfoxScanner:
             if not evidence:
                 continue
             param = str(row.get("param") or row.get("parameter") or "").strip()
+            method = str(row.get("method") or "GET").strip().upper()
+            finding_type = str(row.get("type") or row.get("vtype") or "").strip().lower()
+            severity = self._map_severity(finding_type)
+            title = self._build_title(finding_type, param)
+            fingerprint = (param, method, evidence)
+            if fingerprint in seen_findings:
+                continue
+            seen_findings.add(fingerprint)
             findings.append(
                 {
                     "tool": "dalfox",
-                    "title": "Cross-Site Scripting (XSS) rilevato",
-                    "severity": "high",
-                    "description": "DalFox ha identificato un possibile vettore XSS riflesso o DOM-based.",
+                    "title": title,
+                    "severity": severity,
+                    "description": "DalFox ha identificato un vettore XSS su input non sanitizzato.",
                     "evidence": evidence,
-                    "method": str(row.get("method") or "GET"),
+                    "method": method,
                     "parameters": [param] if param else [],
                     "recommendation": "Validare input, applicare escaping output e CSP strict.",
                     "found_by": "DalFox – Active Testing",
-                    "tags": ["xss", "injection"],
+                    "tags": ["xss", "injection", finding_type or "generic-xss"],
                 }
             )
         return findings
+
+    def _map_severity(self, finding_type: str) -> str:
+        if "dom" in finding_type:
+            return "medium"
+        if "verified" in finding_type or "stored" in finding_type:
+            return "high"
+        return "high"
+
+    def _build_title(self, finding_type: str, param: str) -> str:
+        if "dom" in finding_type:
+            label = "DOM-based XSS"
+        elif "stored" in finding_type:
+            label = "Stored XSS"
+        else:
+            label = "Reflected XSS"
+        if param:
+            return f"{label} rilevato sul parametro '{param}'"
+        return f"{label} rilevato"

@@ -19,10 +19,6 @@ Analisi comparativa tra i PDF di riferimento (stile Pentest Tools) e il report a
 
 ### Priorità Media
 
-- [ ] **C6 – DalFox** (`scanners/dalfox_scanner.py`)
-  - XSS scanner più avanzato di XSStrike: DOM XSS, reflected XSS, parametri complessi
-  - Tool: `dalfox url {target} --format json`
-
 - [ ] **C7 – httpx** (`scanners/httpx_scanner.py`)
   - Web probing avanzato: fingerprinting headers, status codes, redirect chains, tech detection
   - Tool: `httpx -u {target} -json`
