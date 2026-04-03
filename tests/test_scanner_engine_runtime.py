@@ -205,6 +205,7 @@ def test_compute_scan_stats_collects_counters():
     assert stats["tests_performed"] == 6
     assert stats["urls_spidered"] == 7
     assert stats["injection_points"] == 2
+    assert stats["unique_injection_points"] == 2
     assert stats["http_requests_total"] == 12
     assert stats["avg_response_time_ms"] == 75.0
 

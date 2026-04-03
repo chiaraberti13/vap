@@ -249,7 +249,7 @@ def _compute_scan_stats(results: List[Dict[str, Any]], findings: List[Dict[str, 
     tests_performed = 0
     urls: set[str] = set()
     urls_spidered_total = 0
-    injection_points = 0
+    unique_injection_points: set[str] = set()
     http_requests_total = 0
     response_times: List[float] = []
 
@@ -277,21 +277,38 @@ def _compute_scan_stats(results: List[Dict[str, Any]], findings: List[Dict[str, 
         if parameters and not isinstance(parameters, (list, dict, str)):
             finding["parameters"] = str(parameters)
 
+        evidence_url = (
+            finding.get("evidence_url")
+            or finding.get("url")
+            or finding.get("affected_url")
+            or ""
+        )
+        normalized_method = str(finding.get("method") or "").upper()
+        base_context = f"{evidence_url}|{normalized_method}"
+
         if isinstance(parameters, list):
-            injection_points += len(parameters)
+            for parameter in parameters:
+                normalized_parameter = str(parameter).strip()
+                if normalized_parameter:
+                    unique_injection_points.add(f"{base_context}|{normalized_parameter}")
         elif isinstance(parameters, dict):
-            injection_points += len(parameters.keys())
+            for parameter in parameters.keys():
+                normalized_parameter = str(parameter).strip()
+                if normalized_parameter:
+                    unique_injection_points.add(f"{base_context}|{normalized_parameter}")
         elif isinstance(parameters, str) and parameters.strip():
-            injection_points += 1
+            unique_injection_points.add(f"{base_context}|{parameters.strip()}")
 
     avg_response_time_ms = round(sum(response_times) / len(response_times), 2) if response_times else None
     if not http_requests_total:
         http_requests_total = tests_performed
 
+    injection_points = len(unique_injection_points)
     return {
         "tests_performed": tests_performed,
         "urls_spidered": urls_spidered_total or len(urls),
         "injection_points": injection_points,
+        "unique_injection_points": injection_points,
         "http_requests_total": http_requests_total,
         "avg_response_time_ms": avg_response_time_ms,
     }
