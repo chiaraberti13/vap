@@ -11,7 +11,6 @@ Analisi comparativa tra i PDF di riferimento (stile Pentest Tools) e il report a
 
 ## B. PROCESSO DI SCAN (`scanner_engine.py`, `tasks.py`)
 
-- [ ] **B3 – Tracking "urls_spidered"**: raccogliere e sommare gli URL analizzati dai vari scanner
 - [ ] **B4 – Tracking "unique_injection_points"**: raccogliere il conteggio dei parametri/injection point trovati
 - [ ] **B5 – Tracking "total_http_requests"**: sommare le richieste HTTP effettuate da tutti gli scanner
 - [ ] **B6 – Tracking "avg_response_time"**: calcolare e salvare il tempo medio di risposta del target

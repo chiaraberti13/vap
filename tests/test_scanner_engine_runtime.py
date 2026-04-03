@@ -188,8 +188,14 @@ def test_validate_nmap_target_rejects_bad_cidr():
 
 def test_compute_scan_stats_collects_counters():
     results = [
-        {"findings": [{"id": 1}], "tests_performed": 5, "http_requests_total": 9, "avg_response_time_ms": 100},
-        {"findings": [{"id": 2}], "http_requests_total": 3, "avg_response_time_ms": 50},
+        {
+            "findings": [{"id": 1}],
+            "tests_performed": 5,
+            "urls_spidered": 4,
+            "http_requests_total": 9,
+            "avg_response_time_ms": 100,
+        },
+        {"findings": [{"id": 2}], "urls_spidered": 3, "http_requests_total": 3, "avg_response_time_ms": 50},
     ]
     findings = [
         {"evidence_url": "https://example.com/a", "parameters": ["q"], "method": "GET"},
@@ -197,7 +203,7 @@ def test_compute_scan_stats_collects_counters():
     ]
     stats = scanner_engine._compute_scan_stats(results, findings)
     assert stats["tests_performed"] == 6
-    assert stats["urls_spidered"] == 2
+    assert stats["urls_spidered"] == 7
     assert stats["injection_points"] == 2
     assert stats["http_requests_total"] == 12
     assert stats["avg_response_time_ms"] == 75.0
