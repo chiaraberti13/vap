@@ -53,6 +53,10 @@ TARGET_REGEX = re.compile(
 )
 
 
+class WordpressNucleiScanner(NucleiScanner):
+    def __init__(self, enable_live_scans: bool):
+        super().__init__(enable_live_scans=enable_live_scans, template_profile="wordpress")
+
 
 SCANNERS_MAP = {
     "nuclei": NucleiScanner,
@@ -87,9 +91,12 @@ TOOL_DISPLAY_NAMES = {
     "httpx": "httpx",
     "nosqlmap": "NoSQLMap",
 }
+PROFILE_SCANNERS_MAP = {
+    "nuclei_wordpress": WordpressNucleiScanner,
+}
 SCAN_TYPE_PROFILES = {
     "light": ["whatweb", "nikto", "nmap", "httpx"],
-    "wordpress": ["wpscan", "whatweb", "nikto", "nuclei", "nmap", "wafw00f"],
+    "wordpress": ["wpscan", "whatweb", "nikto", "nuclei_wordpress", "nmap", "wafw00f"],
 }
 SCAN_TYPE_CHOICES = ["full", "light", "wordpress", *SCANNERS_MAP.keys()]
 
@@ -462,13 +469,21 @@ def _run_scanner(scanner_cls: type, target: str) -> Dict[str, Any]:
         }
 
 
+def _resolve_scanner_class(scanner_name: str) -> type:
+    if scanner_name in SCANNERS_MAP:
+        return SCANNERS_MAP[scanner_name]
+    if scanner_name in PROFILE_SCANNERS_MAP:
+        return PROFILE_SCANNERS_MAP[scanner_name]
+    raise ScanValidationError(f"Scanner non supportato nel profilo: {scanner_name}.")
+
+
 def get_scanner_classes(scan_type: str) -> List[type]:
     scan_type = scan_type.lower().strip()
     if scan_type == "full":
         return list(SCANNERS_MAP.values())
     if scan_type in SCAN_TYPE_PROFILES:
         scanner_names = SCAN_TYPE_PROFILES[scan_type]
-        return [SCANNERS_MAP[name] for name in scanner_names if name in SCANNERS_MAP]
+        return [_resolve_scanner_class(name) for name in scanner_names]
     if scan_type in SCANNERS_MAP:
         return [SCANNERS_MAP[scan_type]]
     raise ScanValidationError("Tipo di scansione non supportato.")

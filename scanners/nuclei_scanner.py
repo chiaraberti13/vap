@@ -17,6 +17,7 @@ SEVERITY_ORDER = ("critical", "high", "medium", "low", "info")
 @dataclass
 class NucleiScanner:
     enable_live_scans: bool = False
+    template_profile: Optional[str] = None
 
     def run(self, target: str) -> Dict[str, Any]:
         if not self.enable_live_scans:
@@ -221,6 +222,9 @@ class NucleiScanner:
         templates = [item.strip() for item in settings.nuclei_templates.split(",") if item.strip()]
         if templates:
             command.extend(["-t", ",".join(templates)])
+
+        if self.template_profile == "wordpress":
+            command.extend(["-tags", "wordpress"])
 
         if settings.nuclei_additional_args:
             command.extend(shlex.split(settings.nuclei_additional_args))
