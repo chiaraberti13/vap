@@ -17,10 +17,6 @@ Analisi comparativa tra i PDF di riferimento (stile Pentest Tools) e il report a
 
 ### Priorità Alta
 
-- [ ] **C4 – theHarvester** (`scanners/theharvester_scanner.py`)
-  - OSINT: raccoglie email, subdomain, IP, hostname da fonti pubbliche
-  - Tool: `theHarvester -d {domain} -b all -f {output}`
-
 - [ ] **C5 – Arjun** (`scanners/arjun_scanner.py`)
   - HTTP parameter discovery: trova parametri nascosti/non documentati
   - Tool: `arjun -u {target} --json -o {output}`
