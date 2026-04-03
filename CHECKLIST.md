@@ -17,11 +17,6 @@ Analisi comparativa tra i PDF di riferimento (stile Pentest Tools) e il report a
 
 ### Priorità Alta
 
-- [ ] **C2 – wafw00f** (`scanners/wafw00f_scanner.py`)
-  - WAF detection e fingerprinting
-  - Output: tipo di WAF rilevato, bypass hints
-  - Tool: `wafw00f {target} -o json`
-
 - [ ] **C3 – testssl.sh** (`scanners/testssl_scanner.py`)
   - Analisi SSL/TLS approfondita
   - Rileva: cipher deboli, protocolli obsoleti (SSLv3/TLS1.0/1.1), cert scaduti/self-signed, HSTS mancante

@@ -14,6 +14,28 @@ from config import settings
 @dataclass
 class Wafw00fScanner:
     enable_live_scans: bool = False
+    _BYPASS_HINTS_MAP = {
+        "cloudflare": [
+            "Verificare endpoint origin esposti direttamente su IP o host alternativi.",
+            "Applicare mTLS e ACL lato origin per impedire accessi diretti.",
+        ],
+        "sucuri": [
+            "Confermare che DNS e CDN non espongano l'origin senza protezioni.",
+            "Abilitare rate limiting e bot protection con policy conservative.",
+        ],
+        "akamai": [
+            "Validare regole custom su path critici e API sensibili.",
+            "Monitorare anomalie su header di forwarding e bypass cache.",
+        ],
+        "f5 big-ip asm": [
+            "Rivedere signature tuning e staging mode per ridurre false negative.",
+            "Bloccare payload noti OWASP Top 10 con policy enforce.",
+        ],
+        "aws waf": [
+            "Applicare managed rules + regole custom per endpoint business-critical.",
+            "Integrare logging su CloudWatch/SIEM con alert su pattern anomali.",
+        ],
+    }
 
     def run(self, target: str) -> Dict[str, Any]:
         if not self.enable_live_scans:
@@ -43,7 +65,7 @@ class Wafw00fScanner:
             }
 
         with NamedTemporaryFile(mode="w+", suffix=".json") as output_file:
-            command = ["wafw00f", target, "-o", output_file.name]
+            command = ["wafw00f", target, "-f", "json", "-o", output_file.name]
             try:
                 completed = subprocess.run(
                     command,
@@ -91,6 +113,7 @@ class Wafw00fScanner:
         for waf_name in detections:
             if not isinstance(waf_name, str) or not waf_name.strip():
                 continue
+            bypass_hints = self._build_bypass_hints(waf_name)
             findings.append(
                 {
                     "tool": "wafw00f",
@@ -100,6 +123,20 @@ class Wafw00fScanner:
                     "recommendation": "Convalidare le regole di protezione e monitorare possibili bypass.",
                     "found_by": "wafw00f – Passive Detection",
                     "tags": ["waf", "fingerprinting"],
+                    "bypass_hints": bypass_hints,
                 }
             )
         return findings
+
+    def _build_bypass_hints(self, waf_name: str) -> List[str]:
+        normalized_name = waf_name.lower().strip()
+        matched_hints: List[str] = []
+        for fingerprint, hints in self._BYPASS_HINTS_MAP.items():
+            if fingerprint in normalized_name:
+                matched_hints.extend(hints)
+        if matched_hints:
+            return matched_hints
+        return [
+            "Eseguire test di evasione controllati su payload encoding/obfuscation.",
+            "Verificare che l'origin non sia raggiungibile bypassando il layer WAF.",
+        ]
