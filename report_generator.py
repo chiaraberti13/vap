@@ -296,6 +296,43 @@ def _format_cve_summary(details: Dict[str, Any], fallback_references: List[Any])
     return " | ".join(summary_parts)
 
 
+def _ensure_list(value: Any) -> List[Any]:
+    """Normalize supported scalar/container payloads to a flat list."""
+    if value is None:
+        return []
+    if isinstance(value, list):
+        return value
+    if isinstance(value, tuple):
+        return list(value)
+    return [value]
+
+
+def _normalize_cve_details(raw_details: Any) -> Dict[str, Dict[str, Any]]:
+    """Accept legacy cve_details formats and return a CVE-indexed mapping."""
+    if isinstance(raw_details, dict):
+        normalized: Dict[str, Dict[str, Any]] = {}
+        for key, value in raw_details.items():
+            if isinstance(value, dict):
+                normalized[str(key)] = value
+        return normalized
+
+    if isinstance(raw_details, list):
+        normalized = {}
+        for item in raw_details:
+            if not isinstance(item, dict):
+                continue
+            cve_id = str(item.get("cve") or item.get("id") or "").strip()
+            if cve_id:
+                normalized[cve_id] = item
+        return normalized
+
+    return {}
+
+
+def _normalize_technologies(raw_technologies: Any) -> List[Dict[str, Any]]:
+    """Filter technology payloads to dictionaries only."""
+    return [item for item in _ensure_list(raw_technologies) if isinstance(item, dict)]
+
 
 def _color_hex(c: colors.Color) -> str:
     return "#{:02x}{:02x}{:02x}".format(
@@ -649,12 +686,12 @@ def _build_finding_card(finding: Dict[str, Any], ss: Any) -> List[Any]:
     evidence  = html_escape(str(finding.get("evidence", "") or ""))
     desc      = html_escape(str(finding.get("description", "") or ""))
     rec       = html_escape(str(finding.get("recommendation", "") or ""))
-    references = list(finding.get("references") or [])
-    cwe_list  = list(finding.get("cwe") or [])
-    tags      = list(finding.get("tags") or [])
+    references = [str(item) for item in _ensure_list(finding.get("references")) if str(item).strip()]
+    cwe_list  = [str(item) for item in _ensure_list(finding.get("cwe")) if str(item).strip()]
+    tags      = [str(item) for item in _ensure_list(finding.get("tags")) if str(item).strip()]
     owasp_tags = [str(t) for t in tags if "owasp" in str(t).lower()]
     cvss_score = finding.get("cvss_score")
-    cve_list  = list(finding.get("cve") or [])
+    cve_list  = [str(item) for item in _ensure_list(finding.get("cve")) if str(item).strip()]
     found_by = html_escape(_resolve_found_by(finding))
     method = html_escape(str(finding.get("method", "") or ""))
     parameters = finding.get("parameters")
@@ -790,7 +827,7 @@ def _build_finding_card(finding: Dict[str, Any], ss: Any) -> List[Any]:
             Paragraph("EPSS percentile", ss["TableHeader"]),
             Paragraph("Summary", ss["TableHeader"]),
         ]]
-        cve_details = finding.get("cve_details") or {}
+        cve_details = _normalize_cve_details(finding.get("cve_details"))
         for cve in cve_list[:8]:
             details = cve_details.get(str(cve), {})
             summary = _format_cve_summary(details, references)
@@ -811,7 +848,7 @@ def _build_finding_card(finding: Dict[str, Any], ss: Any) -> List[Any]:
         body_rows.append([Paragraph("<b>CVE details:</b>", ss["SmallBold"])])
         body_rows.append([cve_table])
 
-    technologies = finding.get("technologies") or []
+    technologies = _normalize_technologies(finding.get("technologies"))
     if technologies and _is_technology_finding(finding):
         tech_rows = [[Paragraph("Software", ss["TableHeader"]), Paragraph("Version", ss["TableHeader"]), Paragraph("Category", ss["TableHeader"])]]
         for tech in technologies[:20]:

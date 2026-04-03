@@ -1,5 +1,8 @@
 from report_generator import (
+    _ensure_list,
     _is_technology_finding,
+    _normalize_cve_details,
+    _normalize_technologies,
     _owasp_classification_lines,
     _scan_parameters_rows,
     _scan_type_label,
@@ -86,3 +89,32 @@ def test_scan_type_label_includes_profile_details():
 
 def test_scan_type_label_falls_back_to_raw_value_for_unknown_types():
     assert _scan_type_label("custom-scan") == "custom-scan"
+
+
+def test_ensure_list_normalizes_scalars_and_sequences():
+    assert _ensure_list(None) == []
+    assert _ensure_list("value") == ["value"]
+    assert _ensure_list(("a", "b")) == ["a", "b"]
+
+
+def test_normalize_cve_details_accepts_list_payloads():
+    details = _normalize_cve_details([
+        {"cve": "CVE-2024-0001", "cvss": 9.8},
+        {"id": "CVE-2024-0002", "summary": "test"},
+        "invalid",
+    ])
+
+    assert details == {
+        "CVE-2024-0001": {"cve": "CVE-2024-0001", "cvss": 9.8},
+        "CVE-2024-0002": {"id": "CVE-2024-0002", "summary": "test"},
+    }
+
+
+def test_normalize_technologies_filters_non_dict_entries():
+    normalized = _normalize_technologies([
+        {"software": "nginx", "version": "1.26", "category": "Web Server"},
+        "noise",
+        123,
+    ])
+
+    assert normalized == [{"software": "nginx", "version": "1.26", "category": "Web Server"}]
