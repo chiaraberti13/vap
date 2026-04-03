@@ -2,6 +2,7 @@ from report_generator import (
     _is_technology_finding,
     _owasp_classification_lines,
     _scan_parameters_rows,
+    _scan_type_label,
     _technology_category_icon,
     _sorted_scan_coverage,
 )
@@ -75,3 +76,13 @@ def test_scan_parameters_rows_prioritizes_required_fields_and_enumerate_flags():
         ("enumerate_plugins", "True"),
         ("enumerate_users", "False"),
     ]
+
+
+def test_scan_type_label_includes_profile_details():
+    assert _scan_type_label("light") == "Light (surface checks only)"
+    assert _scan_type_label("wordpress") == "WordPress – Passive/Targeted"
+    assert _scan_type_label("nmap") == "Nmap – Network/Port Enumeration"
+
+
+def test_scan_type_label_falls_back_to_raw_value_for_unknown_types():
+    assert _scan_type_label("custom-scan") == "custom-scan"

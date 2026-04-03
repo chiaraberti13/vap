@@ -27,8 +27,6 @@ Analisi comparativa tra i PDF di riferimento (stile Pentest Tools) e il report a
 
 ## E. SCAN TYPES E CONFIGURAZIONE (`config.py`)
 
-- [ ] **E4 – Scan type label nel report**: il campo `scan_type` nel panel mostra info aggiuntive (es. "Light", "Deep", "WordPress – Passive")
-
 ---
 
 ## File da modificare
