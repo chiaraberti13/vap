@@ -239,6 +239,33 @@ def _format_epss_percentile(value: Any) -> str:
     return f"{parsed:.2f}%"
 
 
+def _build_executive_kpi_strip(counts: Counter, total_findings: int, risk_level: str, ss):
+    critical_high = counts.get("critical", 0) + counts.get("high", 0)
+    kpi_rows = [
+        [Paragraph("Executive Snapshot", ss["TableHeader"])],
+        [Paragraph(
+            (
+                f"<b>Risk level:</b> {html_escape(risk_level)}&nbsp;&nbsp;·&nbsp;&nbsp;"
+                f"<b>Total findings:</b> {total_findings}&nbsp;&nbsp;·&nbsp;&nbsp;"
+                f"<b>Critical + High:</b> {critical_high}"
+            ),
+            ss["Body"],
+        )],
+    ]
+    kpi_table = Table(kpi_rows, colWidths=[CONTENT_W])
+    kpi_table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#e2e8f0")),
+        ("BACKGROUND", (0, 1), (-1, -1), colors.white),
+        ("BOX", (0, 0), (-1, -1), 0.6, BORDER_COLOR),
+        ("LINEBELOW", (0, 0), (-1, 0), 0.6, BORDER_COLOR),
+        ("LEFTPADDING", (0, 0), (-1, -1), 10),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 10),
+        ("TOPPADDING", (0, 0), (-1, -1), 7),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 7),
+    ]))
+    return kpi_table
+
+
 def _format_cve_summary(details: Dict[str, Any], fallback_references: List[Any]) -> str:
     summary_parts: List[str] = []
 
@@ -1045,6 +1072,8 @@ def generate_report(
         )
     )
     story.append(Spacer(1, 14))
+    story.append(_build_executive_kpi_strip(counts, len(findings), risk_level, ss))
+    story.append(Spacer(1, 12))
 
     # ── Summary ────────────────────────────────────────────────────────
     story.append(Paragraph("Summary", ss["SectionHeader"]))
