@@ -23,8 +23,6 @@ Analisi comparativa tra i PDF di riferimento (stile Pentest Tools) e il report a
 
 ## D. ENRICHMENT E CLASSIFICAZIONE (`enrichment_engine.py`)
 
-- [ ] **D5 – "Fixed in version" enrichment**: per CVE legate a componenti (WP theme, plugin, library), aggiungere `fixed_in_version` dai dati NVD/WPVulnDB
-
 ---
 
 ## E. SCAN TYPES E CONFIGURAZIONE (`config.py`)
