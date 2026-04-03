@@ -33,7 +33,6 @@ Analisi comparativa tra i PDF di riferimento (stile Pentest Tools) e il report a
 
 | File | Sezioni |
 |------|---------|
-| `report_generator.py` | A1–A18 |
 | `scanner_engine.py` | B1–B8 |
 | `tasks.py` | B10 |
 | `database.py` | B9 |
