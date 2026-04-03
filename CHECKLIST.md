@@ -19,10 +19,6 @@ Analisi comparativa tra i PDF di riferimento (stile Pentest Tools) e il report a
 
 ### Priorità Media
 
-- [ ] **C9 – NoSQLMap** (`scanners/nosqlmap_scanner.py`)
-  - NoSQL injection detection (MongoDB, CouchDB, Redis)
-  - Tool: `nosqlmap` via subprocess
-
 ---
 
 ## D. ENRICHMENT E CLASSIFICAZIONE (`enrichment_engine.py`)

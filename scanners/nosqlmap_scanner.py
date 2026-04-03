@@ -2,10 +2,25 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import re
+import shutil
 import subprocess
 from typing import Any, Dict, List
 
 from config import settings
+
+_SEVERITY_HIGH_PATTERNS = (
+    "vulnerable",
+    "successfully injected",
+    "authentication bypass",
+    "dumped",
+)
+_SEVERITY_MEDIUM_PATTERNS = (
+    "potential",
+    "possible",
+    "injection point",
+    "suspicious",
+)
 
 
 @dataclass
@@ -29,6 +44,14 @@ class NosqlmapScanner:
                 ],
             }
 
+        if not shutil.which("nosqlmap"):
+            return {
+                "tool": "nosqlmap",
+                "status": "skipped",
+                "message": "Tool NoSQLMap non installato.",
+                "findings": [],
+            }
+
         command = ["nosqlmap", "-u", target]
         try:
             completed = subprocess.run(
@@ -38,13 +61,6 @@ class NosqlmapScanner:
                 timeout=settings.scan_timeout_seconds,
                 check=False,
             )
-        except FileNotFoundError:
-            return {
-                "tool": "nosqlmap",
-                "status": "skipped",
-                "message": "Tool NoSQLMap non installato.",
-                "findings": [],
-            }
         except subprocess.TimeoutExpired:
             return {
                 "tool": "nosqlmap",
@@ -61,24 +77,48 @@ class NosqlmapScanner:
         }
 
     def _extract_findings(self, output: str) -> List[Dict[str, Any]]:
-        text = (output or "").lower()
-        if not text:
+        normalized_output = (output or "").strip()
+        if not normalized_output:
             return []
 
-        indicators = ["inject", "vulnerable", "mongodb", "couchdb", "redis"]
-        if not any(token in text for token in indicators):
+        text = normalized_output.lower()
+        datastore_hits = self._extract_datastores(text)
+        if not datastore_hits and "inject" not in text and "vulnerable" not in text:
             return []
 
-        severity = "high" if "vulnerable" in text or "inject" in text else "medium"
+        severity = self._infer_severity(text)
+        datastores = ", ".join(datastore_hits) if datastore_hits else "NoSQL datastore non specificato"
         return [
             {
                 "tool": "nosqlmap",
                 "title": "Potenziale NoSQL Injection rilevata",
                 "severity": severity,
-                "description": "NoSQLMap ha identificato indicatori coerenti con tentativi di NoSQL injection.",
-                "evidence": output[:500],
-                "recommendation": "Usare query sicure, type checks, rate limiting e monitoring anomalo.",
+                "description": (
+                    "NoSQLMap ha identificato indicatori coerenti con tentativi di NoSQL injection "
+                    f"su: {datastores}."
+                ),
+                "evidence": normalized_output[:1000],
+                "recommendation": (
+                    "Usare query parametrizzate/sicure, validare schema e tipi input lato server, "
+                    "abilitare rate limiting e monitoraggio degli accessi anomali."
+                ),
                 "found_by": "NoSQLMap – Active Testing",
-                "tags": ["nosql", "injection"],
+                "affected_datastores": datastore_hits,
+                "tags": ["nosql", "injection", *[db.lower() for db in datastore_hits]],
             }
         ]
+
+    def _extract_datastores(self, text: str) -> List[str]:
+        mapping = {
+            "MongoDB": r"\bmongodb\b|\bmongo\b",
+            "CouchDB": r"\bcouchdb\b|\bcouch\b",
+            "Redis": r"\bredis\b",
+        }
+        return [name for name, pattern in mapping.items() if re.search(pattern, text)]
+
+    def _infer_severity(self, text: str) -> str:
+        if any(pattern in text for pattern in _SEVERITY_HIGH_PATTERNS):
+            return "high"
+        if any(pattern in text for pattern in _SEVERITY_MEDIUM_PATTERNS):
+            return "medium"
+        return "low"
