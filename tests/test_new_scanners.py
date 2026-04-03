@@ -28,6 +28,7 @@ def test_wafw00f_extract_findings():
     findings = scanner._extract_findings({"detected_wafs": ["Cloudflare"]})
     assert findings
     assert "Cloudflare" in findings[0]["title"]
+    assert findings[0]["bypass_hints"]
 
 
 def test_testssl_extract_findings():
