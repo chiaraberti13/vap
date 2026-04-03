@@ -351,7 +351,12 @@ async def metrics_and_logging(request: Request, call_next):
 
 class AuditLoggingMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
-        response = await call_next(request)
+        try:
+            response = await call_next(request)
+        except RuntimeError as exc:
+            if str(exc) == "No response returned." and await request.is_disconnected():
+                return Response(status_code=499)
+            raise
         if settings.audit_logging_enabled:
             log_audit_event(
                 "http_request",
