@@ -555,6 +555,56 @@ def _truncate_preview_text(value: Any, max_length: int = 220) -> Optional[str]:
     return f"{normalized[: max_length - 1].rstrip()}…"
 
 
+def _normalize_severity(value: Any) -> str:
+    severity = str(value or "info").strip().lower()
+    if severity in {"critical", "high", "medium", "low", "info"}:
+        return severity
+    return "info"
+
+
+def _build_learning_blocks_for_finding(finding: Dict[str, Any]) -> Dict[str, str]:
+    severity = _normalize_severity(finding.get("severity"))
+    title = str(finding.get("title") or "questa vulnerabilità").strip()
+    impact = _truncate_preview_text(finding.get("impact"), max_length=180)
+    recommendation = _truncate_preview_text(finding.get("recommendation"), max_length=180)
+
+    severity_risk_map = {
+        "critical": "alto rischio di compromissione immediata",
+        "high": "rischio elevato con impatto concreto su confidenzialità/integrità/disponibilità",
+        "medium": "rischio significativo da gestire nel breve termine",
+        "low": "rischio contenuto ma utile per ridurre superficie d'attacco",
+        "info": "segnale informativo da contestualizzare prima di agire",
+    }
+    severity_skill_map = {
+        "critical": "Incident Response e Threat Modeling",
+        "high": "Secure Coding e OWASP Top 10",
+        "medium": "Vulnerability Management e prioritizzazione remediation",
+        "low": "Hardening baseline e security hygiene",
+        "info": "Log analysis e triage dei falsi positivi",
+    }
+
+    junior_explanation = (
+        f"Il finding '{title}' indica un comportamento potenzialmente sfruttabile: "
+        "parti dalla verifica del contesto tecnico e conferma se è riproducibile."
+    )
+    business_risk = impact or (
+        f"Questo finding rappresenta un {severity_risk_map[severity]}."
+    )
+    manual_verification = recommendation or (
+        "Esegui una verifica manuale controllata, confronta i log applicativi e "
+        "valida il risultato in ambiente autorizzato."
+    )
+    next_skill = (
+        f"Approfondisci {severity_skill_map[severity]} per gestire meglio finding di severità {severity}."
+    )
+    return {
+        "junior_explanation": junior_explanation,
+        "business_risk": business_risk,
+        "manual_verification": manual_verification,
+        "next_skill": next_skill,
+    }
+
+
 def _prepare_findings_for_ui(findings: List[Any]) -> List[Dict[str, Any]]:
     prepared: List[Dict[str, Any]] = []
     for finding in findings:
@@ -577,6 +627,7 @@ def _prepare_findings_for_ui(findings: List[Any]) -> List[Dict[str, Any]]:
             finding_copy.get("evidence"),
             max_length=160,
         )
+        finding_copy["learning_blocks"] = _build_learning_blocks_for_finding(finding_copy)
         prepared.append(finding_copy)
     return prepared
 

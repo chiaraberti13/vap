@@ -206,6 +206,27 @@
                 {% endif %}
               </div>
 
+              {% if finding.learning_blocks %}
+              <div class="grid gap-3 md:grid-cols-2">
+                <article class="rounded-lg border border-sky-700/40 bg-sky-900/10 p-4">
+                  <p class="text-xs font-semibold uppercase tracking-wider text-sky-300 mb-1">Spiegazione per junior</p>
+                  <p class="text-sm text-slate-200">{{ finding.learning_blocks.junior_explanation }}</p>
+                </article>
+                <article class="rounded-lg border border-rose-700/40 bg-rose-900/10 p-4">
+                  <p class="text-xs font-semibold uppercase tracking-wider text-rose-300 mb-1">Rischio business</p>
+                  <p class="text-sm text-slate-200">{{ finding.learning_blocks.business_risk }}</p>
+                </article>
+                <article class="rounded-lg border border-amber-700/40 bg-amber-900/10 p-4">
+                  <p class="text-xs font-semibold uppercase tracking-wider text-amber-300 mb-1">Verifica manuale consigliata</p>
+                  <p class="text-sm text-slate-200">{{ finding.learning_blocks.manual_verification }}</p>
+                </article>
+                <article class="rounded-lg border border-emerald-700/40 bg-emerald-900/10 p-4">
+                  <p class="text-xs font-semibold uppercase tracking-wider text-emerald-300 mb-1">Skill da studiare dopo</p>
+                  <p class="text-sm text-slate-200">{{ finding.learning_blocks.next_skill }}</p>
+                </article>
+              </div>
+              {% endif %}
+
               <details class="rounded-lg border border-slate-700/80">
                 <summary class="px-4 py-3 text-sm font-semibold text-slate-200 bg-slate-800/70">Mostra dettaglio completo</summary>
                 <div class="px-4 py-4 space-y-5 border-t border-slate-700/70">
