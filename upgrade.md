@@ -205,7 +205,7 @@ Interventi:
    - integration: endpoint catalogo + creazione scan,
    - E2E: user journey selezione guidata.
 2. [x] A11y e UX checks automatici (axe + keyboard traversal).
-3. Performance gate:
+3. [x] Performance gate:
    - Lighthouse CI: Performance, Accessibility, Best Practices, SEO >= 90.
 4. Security testing:
    - regression OWASP Top 10 rilevante,
