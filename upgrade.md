@@ -223,7 +223,7 @@ Deliverable:
 **Obiettivo:** apprendimento progressivo e supporto formativo.
 
 Interventi:
-1. Nuova sezione docs: “Percorsi formativi”
+1. [x] Nuova sezione docs: “Percorsi formativi”
    - beginner path (fondamentali + safe practice),
    - analyst path,
    - professional path.
