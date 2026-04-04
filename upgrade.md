@@ -159,7 +159,7 @@ Interventi:
    - cosa sta succedendo ora,
    - perché il tool attuale viene lanciato,
    - come leggere i log in sicurezza.
-2. Per finding: aggiungere blocchi didattici standardizzati:
+2. [x] Per finding: aggiungere blocchi didattici standardizzati:
    - “spiegazione per junior”,
    - “rischio business”,
    - “verifica manuale consigliata”,
