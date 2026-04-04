@@ -64,3 +64,27 @@ def test_issue_token_returns_503_if_demo_credentials_not_configured(monkeypatch)
 
     assert response.status_code == 503
     app.app.dependency_overrides.clear()
+
+
+def test_scan_detail_displays_learning_sidebar():
+    _clear_scans()
+    with SessionLocal() as session:
+        scan = Scan(
+            target="example.com",
+            scan_type="full",
+            status="running",
+            data_classification="internal",
+            logs_json="[]",
+            findings_json="[]",
+        )
+        session.add(scan)
+        session.commit()
+        session.refresh(scan)
+        scan_id = scan.id
+
+    with TestClient(app.app) as client:
+        response = client.get(f"/scans/{scan_id}")
+
+    assert response.status_code == 200
+    assert "Learning sidebar" in response.text
+    assert "Comprendere una valutazione completa multi-tool end-to-end." in response.text
