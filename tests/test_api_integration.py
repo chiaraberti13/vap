@@ -3,7 +3,7 @@ import re
 from fastapi.testclient import TestClient
 
 import app
-from database import AuditEvent, LearningFeedback, Scan, SessionLocal, init_db
+from database import AuditEvent, LearningFeedback, LearningPathProgress, Scan, SessionLocal, init_db
 
 
 def _clear_scans() -> None:
@@ -12,6 +12,7 @@ def _clear_scans() -> None:
         session.query(Scan).delete()
         session.query(AuditEvent).delete()
         session.query(LearningFeedback).delete()
+        session.query(LearningPathProgress).delete()
         session.commit()
 
 
@@ -413,6 +414,65 @@ def test_submit_learning_feedback_rejects_control_chars_in_notes():
 
     assert response.status_code == 422
     assert "caratteri di controllo" in response.json()["detail"]
+    app.app.dependency_overrides.clear()
+
+
+def test_upsert_learning_progress_and_list_returns_subject_rows():
+    _clear_scans()
+    app.app.dependency_overrides[app.enforce_api_key] = lambda: None
+    app.app.dependency_overrides[app.enforce_viewer_role] = lambda: "viewer"
+
+    with TestClient(app.app) as client:
+        create_response = client.post(
+            "/api/v1/learning-progress",
+            json={"path_id": "beginner-path", "completed_modules": 2, "total_modules": 5},
+        )
+        assert create_response.status_code == 200
+        created_payload = create_response.json()
+        assert created_payload["path_id"] == "beginner-path"
+        assert created_payload["completion_ratio"] == 0.4
+        assert created_payload["is_completed"] is False
+
+        list_response = client.get("/api/v1/learning-progress")
+
+    assert list_response.status_code == 200
+    listed_payload = list_response.json()
+    assert len(listed_payload) == 1
+    assert listed_payload[0]["path_id"] == "beginner-path"
+    assert listed_payload[0]["completed_modules"] == 2
+    assert listed_payload[0]["total_modules"] == 5
+    app.app.dependency_overrides.clear()
+
+
+def test_learning_progress_rejects_completed_modules_over_total():
+    _clear_scans()
+    app.app.dependency_overrides[app.enforce_api_key] = lambda: None
+    app.app.dependency_overrides[app.enforce_viewer_role] = lambda: "viewer"
+
+    with TestClient(app.app) as client:
+        response = client.post(
+            "/api/v1/learning-progress",
+            json={"path_id": "beginner-path", "completed_modules": 6, "total_modules": 5},
+        )
+
+    assert response.status_code == 422
+    assert "non può superare" in response.json()["detail"]
+    app.app.dependency_overrides.clear()
+
+
+def test_learning_progress_rejects_invalid_path_id():
+    _clear_scans()
+    app.app.dependency_overrides[app.enforce_api_key] = lambda: None
+    app.app.dependency_overrides[app.enforce_viewer_role] = lambda: "viewer"
+
+    with TestClient(app.app) as client:
+        response = client.post(
+            "/api/v1/learning-progress",
+            json={"path_id": "!!", "completed_modules": 1, "total_modules": 5},
+        )
+
+    assert response.status_code == 422
+    assert response.json()["detail"] == "path_id non valido."
     app.app.dependency_overrides.clear()
 
 
