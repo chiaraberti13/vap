@@ -5,6 +5,9 @@
   const hiddenScanType = document.getElementById("scan-type-selected");
   const compareGrid = document.getElementById("scan-compare-grid");
   const compareEmpty = document.getElementById("scan-compare-empty");
+  const compareToggle = document.getElementById("scan-compare-toggle");
+  const compareToggleLabel = document.getElementById("scan-compare-toggle-label");
+  const compareContent = document.getElementById("scan-compare-content");
   const whyObjective = document.getElementById("scan-why-objective");
   const whyWhenToUse = document.getElementById("scan-why-when-to-use");
   const whyWhenNotToUse = document.getElementById("scan-why-when-not-to-use");
@@ -26,6 +29,9 @@
     !hiddenScanType ||
     !compareGrid ||
     !compareEmpty ||
+    !compareToggle ||
+    !compareToggleLabel ||
+    !compareContent ||
     !whyObjective ||
     !whyWhenToUse ||
     !whyWhenNotToUse ||
@@ -58,6 +64,7 @@
   const selectedForCompare = new Set();
   let activeCategory = "Tutte";
   let currentStep = 1;
+  let mobileCompareExpanded = false;
   const totalSteps = stepPanels.length;
 
   const levelStyles = {
@@ -128,6 +135,15 @@
     }
     compareEmpty.classList.add("hidden");
     selectedEntries.forEach((entry) => compareGrid.appendChild(compareCard(entry)));
+  }
+
+  function updateCompareToggleUi() {
+    const isDesktop = window.matchMedia("(min-width: 768px)").matches;
+    const isExpanded = isDesktop || mobileCompareExpanded;
+
+    compareContent.classList.toggle("hidden", !isExpanded);
+    compareToggle.setAttribute("aria-expanded", String(isExpanded));
+    compareToggleLabel.textContent = isExpanded ? "Chiudi confronto" : "Apri confronto";
   }
 
   function updateSelectedScan(scanType) {
@@ -298,9 +314,20 @@
     updateStepperUi();
   });
 
+  compareToggle.addEventListener("click", () => {
+    if (window.matchMedia("(min-width: 768px)").matches) {
+      return;
+    }
+    mobileCompareExpanded = !mobileCompareExpanded;
+    updateCompareToggleUi();
+  });
+
+  window.addEventListener("resize", updateCompareToggleUi);
+
   renderFilters();
   renderCards();
   renderCompare();
   registerGlossaryInteractions();
   updateStepperUi();
+  updateCompareToggleUi();
 })();
