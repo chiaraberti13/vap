@@ -77,7 +77,7 @@ Interventi:
 1. [x] Inventario feature correnti (UI/API/CLI/report) in una matrice “must keep”.
 2. [x] Golden dataset di scansioni simulate per regression test.
 3. [x] Snapshot UX baseline (flusso “nuova scansione” attuale).
-4. Definizione KPI di upgrade:
+4. [x] Definizione KPI di upgrade:
    - Task completion scan-type selection;
    - riduzione errori selezione scan;
    - tempo medio comprensione output;
