@@ -123,6 +123,24 @@ class AuditEvent(Base):
     metadata_json = Column(Text, nullable=True)
 
 
+class LearningFeedback(Base):
+    __tablename__ = "learning_feedback"
+    __table_args__ = (
+        Index("ix_learning_feedback_created_at", "created_at"),
+        Index("ix_learning_feedback_scan_type", "scan_type"),
+        Index("ix_learning_feedback_rating", "rating"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    scan_type = Column(String(50), nullable=False)
+    target_experience_level = Column(String(20), nullable=False)
+    rating = Column(Integer, nullable=False)
+    clarity_score = Column(Integer, nullable=False)
+    confidence_after_scan = Column(Integer, nullable=False)
+    notes = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+
+
 _B9_MIGRATIONS = [
     ("tests_performed", "INTEGER"),
     ("urls_spidered", "INTEGER"),

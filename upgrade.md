@@ -300,8 +300,8 @@ Una release è “done” quando:
 - Test E2E journey “nuova scansione”.
 
 ## Sprint 3
-- Fase 3 su scan detail + remediation roadmap.
-- Beta interna con feedback strutturato.
+- [x] Fase 3 su scan detail + remediation roadmap.
+- [x] Beta interna con feedback strutturato (2026-04-04): introdotto endpoint `POST /api/v1/learning-feedback` con persistenza DB, validazioni robuste e audit trail.
 
 ## Sprint 4
 - Fase 4 + Fase 5 (hardening + quality gates).

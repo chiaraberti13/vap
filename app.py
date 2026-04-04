@@ -39,7 +39,7 @@ from compliance import (
     record_consent,
 )
 from config import settings
-from database import AuditEvent, ConsentRecord, Scan, SessionLocal, get_db, init_db
+from database import AuditEvent, ConsentRecord, LearningFeedback, Scan, SessionLocal, get_db, init_db
 from scan_catalog import get_scan_catalog
 from scanner_engine import (
     ScanValidationError,
@@ -560,6 +560,26 @@ class AuditEventStatus(BaseModel):
     ip_address: Optional[str]
     user_agent: Optional[str]
     metadata: Dict[str, Any]
+
+
+class LearningFeedbackCreate(BaseModel):
+    scan_type: str = Field(..., max_length=50)
+    target_experience_level: str = Field(..., pattern="^(beginner|intermediate|professional)$")
+    rating: int = Field(..., ge=1, le=5)
+    clarity_score: int = Field(..., ge=1, le=5)
+    confidence_after_scan: int = Field(..., ge=1, le=5)
+    notes: Optional[str] = Field(None, max_length=1000)
+
+
+class LearningFeedbackStatus(BaseModel):
+    id: int
+    scan_type: str
+    target_experience_level: str
+    rating: int
+    clarity_score: int
+    confidence_after_scan: int
+    notes: Optional[str]
+    created_at: datetime
 
 
 class ConnectionManager:
@@ -1375,6 +1395,55 @@ def record_consent_api(
         consent_type=consent.consent_type,
         version=consent.version,
         accepted_at=consent.accepted_at,
+    )
+
+
+@app.post("/api/v1/learning-feedback", response_model=LearningFeedbackStatus)
+def submit_learning_feedback(
+    request: Request,
+    payload: LearningFeedbackCreate,
+    db: Session = Depends(get_db),
+    _: None = Depends(enforce_api_key),
+    __: str = Depends(enforce_viewer_role),
+) -> LearningFeedbackStatus:
+    scan_type = payload.scan_type.strip().lower()
+    allowed_scan_types = {entry["id"] for entry in get_scan_catalog()}
+    if scan_type not in allowed_scan_types:
+        raise HTTPException(status_code=400, detail="scan_type non supportato nel catalogo didattico.")
+
+    cleaned_notes = " ".join(payload.notes.split()) if payload.notes else None
+    feedback = LearningFeedback(
+        scan_type=scan_type,
+        target_experience_level=payload.target_experience_level,
+        rating=payload.rating,
+        clarity_score=payload.clarity_score,
+        confidence_after_scan=payload.confidence_after_scan,
+        notes=cleaned_notes,
+    )
+    db.add(feedback)
+    db.commit()
+    db.refresh(feedback)
+
+    _record_audit(
+        db,
+        request,
+        "learning_feedback_submitted",
+        scan_type=feedback.scan_type,
+        target_experience_level=feedback.target_experience_level,
+        rating=feedback.rating,
+        clarity_score=feedback.clarity_score,
+        confidence_after_scan=feedback.confidence_after_scan,
+    )
+
+    return LearningFeedbackStatus(
+        id=feedback.id,
+        scan_type=feedback.scan_type,
+        target_experience_level=feedback.target_experience_level,
+        rating=feedback.rating,
+        clarity_score=feedback.clarity_score,
+        confidence_after_scan=feedback.confidence_after_scan,
+        notes=feedback.notes,
+        created_at=feedback.created_at,
     )
 
 
