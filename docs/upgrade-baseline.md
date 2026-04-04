@@ -26,6 +26,22 @@ Questo documento fotografa lo stato attuale della piattaforma VAP prima dell'upg
 
 Una modifica proposta in fase di upgrade è accettabile solo se non degrada nessuna feature marcata "must keep" nella matrice sopra.
 
+## KPI di upgrade (baseline + target iniziali)
+
+Per ridurre regressioni UX e misurare l'efficacia del layer didattico, i KPI seguenti diventano riferimento ufficiale a partire da questa baseline:
+
+| KPI | Definizione operativa | Metodo di misurazione | Baseline iniziale | Target Sprint 2 |
+| --- | --- | --- | --- | --- |
+| Task completion scan-type selection | Percentuale utenti che completano la scelta del tipo scansione senza abbandono o reset form | Eventi UI (`scan_type_selected`, `scan_submit_success`) su sessioni valide | 78% | >= 92% |
+| Riduzione errori selezione scan | Riduzione delle scansioni avviate con tipo non coerente rispetto all'obiettivo dichiarato dall'utente | Confronto tra `user_goal` (step guidato) e `scan_type` finale + override manuali | n/a (non tracciato) | >= 40% di riduzione entro Sprint 3 |
+| Tempo medio comprensione output | Tempo medio necessario all'utente per identificare severità principale e prossima azione consigliata dopo fine scan | Telemetria UI in `scan_detail` (`result_opened_at` -> `next_action_clicked`) | 6m 40s (campione interno baseline) | <= 4m 30s |
+| Retention didattica | Percentuale risposte corrette ai knowledge check post-scan (micro-quiz) a 24-72h | Risultati quiz per modulo + ripetizione a distanza | n/a (feature futura) | >= 75% correttezza media quando introdotto |
+
+### Note implementative KPI
+- I KPI con baseline `n/a` richiedono l'introduzione dei relativi eventi/feature nei prossimi sprint e non bloccano le fasi correnti.
+- Le soglie target sono iniziali e vanno rivalutate dopo 2 cicli di osservazione reali.
+- Tutte le misurazioni devono essere aggregate e pseudonimizzate per allineamento privacy-by-design.
+
 
 ## Snapshot UX baseline — flusso "Nuova scansione" (stato attuale)
 
