@@ -21,7 +21,7 @@ def test_get_scanner_classes_supports_wordpress_scan_type():
         scanner_engine.WpscanScanner,
         scanner_engine.WhatWebScanner,
         scanner_engine.NiktoScanner,
-        scanner_engine.NucleiScanner,
+        scanner_engine.WordpressNucleiScanner,
         scanner_engine.NmapScanner,
         scanner_engine.Wafw00fScanner,
     ]
