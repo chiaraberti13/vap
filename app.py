@@ -40,7 +40,7 @@ from compliance import (
     record_consent,
 )
 from config import settings
-from database import AuditEvent, ConsentRecord, LearningFeedback, Scan, SessionLocal, get_db, init_db
+from database import AuditEvent, ConsentRecord, LearningFeedback, LearningPathProgress, Scan, SessionLocal, get_db, init_db
 from scan_catalog import get_scan_catalog
 from scanner_engine import (
     ScanValidationError,
@@ -584,6 +584,21 @@ class LearningFeedbackStatus(BaseModel):
     created_at: datetime
 
 
+class LearningPathProgressUpdate(BaseModel):
+    path_id: str = Field(..., min_length=2, max_length=80)
+    completed_modules: int = Field(..., ge=0, le=200)
+    total_modules: int = Field(..., ge=1, le=200)
+
+
+class LearningPathProgressStatus(BaseModel):
+    path_id: str
+    completed_modules: int
+    total_modules: int
+    completion_ratio: float
+    is_completed: bool
+    updated_at: datetime
+
+
 class ConnectionManager:
     def __init__(self) -> None:
         self.active_connections: Dict[int, Set[WebSocket]] = {}
@@ -634,6 +649,13 @@ def _normalize_learning_feedback_notes(notes: Optional[str]) -> Optional[str]:
         raise HTTPException(status_code=422, detail="Le note contengono caratteri di controllo non consentiti.")
     if _HTML_TAG_PATTERN.search(normalized):
         raise HTTPException(status_code=422, detail="Le note non possono contenere tag HTML.")
+    return normalized
+
+
+def _normalize_learning_path_id(path_id: str) -> str:
+    normalized = path_id.strip().lower()
+    if not re.fullmatch(r"[a-z0-9][a-z0-9_-]{1,79}", normalized):
+        raise HTTPException(status_code=422, detail="path_id non valido.")
     return normalized
 
 
@@ -1478,6 +1500,95 @@ def submit_learning_feedback(
         notes=feedback.notes,
         created_at=feedback.created_at,
     )
+
+
+@app.post("/api/v1/learning-progress", response_model=LearningPathProgressStatus)
+def upsert_learning_progress(
+    request: Request,
+    payload: LearningPathProgressUpdate,
+    db: Session = Depends(get_db),
+    _: None = Depends(enforce_api_key),
+    __: str = Depends(enforce_viewer_role),
+) -> LearningPathProgressStatus:
+    if payload.completed_modules > payload.total_modules:
+        raise HTTPException(status_code=422, detail="completed_modules non può superare total_modules.")
+
+    subject_id = get_subject_id(request)
+    normalized_path_id = _normalize_learning_path_id(payload.path_id)
+    now = datetime.now(timezone.utc)
+    is_completed = payload.completed_modules == payload.total_modules
+    existing = (
+        db.query(LearningPathProgress)
+        .filter(
+            LearningPathProgress.subject_id == subject_id,
+            LearningPathProgress.path_id == normalized_path_id,
+        )
+        .first()
+    )
+    if existing:
+        existing.completed_modules = payload.completed_modules
+        existing.total_modules = payload.total_modules
+        existing.is_completed = 1 if is_completed else 0
+        existing.updated_at = now
+        progress = existing
+    else:
+        progress = LearningPathProgress(
+            subject_id=subject_id,
+            path_id=normalized_path_id,
+            completed_modules=payload.completed_modules,
+            total_modules=payload.total_modules,
+            is_completed=1 if is_completed else 0,
+            updated_at=now,
+        )
+        db.add(progress)
+    db.commit()
+    db.refresh(progress)
+
+    _record_audit(
+        db,
+        request,
+        "learning_progress_updated",
+        subject_id=subject_id,
+        path_id=progress.path_id,
+        completed_modules=progress.completed_modules,
+        total_modules=progress.total_modules,
+        is_completed=bool(progress.is_completed),
+    )
+    return LearningPathProgressStatus(
+        path_id=progress.path_id,
+        completed_modules=progress.completed_modules,
+        total_modules=progress.total_modules,
+        completion_ratio=round(progress.completed_modules / progress.total_modules, 4),
+        is_completed=bool(progress.is_completed),
+        updated_at=progress.updated_at,
+    )
+
+
+@app.get("/api/v1/learning-progress", response_model=List[LearningPathProgressStatus])
+def list_learning_progress(
+    request: Request,
+    db: Session = Depends(get_db),
+    _: None = Depends(enforce_api_key),
+    __: str = Depends(enforce_viewer_role),
+) -> List[LearningPathProgressStatus]:
+    subject_id = get_subject_id(request)
+    progress_rows = (
+        db.query(LearningPathProgress)
+        .filter(LearningPathProgress.subject_id == subject_id)
+        .order_by(LearningPathProgress.updated_at.desc())
+        .all()
+    )
+    return [
+        LearningPathProgressStatus(
+            path_id=row.path_id,
+            completed_modules=row.completed_modules,
+            total_modules=row.total_modules,
+            completion_ratio=round(row.completed_modules / row.total_modules, 4),
+            is_completed=bool(row.is_completed),
+            updated_at=row.updated_at,
+        )
+        for row in progress_rows
+    ]
 
 
 @app.get("/api/v1/gdpr/export")

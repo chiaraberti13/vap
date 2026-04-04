@@ -141,6 +141,22 @@ class LearningFeedback(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
 
+class LearningPathProgress(Base):
+    __tablename__ = "learning_path_progress"
+    __table_args__ = (
+        Index("ix_learning_path_progress_subject_path", "subject_id", "path_id"),
+        Index("ix_learning_path_progress_subject_completed", "subject_id", "is_completed"),
+        Index("ix_learning_path_progress_updated_at", "updated_at"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    subject_id = Column(String(64), nullable=False)
+    path_id = Column(String(80), nullable=False)
+    completed_modules = Column(Integer, nullable=False, default=0)
+    total_modules = Column(Integer, nullable=False, default=0)
+    is_completed = Column(Integer, nullable=False, default=0)
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+
 _B9_MIGRATIONS = [
     ("tests_performed", "INTEGER"),
     ("urls_spidered", "INTEGER"),

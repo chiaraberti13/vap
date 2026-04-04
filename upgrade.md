@@ -261,7 +261,7 @@ Deliverable:
 ## P2 (medio termine)
 - RBAC + allowlist target + hardening CSP.
 - Lighthouse CI + security pipeline avanzata.
-- Percorsi didattici multipli con progress tracking.
+- [x] Percorsi didattici multipli con progress tracking (2026-04-04): aggiunti endpoint `POST/GET /api/v1/learning-progress` con persistenza per-subject e audit event `learning_progress_updated`.
 
 ---
 
