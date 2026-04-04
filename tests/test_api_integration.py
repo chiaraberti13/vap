@@ -329,6 +329,52 @@ def test_submit_learning_feedback_rejects_unknown_scan_type():
     app.app.dependency_overrides.clear()
 
 
+def test_submit_learning_feedback_rejects_html_in_notes():
+    _clear_scans()
+    app.app.dependency_overrides[app.enforce_api_key] = lambda: None
+    app.app.dependency_overrides[app.enforce_viewer_role] = lambda: "viewer"
+
+    with TestClient(app.app) as client:
+        response = client.post(
+            "/api/v1/learning-feedback",
+            json={
+                "scan_type": "light",
+                "target_experience_level": "beginner",
+                "rating": 4,
+                "clarity_score": 4,
+                "confidence_after_scan": 3,
+                "notes": "<script>alert('xss')</script>",
+            },
+        )
+
+    assert response.status_code == 422
+    assert "tag HTML" in response.json()["detail"]
+    app.app.dependency_overrides.clear()
+
+
+def test_submit_learning_feedback_rejects_control_chars_in_notes():
+    _clear_scans()
+    app.app.dependency_overrides[app.enforce_api_key] = lambda: None
+    app.app.dependency_overrides[app.enforce_viewer_role] = lambda: "viewer"
+
+    with TestClient(app.app) as client:
+        response = client.post(
+            "/api/v1/learning-feedback",
+            json={
+                "scan_type": "light",
+                "target_experience_level": "beginner",
+                "rating": 4,
+                "clarity_score": 4,
+                "confidence_after_scan": 3,
+                "notes": "nota valida\u0007con controllo",
+            },
+        )
+
+    assert response.status_code == 422
+    assert "caratteri di controllo" in response.json()["detail"]
+    app.app.dependency_overrides.clear()
+
+
 def test_auth_token_endpoint_enforces_rate_limit(monkeypatch):
     """
     Regression security test: simula un brute-force burst su /auth/token

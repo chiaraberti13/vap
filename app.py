@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 import asyncio
 import json
 from pathlib import Path
+import re
 import threading
 from time import perf_counter
 from typing import Any, Dict, List, Optional, Set
@@ -607,6 +608,9 @@ class ConnectionManager:
 
 manager = ConnectionManager()
 
+_CONTROL_CHARS_PATTERN = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
+_HTML_TAG_PATTERN = re.compile(r"<\s*/?\s*[a-zA-Z][^>]*>")
+
 
 def _load_json_list(value: Optional[str]) -> List[Any]:
     if not value:
@@ -616,6 +620,21 @@ def _load_json_list(value: Optional[str]) -> List[Any]:
     except json.JSONDecodeError:
         return []
     return payload if isinstance(payload, list) else []
+
+
+def _normalize_learning_feedback_notes(notes: Optional[str]) -> Optional[str]:
+    if notes is None:
+        return None
+
+    normalized = " ".join(notes.split())
+    if not normalized:
+        return None
+
+    if _CONTROL_CHARS_PATTERN.search(normalized):
+        raise HTTPException(status_code=422, detail="Le note contengono caratteri di controllo non consentiti.")
+    if _HTML_TAG_PATTERN.search(normalized):
+        raise HTTPException(status_code=422, detail="Le note non possono contenere tag HTML.")
+    return normalized
 
 
 def _load_json_object(value: Optional[str]) -> Dict[str, Any]:
@@ -1421,7 +1440,7 @@ def submit_learning_feedback(
     if scan_type not in allowed_scan_types:
         raise HTTPException(status_code=400, detail="scan_type non supportato nel catalogo didattico.")
 
-    cleaned_notes = " ".join(payload.notes.split()) if payload.notes else None
+    cleaned_notes = _normalize_learning_feedback_notes(payload.notes)
     feedback = LearningFeedback(
         scan_type=scan_type,
         target_experience_level=payload.target_experience_level,
