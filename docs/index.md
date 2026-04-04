@@ -7,6 +7,7 @@ Benvenuto nella documentazione ufficiale di **Vulnerability Assessment Platform*
 - **Architettura** con diagrammi C4 (PlantUML).
 - **Deployment** su Docker e Kubernetes.
 - **Linee guida** per sicurezza, troubleshooting e contribuzione.
+- **Percorsi formativi** progressivi (beginner, analyst, professional).
 
 ## Avvio rapido
 
@@ -19,3 +20,12 @@ python app.py
 - OpenAPI JSON: `http://localhost:8000/openapi.json`
 
 > Nota: se è abilitata l'autenticazione tramite API key o JWT, consulta la sezione **Security**.
+
+## Percorsi formativi
+
+Consulta la nuova sezione dedicata:
+
+- `docs/learning-paths/README.md`
+- `docs/learning-paths/beginner-path.md`
+- `docs/learning-paths/analyst-path.md`
+- `docs/learning-paths/professional-path.md`
