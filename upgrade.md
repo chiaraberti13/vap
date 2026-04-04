@@ -234,7 +234,7 @@ Interventi:
    - errori comuni,
    - remediation checklist.
 3. [x] Collegamenti a documentazione ufficiale framework/librerie usate.
-4. Glossario cyber e FAQ operative.
+4. [x] Glossario cyber e FAQ operative.
 
 Deliverable:
 - `docs/learning-paths/`
