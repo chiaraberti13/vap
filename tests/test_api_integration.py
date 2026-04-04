@@ -89,6 +89,8 @@ def test_scan_detail_displays_learning_sidebar():
     assert response.status_code == 200
     assert "Learning sidebar" in response.text
     assert "Comprendere una valutazione completa multi-tool end-to-end." in response.text
+    assert 'id="scan-detail-config"' in response.text
+    assert '<script src="/static/js/scan-detail.js"></script>' in response.text
 
 
 def test_homepage_uses_legacy_form_when_guided_explorer_flag_is_disabled(monkeypatch):

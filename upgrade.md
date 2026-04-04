@@ -185,6 +185,7 @@ Interventi prioritari:
    - riduzione inline scripts/styles (progressivo),
    - CSP più restrittiva,
    - valutazione migrazione da Tailwind CDN a build locale.
+   - [x] Step 1 completato: script inline di `scan_detail.html` estratto in `static/js/scan-detail.js` con rendering DOM sicuro.
 5. [x] Secrets governance:
    - checklist automatica startup con severity.
 
