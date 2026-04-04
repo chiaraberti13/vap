@@ -40,6 +40,7 @@ from compliance import (
 )
 from config import settings
 from database import ConsentRecord, Scan, SessionLocal, get_db, init_db
+from scan_catalog import get_scan_catalog
 from scanner_engine import (
     ScanValidationError,
     validate_nmap_target,
@@ -162,6 +163,11 @@ def _init_api_cache() -> Optional[Redis]:
 api_cache = _init_api_cache()
 
 
+def _scan_catalog_for_ui() -> List[Dict[str, Any]]:
+    catalog = {entry["id"]: entry for entry in get_scan_catalog()}
+    return [catalog[scan_type] for scan_type in SCAN_TYPES if scan_type in catalog]
+
+
 def _cache_key(*parts: str) -> str:
     return ":".join([settings.api_cache_prefix, *parts])
 
@@ -264,6 +270,7 @@ def api_key_ui_exception_handler(request: Request, exc: APIKeyUIError) -> Respon
         {
             "request": request,
             "scan_types": SCAN_TYPES,
+            "scan_catalog_entries": _scan_catalog_for_ui(),
             "api_key_required": bool(settings.api_key or settings.api_key_hash),
             "error": exc.detail,
             "csrf_token": csrf_token,
@@ -630,6 +637,7 @@ def index(request: Request, db: Session = Depends(get_db)) -> Response:
         {
             "request": request,
             "scan_types": SCAN_TYPES,
+            "scan_catalog_entries": _scan_catalog_for_ui(),
             "api_key_required": bool(settings.api_key or settings.api_key_hash),
             "csrf_token": csrf_token,
             "data_classifications": DATA_CLASSIFICATIONS,
@@ -736,6 +744,7 @@ def create_scan_form(
             {
                 "request": request,
                 "scan_types": SCAN_TYPES,
+                "scan_catalog_entries": _scan_catalog_for_ui(),
                 "api_key_required": bool(settings.api_key or settings.api_key_hash),
                 "error": "Token CSRF non valido o scaduto.",
                 "csrf_token": csrf_token,
@@ -764,6 +773,7 @@ def create_scan_form(
             {
                 "request": request,
                 "scan_types": SCAN_TYPES,
+                "scan_catalog_entries": _scan_catalog_for_ui(),
                 "api_key_required": bool(settings.api_key or settings.api_key_hash),
                 "error": str(exc),
                 "csrf_token": csrf_token,
@@ -797,6 +807,7 @@ def create_scan_form(
                 {
                     "request": request,
                     "scan_types": SCAN_TYPES,
+                    "scan_catalog_entries": _scan_catalog_for_ui(),
                     "api_key_required": bool(settings.api_key or settings.api_key_hash),
                     "error": "Accetta privacy policy e termini di servizio per procedere.",
                     "csrf_token": csrf_token,
@@ -906,6 +917,7 @@ def create_scan_form(
                 {
                     "request": request,
                     "scan_types": SCAN_TYPES,
+                    "scan_catalog_entries": _scan_catalog_for_ui(),
                     "api_key_required": bool(settings.api_key or settings.api_key_hash),
                     "error": "Servizio di accodamento non disponibile. Riprova più tardi.",
                     "csrf_token": csrf_token,
