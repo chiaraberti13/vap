@@ -251,7 +251,7 @@ Deliverable:
 ## P0 (immediato)
 - Catalogo metadati scansioni + API read-only.
 - Refactor UI selezione scan in cards guidate.
-- Anti-regression test funzionalità attuali.
+- [x] Anti-regression test funzionalità attuali (2026-04-04): aggiunto test integrazione `test_download_report_endpoint_preserves_pdf_delivery_and_audit` per garantire continuità download PDF e audit trail `report_downloaded`.
 - Copywriting didattico minimo per full/light/wordpress + top tool.
 
 ## P1 (breve termine)
