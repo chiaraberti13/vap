@@ -50,3 +50,25 @@ body {
 ::-webkit-scrollbar-thumb:hover {
     background: var(--secondary-color);
 }
+
+/* scan_detail.html extracted styles for CSP hardening */
+.severity-critical { background-color: #dc2626; }
+.severity-high     { background-color: #ea580c; }
+.severity-medium   { background-color: #d97706; }
+.severity-low      { background-color: #2563eb; }
+.severity-info     { background-color: #6b7280; }
+.border-critical   { border-left-color: #dc2626; }
+.border-high       { border-left-color: #ea580c; }
+.border-medium     { border-left-color: #d97706; }
+.border-low        { border-left-color: #2563eb; }
+.border-info       { border-left-color: #6b7280; }
+.bg-critical-faint { background-color: rgba(220, 38, 38, 0.07); }
+.bg-high-faint     { background-color: rgba(234, 88, 12, 0.07); }
+.bg-medium-faint   { background-color: rgba(217, 119, 6, 0.07); }
+.bg-low-faint      { background-color: rgba(37, 99, 235, 0.07); }
+.bg-info-faint     { background-color: rgba(107, 114, 128, 0.07); }
+details > summary  { cursor: pointer; list-style: none; }
+details > summary::-webkit-details-marker { display: none; }
+details[open] .chevron { transform: rotate(90deg); }
+.chevron { transition: transform 0.2s; }
+pre { white-space: pre-wrap; word-break: break-all; }

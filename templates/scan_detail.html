@@ -6,28 +6,6 @@
   <title>Dettaglio scansione</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="/static/css/style.css" />
-  <style>
-    .severity-critical { background-color: #dc2626; }
-    .severity-high     { background-color: #ea580c; }
-    .severity-medium   { background-color: #d97706; }
-    .severity-low      { background-color: #2563eb; }
-    .severity-info     { background-color: #6b7280; }
-    .border-critical   { border-left-color: #dc2626; }
-    .border-high       { border-left-color: #ea580c; }
-    .border-medium     { border-left-color: #d97706; }
-    .border-low        { border-left-color: #2563eb; }
-    .border-info       { border-left-color: #6b7280; }
-    .bg-critical-faint { background-color: rgba(220,38,38,0.07); }
-    .bg-high-faint     { background-color: rgba(234,88,12,0.07); }
-    .bg-medium-faint   { background-color: rgba(217,119,6,0.07); }
-    .bg-low-faint      { background-color: rgba(37,99,235,0.07); }
-    .bg-info-faint     { background-color: rgba(107,114,128,0.07); }
-    details > summary  { cursor: pointer; list-style: none; }
-    details > summary::-webkit-details-marker { display: none; }
-    details[open] .chevron { transform: rotate(90deg); }
-    .chevron { transition: transform 0.2s; }
-    pre { white-space: pre-wrap; word-break: break-all; }
-  </style>
 </head>
 <body class="bg-slate-950 text-slate-100">
   <main class="min-h-screen px-6 py-10">
@@ -87,7 +65,7 @@
           {% endif %}
         </div>
         <div class="mt-4 h-3 w-full overflow-hidden rounded-full bg-slate-800">
-          <div id="scan-progress-bar" class="h-full bg-cyan-400 transition-all" style="width: {{ scan.progress or 0 }}%;"></div>
+          <div id="scan-progress-bar" class="h-full bg-cyan-400 transition-all" data-progress="{{ scan.progress or 0 }}"></div>
         </div>
         <p class="mt-3 text-sm text-slate-300">Progresso: <span id="scan-progress-value">{{ scan.progress or 0 }}</span>%</p>
       </section>

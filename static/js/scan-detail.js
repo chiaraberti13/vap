@@ -18,6 +18,13 @@
   const logsContainer = document.getElementById("scan-logs");
   const notificationsContainer = document.getElementById("scan-notifications");
   const cancelButton = document.getElementById("cancel-scan");
+  const initialProgress = Number(progressBar?.dataset?.progress ?? 0);
+
+  if (Number.isFinite(initialProgress) && progressBar && progressValue) {
+    const normalized = Math.min(100, Math.max(0, initialProgress));
+    progressBar.style.width = `${normalized}%`;
+    progressValue.textContent = String(normalized);
+  }
 
   const renderEmptyState = (container, message) => {
     container.textContent = "";
