@@ -138,8 +138,8 @@ Interventi UI:
    - [x] Stato stepper ARIA coerente con navigazione guidata (2026-04-04): `aria-current="step"` ora aggiornato dinamicamente in `static/js/scan-catalog.js` durante la progressione Step 1→4.
 
 Interventi backend/API:
-1. Endpoint read-only per catalogo scansioni didattico (es. `GET /api/v1/scan-catalog`).
-2. Binding robusto tra card selezionata e `scan_type` effettivo (anti-tampering lato server).
+1. [x] Endpoint read-only per catalogo scansioni didattico (2026-04-04): introdotto `GET /api/v1/scan-catalog` con policy di accesso viewer/API key e cache applicativa read-only.
+2. [x] Binding robusto tra card selezionata e `scan_type` effettivo (anti-tampering lato server, 2026-04-04): blocco esplicito di `scan_type` non presenti in `SCAN_TYPES` sia nel form web che nell'endpoint API.
 
 Deliverable:
 - update `templates/index.html`

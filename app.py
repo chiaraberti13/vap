@@ -969,6 +969,8 @@ def create_scan_form(
         enforce_csrf(request, csrf_token)
         scan_type = scan_type.lower().strip()
         data_classification = data_classification.lower().strip()
+        if scan_type not in SCAN_TYPES:
+            raise ScanValidationError("Tipologia di scansione non valida.")
         if data_classification not in DATA_CLASSIFICATIONS:
             raise ScanValidationError("Classificazione dati non valida.")
         if scan_type == "nmap":
@@ -1269,6 +1271,8 @@ def create_scan(
     try:
         scan_type = payload.scan_type.lower().strip()
         data_classification = payload.data_classification.lower().strip()
+        if scan_type not in SCAN_TYPES:
+            raise ScanValidationError("Tipologia di scansione non valida.")
         if data_classification not in DATA_CLASSIFICATIONS:
             raise ScanValidationError("Classificazione dati non valida.")
         if scan_type == "nmap":
@@ -1636,6 +1640,22 @@ def list_scans(
         cache_key,
         [item.model_dump(mode="json") for item in response_payload],
     )
+    return response_payload
+
+
+@app.get("/api/v1/scan-catalog", response_model=List[Dict[str, Any]])
+@limiter.limit(settings.rate_limit_read)
+def get_scan_catalog_endpoint(
+    request: Request,
+    _: None = Depends(enforce_api_key),
+    __: str = Depends(enforce_viewer_role),
+) -> List[Dict[str, Any]]:
+    cache_key = _cache_key("scan-catalog")
+    cached_payload = _get_cached_json(cache_key)
+    if cached_payload:
+        return cached_payload
+    response_payload = _scan_catalog_for_ui()
+    _set_cached_json(cache_key, response_payload)
     return response_payload
 
 
