@@ -75,6 +75,7 @@
           </div>
           {% endif %}
 
+          {% if scan_explorer_enabled %}
           <form class="mt-6 grid gap-5" method="post" action="/scans" id="guided-scan-form">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
             <ol id="scan-stepper-nav" class="grid gap-2 sm:grid-cols-4" aria-label="Stepper pre-esecuzione scansione">
@@ -242,6 +243,87 @@
               <button type="button" id="scan-step-next" class="rounded-lg border border-cyan-500 px-4 py-2 text-sm text-cyan-200 hover:bg-cyan-500/10">Continua</button>
             </div>
           </form>
+          {% else %}
+          <form class="mt-6 grid gap-5" method="post" action="/scans">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+            <label class="grid gap-2">
+              <span class="text-sm text-slate-300">Target</span>
+              <input
+                name="target"
+                type="text"
+                placeholder="https://example.com"
+                class="w-full rounded-lg border border-slate-700 bg-slate-950/70 px-4 py-3 text-slate-100 focus:border-cyan-400 focus:outline-none"
+                required
+              />
+            </label>
+            {% if api_key_required %}
+            <label class="grid gap-2">
+              <span class="text-sm text-slate-300">API Key</span>
+              <input
+                name="api_key"
+                type="password"
+                placeholder="Inserisci la chiave API"
+                class="w-full rounded-lg border border-slate-700 bg-slate-950/70 px-4 py-3 text-slate-100 focus:border-cyan-400 focus:outline-none"
+                required
+              />
+            </label>
+            {% endif %}
+            <label class="grid gap-2">
+              <span class="text-sm text-slate-300">Tipo scansione</span>
+              <select
+                name="scan_type"
+                class="w-full rounded-lg border border-slate-700 bg-slate-950/70 px-4 py-3 text-slate-100 focus:border-cyan-400 focus:outline-none"
+              >
+                {% for scan_type in scan_types %}
+                <option value="{{ scan_type }}">{{ scan_type | upper }}</option>
+                {% endfor %}
+              </select>
+            </label>
+            <label class="grid gap-2">
+              <span class="text-sm text-slate-300">Priorità scansione</span>
+              <select
+                name="priority"
+                class="w-full rounded-lg border border-slate-700 bg-slate-950/70 px-4 py-3 text-slate-100 focus:border-cyan-400 focus:outline-none"
+              >
+                <option value="9">Critica</option>
+                <option value="7">Alta</option>
+                <option value="5" selected>Media</option>
+                <option value="3">Bassa</option>
+                <option value="1">Minima</option>
+              </select>
+            </label>
+            <label class="grid gap-2">
+              <span class="text-sm text-slate-300">Classificazione dati</span>
+              <select
+                name="data_classification"
+                class="w-full rounded-lg border border-slate-700 bg-slate-950/70 px-4 py-3 text-slate-100 focus:border-cyan-400 focus:outline-none"
+              >
+                {% for classification in data_classifications %}
+                <option value="{{ classification }}">{{ classification | upper }}</option>
+                {% endfor %}
+              </select>
+            </label>
+            <div class="rounded-lg border border-slate-800 bg-slate-950/50 p-4 text-sm text-slate-300">
+              <p class="font-semibold text-slate-200">Consenso legale</p>
+              <div class="mt-3 grid gap-2">
+                <label class="flex items-start gap-2">
+                  <input type="checkbox" name="accept_privacy" class="mt-1 accent-cyan-400" required />
+                  <span>Accetto la <a class="text-cyan-300 underline" href="/privacy-policy" target="_blank" rel="noopener">Privacy Policy</a> (v{{ privacy_policy_version }}).</span>
+                </label>
+                <label class="flex items-start gap-2">
+                  <input type="checkbox" name="accept_terms" class="mt-1 accent-cyan-400" required />
+                  <span>Accetto i <a class="text-cyan-300 underline" href="/terms-of-service" target="_blank" rel="noopener">Termini di Servizio</a> (v{{ terms_version }}).</span>
+                </label>
+              </div>
+            </div>
+            <button
+              type="submit"
+              class="w-full md:w-auto inline-flex items-center justify-center rounded-lg bg-cyan-500 px-6 py-3 font-semibold text-slate-900 hover:bg-cyan-400 transition"
+            >
+              Avvia scan
+            </button>
+          </form>
+          {% endif %}
         </div>
 
         <aside class="grid gap-4">
@@ -275,7 +357,9 @@
       </div>
     </footer>
   </main>
+  {% if scan_explorer_enabled %}
   <script id="scan-catalog-json" type="application/json">{{ scan_catalog_entries | tojson }}</script>
   <script src="/static/js/scan-catalog.js"></script>
+  {% endif %}
 </body>
 </html>

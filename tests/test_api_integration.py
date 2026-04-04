@@ -90,6 +90,26 @@ def test_scan_detail_displays_learning_sidebar():
     assert "Comprendere una valutazione completa multi-tool end-to-end." in response.text
 
 
+def test_homepage_uses_legacy_form_when_guided_explorer_flag_is_disabled(monkeypatch):
+    _clear_scans()
+    monkeypatch.setattr(
+        app,
+        "settings",
+        type(
+            "S",
+            (),
+            {**app.settings.__dict__, "ui_guided_scan_explorer_enabled": False},
+        )(),
+    )
+
+    with TestClient(app.app) as client:
+        response = client.get("/")
+
+    assert response.status_code == 200
+    assert "Scan Type Explorer" not in response.text
+    assert 'name="scan_type"' in response.text
+
+
 def test_list_scans_forbidden_for_role_not_allowed():
     _clear_scans()
     app.app.dependency_overrides[app.enforce_api_key] = lambda: None
