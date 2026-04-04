@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 import os
 from pathlib import Path
 import secrets
-from typing import List
+from typing import Dict, List
 
 from dotenv import load_dotenv
 
@@ -194,44 +194,80 @@ settings = Settings()
 settings.reports_dir.mkdir(parents=True, exist_ok=True)
 
 
+def build_startup_security_checklist() -> List[Dict[str, str]]:
+    """Return startup security checks with severity for production deployments."""
+    checks: List[Dict[str, str]] = []
+    if settings.app_env != "production":
+        return checks
+
+    if not settings.csrf_secret:
+        checks.append(
+            {
+                "severity": "high",
+                "code": "csrf_secret_missing",
+                "message": (
+                    "VAP_CSRF_SECRET non impostato: verrà generata una chiave random a ogni riavvio, "
+                    "invalidando le sessioni attive."
+                ),
+                "remediation": "Impostare VAP_CSRF_SECRET in modo stabile tramite secret manager.",
+            }
+        )
+    if not settings.jwt_secret:
+        checks.append(
+            {
+                "severity": "critical",
+                "code": "jwt_secret_missing",
+                "message": (
+                    "VAP_JWT_SECRET non impostato: autenticazione JWT non affidabile o non funzionante."
+                ),
+                "remediation": "Impostare VAP_JWT_SECRET con valore robusto (es. openssl rand -hex 32).",
+            }
+        )
+    if not settings.api_key and not settings.api_key_hash:
+        checks.append(
+            {
+                "severity": "high",
+                "code": "api_key_missing",
+                "message": "Nessuna API key configurata: endpoint API esposti senza autenticazione by-key.",
+                "remediation": "Configurare VAP_API_KEY_HASH (preferibile) o VAP_API_KEY.",
+            }
+        )
+    if not settings.require_https:
+        checks.append(
+            {
+                "severity": "high",
+                "code": "https_not_enforced",
+                "message": "VAP_REQUIRE_HTTPS=false: traffico non forzato su HTTPS.",
+                "remediation": "Impostare VAP_REQUIRE_HTTPS=true in produzione.",
+            }
+        )
+    if settings.host == "0.0.0.0":
+        checks.append(
+            {
+                "severity": "medium",
+                "code": "host_exposed",
+                "message": "VAP_HOST=0.0.0.0: servizio in ascolto su tutte le interfacce di rete.",
+                "remediation": "Limitare VAP_HOST a interfacce autorizzate quando possibile.",
+            }
+        )
+
+    return checks
+
+
 def _warn_production_security() -> None:
     """Log warnings for insecure settings when running in production."""
     import logging
     _log = logging.getLogger("vap.config")
 
-    if settings.app_env != "production":
-        return
-
-    warnings = []
-
-    if not settings.csrf_secret:
-        warnings.append(
-            "VAP_CSRF_SECRET is not set: a random secret will be generated on each restart, "
-            "invalidating all active sessions. Set a stable secret in production."
+    checks = build_startup_security_checklist()
+    for check in checks:
+        _log.warning(
+            "[VAP PRODUCTION SECURITY][%s][%s] %s Remediation: %s",
+            check["severity"].upper(),
+            check["code"],
+            check["message"],
+            check["remediation"],
         )
-    if not settings.jwt_secret:
-        warnings.append(
-            "VAP_JWT_SECRET is not set: JWT authentication will fail or use an empty key. "
-            "Set a strong random secret (e.g. `openssl rand -hex 32`)."
-        )
-    if not settings.api_key and not settings.api_key_hash:
-        warnings.append(
-            "No API key configured (VAP_API_KEY / VAP_API_KEY_HASH): "
-            "the API is accessible without authentication."
-        )
-    if not settings.require_https:
-        warnings.append(
-            "VAP_REQUIRE_HTTPS=false: traffic is not forced over HTTPS. "
-            "Enable in production to protect credentials and scan data."
-        )
-    if settings.host == "0.0.0.0":
-        warnings.append(
-            "VAP_HOST=0.0.0.0: the server binds to all network interfaces. "
-            "Restrict to a specific interface if external exposure is not intended."
-        )
-
-    for msg in warnings:
-        _log.warning("[VAP PRODUCTION SECURITY] %s", msg)
 
 
 _warn_production_security()

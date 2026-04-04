@@ -185,7 +185,7 @@ Interventi prioritari:
    - riduzione inline scripts/styles (progressivo),
    - CSP più restrittiva,
    - valutazione migrazione da Tailwind CDN a build locale.
-5. Secrets governance:
+5. [x] Secrets governance:
    - checklist automatica startup con severity.
 
 Deliverable:
