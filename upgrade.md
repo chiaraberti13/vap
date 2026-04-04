@@ -293,7 +293,7 @@ Una release è “done” quando:
 
 ## Sprint 1 (1-2 settimane)
 - [x] Fase 0 + Fase 1 complete.
-- POC UI cards per 3 scan type principali.
+- [x] POC UI cards per 3 scan type principali (2026-04-04): aggiunto test `test_homepage_guided_explorer_exposes_top3_poc_scan_cards` per verificare la presenza in homepage guidata di `full`, `light`, `wordpress`.
 
 ## Sprint 2
 - [x] Fase 2 completa con rollout feature-flag.

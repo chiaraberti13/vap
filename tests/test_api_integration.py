@@ -1,3 +1,5 @@
+import re
+
 from fastapi.testclient import TestClient
 
 import app
@@ -112,6 +114,31 @@ def test_homepage_uses_legacy_form_when_guided_explorer_flag_is_disabled(monkeyp
     assert response.status_code == 200
     assert "Scan Type Explorer" not in response.text
     assert 'name="scan_type"' in response.text
+
+
+def test_homepage_guided_explorer_exposes_top3_poc_scan_cards():
+    """Verifica POC Sprint 1: homepage guidata contiene i 3 scan type principali."""
+    _clear_scans()
+
+    with TestClient(app.app) as client:
+        response = client.get("/")
+
+    assert response.status_code == 200
+    assert "Scan Type Explorer" in response.text
+    assert "Full Stack Assessment" in response.text
+    assert "Light Baseline Scan" in response.text
+    assert "WordPress Focused Assessment" in response.text
+
+    payload_match = re.search(
+        r'<script id="scan-catalog-json" type="application/json">(.*?)</script>',
+        response.text,
+        re.DOTALL,
+    )
+    assert payload_match is not None
+    payload = payload_match.group(1)
+    assert '"id": "full"' in payload
+    assert '"id": "light"' in payload
+    assert '"id": "wordpress"' in payload
 
 
 def test_list_scans_forbidden_for_role_not_allowed():
