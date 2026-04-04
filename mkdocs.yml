@@ -40,6 +40,7 @@ nav:
       - Professional Path: learning-paths/professional-path.md
   - Scan Playbooks:
       - Panoramica: scan-playbooks/README.md
+  - Glossario & FAQ Operative: glossary-faq.md
   - Riferimenti Ufficiali: official-references.md
 
 markdown_extensions:

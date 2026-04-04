@@ -9,6 +9,7 @@ Benvenuto nella documentazione ufficiale di **Vulnerability Assessment Platform*
 - **Linee guida** per sicurezza, troubleshooting e contribuzione.
 - **Percorsi formativi** progressivi (beginner, analyst, professional).
 - **Riferimenti ufficiali** a framework/librerie usate (backend, sicurezza, UX, testing).
+- **Glossario cyber + FAQ operative** per supportare decisioni rapide durante le analisi.
 
 ## Avvio rapido
 
@@ -31,6 +32,10 @@ Consulta la nuova sezione dedicata:
 - `docs/learning-paths/analyst-path.md`
 - `docs/learning-paths/professional-path.md`
 
+
+## Glossario e FAQ operative
+
+- `docs/glossary-faq.md`
 
 ## Riferimenti ufficiali
 
