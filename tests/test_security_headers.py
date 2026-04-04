@@ -19,5 +19,8 @@ def test_csp_disallows_inline_scripts_by_default():
         directives[key] = value
 
     script_src = directives.get("script-src", "")
+    style_src = directives.get("style-src", "")
     assert "'unsafe-inline'" not in script_src
+    assert "'unsafe-inline'" not in style_src
     assert script_src == "'self' https://cdn.tailwindcss.com"
+    assert style_src == "'self' https://cdn.tailwindcss.com"

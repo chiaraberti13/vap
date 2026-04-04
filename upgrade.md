@@ -184,6 +184,7 @@ Interventi prioritari:
 4. Hardening frontend:
    - riduzione inline scripts/styles (progressivo),
    - [x] CSP più restrittiva (rimossa `unsafe-inline` da `script-src` di default),
+   - [x] riduzione `unsafe-inline` anche su `style-src` (2026-04-04): estratti gli stili inline da `scan_detail.html` in `static/css/style.css` e barra progresso inizializzata via JS senza attributi `style`.
    - valutazione migrazione da Tailwind CDN a build locale.
    - [x] Step 1 completato: script inline di `scan_detail.html` estratto in `static/js/scan-detail.js` con rendering DOM sicuro.
 5. [x] Secrets governance:
