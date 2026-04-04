@@ -257,7 +257,7 @@ Deliverable:
 ## P1 (breve termine)
 - Learning sidebar su scan detail.
 - Confidence model UI e remediation roadmap.
-- A11y audit completo e fix.
+- [x] A11y audit completo e fix (2026-04-04): introdotti skip-link tastiera su homepage/dettaglio scansione e alert region ARIA per errori bloccanti (`templates/index.html`, `templates/scan_detail.html`) con regressione automatica in `tests/test_accessibility_checks.py`.
 
 ## P2 (medio termine)
 - RBAC + allowlist target + hardening CSP.

@@ -8,6 +8,9 @@
   <link rel="stylesheet" href="/static/css/style.css" />
 </head>
 <body class="bg-slate-950 text-slate-100">
+  <a href="#scan-status" class="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-50 focus:rounded-md focus:bg-cyan-500 focus:px-4 focus:py-2 focus:text-slate-900 focus:font-semibold">
+    Salta allo stato scansione
+  </a>
   <main class="min-h-screen px-6 py-10">
     <div class="max-w-6xl mx-auto space-y-8">
 
@@ -26,7 +29,7 @@
       </div>
 
       {% if report_error %}
-      <div class="rounded-xl border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-amber-100">
+      <div class="rounded-xl border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-amber-100" role="alert" aria-live="assertive">
         {{ report_error }}
       </div>
       {% endif %}

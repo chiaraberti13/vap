@@ -16,6 +16,8 @@ class LandmarkParser(HTMLParser):
         self.links: list[dict[str, str]] = []
         self.inputs: list[dict[str, str]] = []
         self.live_regions: dict[str, dict[str, str]] = {}
+        self.skip_links: list[dict[str, str]] = []
+        self.alert_regions: list[dict[str, str]] = []
 
     def handle_starttag(self, tag: str, attrs) -> None:
         attr_map = {k: v for k, v in attrs if k}
@@ -31,10 +33,16 @@ class LandmarkParser(HTMLParser):
                 self.buttons[button_id] = attr_map
         if tag == "a":
             self.links.append(attr_map)
+            if attr_map.get("href", "").startswith("#"):
+                classes = attr_map.get("class", "")
+                if "sr-only" in classes:
+                    self.skip_links.append(attr_map)
         if tag == "input":
             self.inputs.append(attr_map)
         if attr_map.get("aria-live"):
             self.live_regions[attr_map.get("id", f"anon-{len(self.live_regions)}")] = attr_map
+        if attr_map.get("role") == "alert":
+            self.alert_regions.append(attr_map)
 
 
 def _clear_scans() -> None:
@@ -81,6 +89,7 @@ def test_homepage_has_core_accessibility_landmarks_and_keyboard_controls():
     assert compare_toggle is not None
     assert compare_toggle.get("aria-controls") == "scan-compare-content"
     assert compare_toggle.get("aria-expanded") in {"true", "false"}
+    assert any(link.get("href") == "#new-scan-title" for link in parser.skip_links)
 
 
 def test_scan_detail_has_live_regions_and_single_main_landmark():
@@ -116,3 +125,4 @@ def test_scan_detail_has_live_regions_and_single_main_landmark():
     assert logs_region[1].get("aria-live") == "polite"
     assert notifications_region[1].get("role") == "status"
     assert notifications_region[1].get("aria-live") == "assertive"
+    assert any(link.get("href") == "#scan-status" for link in parser.skip_links)
