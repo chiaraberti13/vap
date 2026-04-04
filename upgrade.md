@@ -199,7 +199,7 @@ Deliverable:
 **Obiettivo:** “create → testa → correggi → ottimizza” come processo standard.
 
 Interventi:
-1. Test pyramid aggiornata:
+1. [x] Test pyramid aggiornata:
    - unit: catalogo/metadati/validatori,
    - integration: endpoint catalogo + creazione scan,
    - E2E: user journey selezione guidata.

@@ -189,3 +189,56 @@ def test_list_audit_events_include_all_supports_event_filter():
     assert payload[0]["event"] == "scan_canceled"
     assert payload[0]["subject_id"] == "subject-2"
     app.app.dependency_overrides.clear()
+
+
+def test_guided_scan_form_end_to_end_journey(monkeypatch):
+    """Copre il journey guidato: homepage -> submit form -> redirect dettaglio scansione."""
+    _clear_scans()
+    app.app.dependency_overrides[app.enforce_api_key_form_dependency] = lambda: None
+
+    class DummyResult:
+        id = "dummy-task-e2e"
+
+    def fake_apply_async(*_args, **_kwargs):
+        return DummyResult()
+
+    monkeypatch.setattr(app.orchestrate_scan, "apply_async", fake_apply_async)
+
+    with TestClient(app.app) as client:
+        homepage = client.get("/")
+        assert homepage.status_code == 200
+
+        csrf_cookie = client.cookies.get(app.settings.csrf_cookie_name)
+        assert csrf_cookie
+
+        create_response = client.post(
+            "/scans",
+            data={
+                "target": "https://example.com",
+                "learning_goal": "baseline",
+                "scan_type": "wordpress",
+                "priority": "7",
+                "data_classification": "internal",
+                "accept_privacy": "on",
+                "accept_terms": "on",
+                "csrf_token": csrf_cookie,
+            },
+            follow_redirects=False,
+        )
+
+        assert create_response.status_code == 303
+        detail_url = create_response.headers["location"]
+        assert detail_url.startswith("/scans/")
+
+        detail = client.get(detail_url)
+        assert detail.status_code == 200
+        assert "Learning sidebar" in detail.text
+        assert "WORDPRESS" in detail.text
+
+    with SessionLocal() as session:
+        saved_scan = session.query(Scan).filter(Scan.target == "https://example.com").first()
+        assert saved_scan is not None
+        assert saved_scan.scan_type == "wordpress"
+        assert saved_scan.priority == 7
+
+    app.app.dependency_overrides.clear()
