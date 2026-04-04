@@ -1,13 +1,14 @@
 from fastapi.testclient import TestClient
 
 import app
-from database import Scan, SessionLocal, init_db
+from database import AuditEvent, Scan, SessionLocal, init_db
 
 
 def _clear_scans() -> None:
     init_db()
     with SessionLocal() as session:
         session.query(Scan).delete()
+        session.query(AuditEvent).delete()
         session.commit()
 
 
@@ -138,4 +139,53 @@ def test_create_scan_forbidden_for_viewer_role():
         )
 
     assert response.status_code == 403
+    app.app.dependency_overrides.clear()
+
+
+def test_list_audit_events_returns_sensitive_actions_only_by_default():
+    _clear_scans()
+    app.app.dependency_overrides[app.enforce_api_key] = lambda: None
+    app.app.dependency_overrides[app.enforce_admin_role] = lambda: "admin"
+
+    with SessionLocal() as session:
+        session.add_all(
+            [
+                AuditEvent(event="gdpr_export", subject_id="subject-1", actor="jwt:admin"),
+                AuditEvent(event="scan_canceled", subject_id="subject-1", actor="jwt:admin"),
+            ]
+        )
+        session.commit()
+
+    with TestClient(app.app) as client:
+        response = client.get("/api/v1/audit/events")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert len(payload) == 1
+    assert payload[0]["event"] == "gdpr_export"
+    app.app.dependency_overrides.clear()
+
+
+def test_list_audit_events_include_all_supports_event_filter():
+    _clear_scans()
+    app.app.dependency_overrides[app.enforce_api_key] = lambda: None
+    app.app.dependency_overrides[app.enforce_admin_role] = lambda: "admin"
+
+    with SessionLocal() as session:
+        session.add_all(
+            [
+                AuditEvent(event="gdpr_export", subject_id="subject-1", actor="jwt:admin"),
+                AuditEvent(event="scan_canceled", subject_id="subject-2", actor="jwt:admin"),
+            ]
+        )
+        session.commit()
+
+    with TestClient(app.app) as client:
+        response = client.get("/api/v1/audit/events?include_all_events=true&event=scan_canceled")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert len(payload) == 1
+    assert payload[0]["event"] == "scan_canceled"
+    assert payload[0]["subject_id"] == "subject-2"
     app.app.dependency_overrides.clear()

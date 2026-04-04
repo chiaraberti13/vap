@@ -39,7 +39,7 @@ from compliance import (
     record_consent,
 )
 from config import settings
-from database import ConsentRecord, Scan, SessionLocal, get_db, init_db
+from database import AuditEvent, ConsentRecord, Scan, SessionLocal, get_db, init_db
 from scan_catalog import get_scan_catalog
 from scanner_engine import (
     ScanValidationError,
@@ -551,6 +551,17 @@ class ConsentStatus(BaseModel):
     accepted_at: datetime
 
 
+class AuditEventStatus(BaseModel):
+    id: int
+    event: str
+    subject_id: Optional[str]
+    actor: str
+    created_at: datetime
+    ip_address: Optional[str]
+    user_agent: Optional[str]
+    metadata: Dict[str, Any]
+
+
 class ConnectionManager:
     def __init__(self) -> None:
         self.active_connections: Dict[int, Set[WebSocket]] = {}
@@ -584,6 +595,16 @@ def _load_json_list(value: Optional[str]) -> List[Any]:
     except json.JSONDecodeError:
         return []
     return payload if isinstance(payload, list) else []
+
+
+def _load_json_object(value: Optional[str]) -> Dict[str, Any]:
+    if not value:
+        return {}
+    try:
+        payload = json.loads(value)
+    except json.JSONDecodeError:
+        return {}
+    return payload if isinstance(payload, dict) else {}
 
 
 def _truncate_preview_text(value: Any, max_length: int = 220) -> Optional[str]:
@@ -1375,6 +1396,51 @@ def export_gdpr_data(
         exported_scans=len(payload),
     )
     return {"subject_id": subject_id, "exported_at": datetime.now(timezone.utc).isoformat(), "scans": payload}
+
+
+@app.get("/api/v1/audit/events", response_model=List[AuditEventStatus])
+def list_audit_events(
+    request: Request,
+    event: Optional[str] = None,
+    subject_id: Optional[str] = None,
+    limit: int = 50,
+    include_all_events: bool = False,
+    db: Session = Depends(get_db),
+    _: None = Depends(enforce_api_key),
+    __: str = Depends(enforce_admin_role),
+) -> List[AuditEventStatus]:
+    safe_limit = min(max(limit, 1), 200)
+    query = db.query(AuditEvent)
+    if event:
+        query = query.filter(AuditEvent.event == event.strip().lower())
+    if subject_id:
+        query = query.filter(AuditEvent.subject_id == subject_id.strip())
+    if not include_all_events:
+        query = query.filter(
+            AuditEvent.event.in_(
+                [
+                    "consent_recorded",
+                    "gdpr_export",
+                    "gdpr_deletion",
+                    "report_downloaded",
+                    "scan_deleted",
+                ]
+            )
+        )
+    events = query.order_by(AuditEvent.created_at.desc()).limit(safe_limit).all()
+    return [
+        AuditEventStatus(
+            id=audit.id,
+            event=audit.event,
+            subject_id=audit.subject_id,
+            actor=audit.actor,
+            created_at=audit.created_at,
+            ip_address=audit.ip_address,
+            user_agent=audit.user_agent,
+            metadata=_load_json_object(audit.metadata_json),
+        )
+        for audit in events
+    ]
 
 
 @app.delete("/api/v1/gdpr/delete")
