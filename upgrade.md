@@ -101,7 +101,7 @@ Interventi:
    - `expected_duration`, `invasiveness`, `noise_level`,
    - `required_permissions`, `legal_notice`,
    - `common_false_positives`, `interpretation_guide`, `next_learning_step`.
-2. Mappare ogni scan type esistente del backend al catalogo senza rimuovere nulla.
+2. [x] Mappare ogni scan type esistente del backend al catalogo senza rimuovere nulla.
 3. Validare coerenza tra `SCAN_TYPES`/`SCAN_TYPE_CHOICES` e catalogo via test.
 
 Deliverable:
