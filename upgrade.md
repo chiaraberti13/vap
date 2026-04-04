@@ -124,7 +124,7 @@ Interventi UI:
    - confronto rapido tra 2-3 scansioni.
 2. [x] Pannello “Perché scegliere questa analisi” dinamico.
 3. [x] Tooltip/accessory “Termini tecnici” (OWASP, CVSS, false positive).
-4. Stepper guidato pre-esecuzione:
+4. [x] Stepper guidato pre-esecuzione:
    - Step 1: obiettivo utente;
    - Step 2: scelta scansione consigliata;
    - Step 3: conferma legale/consenso;

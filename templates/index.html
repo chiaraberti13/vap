@@ -75,31 +75,48 @@
           </div>
           {% endif %}
 
-          <form class="mt-6 grid gap-5" method="post" action="/scans">
+          <form class="mt-6 grid gap-5" method="post" action="/scans" id="guided-scan-form">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
-            <label class="grid gap-2">
-              <span class="text-sm text-slate-300">Target</span>
-              <input
-                name="target"
-                type="text"
-                placeholder="https://example.com"
-                class="w-full rounded-lg border border-slate-700 bg-slate-950/70 px-4 py-3 text-slate-100 focus:border-cyan-400 focus:outline-none"
-                required
-              />
-            </label>
-            {% if api_key_required %}
-            <label class="grid gap-2">
-              <span class="text-sm text-slate-300">API Key</span>
-              <input
-                name="api_key"
-                type="password"
-                placeholder="Inserisci la chiave API"
-                class="w-full rounded-lg border border-slate-700 bg-slate-950/70 px-4 py-3 text-slate-100 focus:border-cyan-400 focus:outline-none"
-                required
-              />
-            </label>
-            {% endif %}
-            <section class="grid gap-3" aria-labelledby="scan-explorer-title">
+            <ol id="scan-stepper-nav" class="grid gap-2 sm:grid-cols-4" aria-label="Stepper pre-esecuzione scansione">
+              <li class="rounded-lg border border-cyan-400 bg-cyan-500/10 p-3 text-xs" data-step-indicator="1"><span class="font-semibold">Step 1</span><p class="mt-1 text-slate-300">Obiettivo utente</p></li>
+              <li class="rounded-lg border border-slate-700 bg-slate-950/50 p-3 text-xs" data-step-indicator="2"><span class="font-semibold">Step 2</span><p class="mt-1 text-slate-300">Scansione consigliata</p></li>
+              <li class="rounded-lg border border-slate-700 bg-slate-950/50 p-3 text-xs" data-step-indicator="3"><span class="font-semibold">Step 3</span><p class="mt-1 text-slate-300">Consenso legale</p></li>
+              <li class="rounded-lg border border-slate-700 bg-slate-950/50 p-3 text-xs" data-step-indicator="4"><span class="font-semibold">Step 4</span><p class="mt-1 text-slate-300">Conferma ed esecuzione</p></li>
+            </ol>
+
+            <section class="grid gap-4" data-step-panel="1">
+              <h3 class="text-sm text-slate-200 font-semibold tracking-wide">Step 1 · Definisci obiettivo e target</h3>
+              <label class="grid gap-2">
+                <span class="text-sm text-slate-300">Target</span>
+                <input
+                  name="target"
+                  type="text"
+                  placeholder="https://example.com"
+                  class="w-full rounded-lg border border-slate-700 bg-slate-950/70 px-4 py-3 text-slate-100 focus:border-cyan-400 focus:outline-none"
+                  required
+                />
+              </label>
+              {% if api_key_required %}
+              <label class="grid gap-2">
+                <span class="text-sm text-slate-300">API Key</span>
+                <input
+                  name="api_key"
+                  type="password"
+                  placeholder="Inserisci la chiave API"
+                  class="w-full rounded-lg border border-slate-700 bg-slate-950/70 px-4 py-3 text-slate-100 focus:border-cyan-400 focus:outline-none"
+                  required
+                />
+              </label>
+              {% endif %}
+              <fieldset class="grid gap-2">
+                <legend class="text-sm text-slate-300">Obiettivo principale</legend>
+                <label class="flex items-start gap-2 text-sm text-slate-300"><input type="radio" name="learning_goal" value="baseline" class="mt-1 accent-cyan-400" required />Mappare esposizione iniziale (baseline).</label>
+                <label class="flex items-start gap-2 text-sm text-slate-300"><input type="radio" name="learning_goal" value="verification" class="mt-1 accent-cyan-400" />Verificare fix o remediation già eseguite.</label>
+                <label class="flex items-start gap-2 text-sm text-slate-300"><input type="radio" name="learning_goal" value="deep_dive" class="mt-1 accent-cyan-400" />Approfondimento tecnico su stack specifico.</label>
+              </fieldset>
+            </section>
+
+            <section class="grid gap-3 hidden" data-step-panel="2" aria-labelledby="scan-explorer-title">
               <div class="flex items-center justify-between gap-3 flex-wrap">
                 <h3 id="scan-explorer-title" class="text-sm text-slate-200 font-semibold tracking-wide">Scan Type Explorer</h3>
                 <p class="text-xs text-slate-400">Seleziona fino a 3 card per confronto rapido.</p>
@@ -151,7 +168,34 @@
                 <div id="scan-compare-grid" class="mt-3 grid gap-3 md:grid-cols-3"></div>
               </div>
             </section>
-            <label class="grid gap-2">
+            <section class="grid gap-4 hidden" data-step-panel="3">
+              <h3 class="text-sm text-slate-200 font-semibold tracking-wide">Step 3 · Conferma legale e consenso</h3>
+              <div class="rounded-lg border border-slate-800 bg-slate-950/50 p-4 text-sm text-slate-300">
+                <p class="font-semibold text-slate-200">Consenso e compliance GDPR</p>
+                <div class="mt-3 grid gap-2">
+                  <label class="flex items-start gap-2">
+                    <input type="checkbox" name="accept_privacy" class="mt-1 accent-cyan-400" required />
+                    <span>
+                      Ho letto e accetto la
+                      <a class="text-cyan-300 underline" href="/privacy-policy" target="_blank" rel="noopener">Privacy Policy</a>
+                      (v{{ privacy_policy_version }}).
+                    </span>
+                  </label>
+                  <label class="flex items-start gap-2">
+                    <input type="checkbox" name="accept_terms" class="mt-1 accent-cyan-400" required />
+                    <span>
+                      Accetto i
+                      <a class="text-cyan-300 underline" href="/terms-of-service" target="_blank" rel="noopener">Termini di Servizio</a>
+                      (v{{ terms_version }}).
+                    </span>
+                  </label>
+                </div>
+              </div>
+            </section>
+            <section class="grid gap-4 hidden" data-step-panel="4">
+              <h3 class="text-sm text-slate-200 font-semibold tracking-wide">Step 4 · Run scansione</h3>
+              <p class="text-sm text-slate-400">Ricontrolla la priorità e la classificazione dati prima dell'esecuzione.</p>
+              <label class="grid gap-2">
               <span class="text-sm text-slate-300">Priorità scansione</span>
               <select
                 name="priority"
@@ -163,45 +207,29 @@
                 <option value="3">Bassa</option>
                 <option value="1">Minima</option>
               </select>
-            </label>
-            <label class="grid gap-2">
-              <span class="text-sm text-slate-300">Classificazione dati</span>
-              <select
-                name="data_classification"
-                class="w-full rounded-lg border border-slate-700 bg-slate-950/70 px-4 py-3 text-slate-100 focus:border-cyan-400 focus:outline-none"
+              </label>
+              <label class="grid gap-2">
+                <span class="text-sm text-slate-300">Classificazione dati</span>
+                <select
+                  name="data_classification"
+                  class="w-full rounded-lg border border-slate-700 bg-slate-950/70 px-4 py-3 text-slate-100 focus:border-cyan-400 focus:outline-none"
+                >
+                  {% for classification in data_classifications %}
+                  <option value="{{ classification }}">{{ classification | upper }}</option>
+                  {% endfor %}
+                </select>
+              </label>
+              <button
+                type="submit"
+                class="w-full md:w-auto inline-flex items-center justify-center rounded-lg bg-cyan-500 px-6 py-3 font-semibold text-slate-900 hover:bg-cyan-400 transition"
               >
-                {% for classification in data_classifications %}
-                <option value="{{ classification }}">{{ classification | upper }}</option>
-                {% endfor %}
-              </select>
-            </label>
-            <div class="rounded-lg border border-slate-800 bg-slate-950/50 p-4 text-sm text-slate-300">
-              <p class="font-semibold text-slate-200">Consenso e compliance GDPR</p>
-              <div class="mt-3 grid gap-2">
-                <label class="flex items-start gap-2">
-                  <input type="checkbox" name="accept_privacy" class="mt-1 accent-cyan-400" required />
-                  <span>
-                    Ho letto e accetto la
-                    <a class="text-cyan-300 underline" href="/privacy-policy" target="_blank" rel="noopener">Privacy Policy</a>
-                    (v{{ privacy_policy_version }}).
-                  </span>
-                </label>
-                <label class="flex items-start gap-2">
-                  <input type="checkbox" name="accept_terms" class="mt-1 accent-cyan-400" required />
-                  <span>
-                    Accetto i
-                    <a class="text-cyan-300 underline" href="/terms-of-service" target="_blank" rel="noopener">Termini di Servizio</a>
-                    (v{{ terms_version }}).
-                  </span>
-                </label>
-              </div>
+                Avvia scan
+              </button>
+            </section>
+            <div class="flex items-center justify-between gap-3 border-t border-slate-800/60 pt-4">
+              <button type="button" id="scan-step-prev" class="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:border-slate-500 disabled:opacity-40 disabled:cursor-not-allowed">Indietro</button>
+              <button type="button" id="scan-step-next" class="rounded-lg border border-cyan-500 px-4 py-2 text-sm text-cyan-200 hover:bg-cyan-500/10">Continua</button>
             </div>
-            <button
-              type="submit"
-              class="w-full md:w-auto inline-flex items-center justify-center rounded-lg bg-cyan-500 px-6 py-3 font-semibold text-slate-900 hover:bg-cyan-400 transition"
-            >
-              Avvia scan
-            </button>
           </form>
         </div>
 

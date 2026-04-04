@@ -13,6 +13,11 @@
   const glossaryTooltip = document.getElementById("glossary-tooltip");
   const glossaryTooltipContent = document.getElementById("glossary-tooltip-content");
   const glossaryButtons = document.querySelectorAll("[data-glossary-term]");
+  const guidedForm = document.getElementById("guided-scan-form");
+  const stepPanels = document.querySelectorAll("[data-step-panel]");
+  const stepIndicators = document.querySelectorAll("[data-step-indicator]");
+  const stepNext = document.getElementById("scan-step-next");
+  const stepPrev = document.getElementById("scan-step-prev");
 
   if (
     !payloadNode ||
@@ -28,6 +33,11 @@
     !whyLimits ||
     !glossaryTooltip ||
     !glossaryTooltipContent ||
+    !guidedForm ||
+    stepPanels.length === 0 ||
+    stepIndicators.length === 0 ||
+    !stepNext ||
+    !stepPrev ||
     glossaryButtons.length === 0
   ) {
     return;
@@ -47,6 +57,8 @@
   const categories = ["Tutte", ...new Set(catalog.map((entry) => entry.category))];
   const selectedForCompare = new Set();
   let activeCategory = "Tutte";
+  let currentStep = 1;
+  const totalSteps = stepPanels.length;
 
   const levelStyles = {
     beginner: "bg-emerald-500/20 text-emerald-200 border-emerald-400/40",
@@ -224,8 +236,71 @@
     });
   }
 
+  function updateStepperUi() {
+    stepPanels.forEach((panel) => {
+      const panelStep = Number(panel.dataset.stepPanel);
+      panel.classList.toggle("hidden", panelStep !== currentStep);
+    });
+
+    stepIndicators.forEach((indicator) => {
+      const indicatorStep = Number(indicator.dataset.stepIndicator);
+      const isActive = indicatorStep === currentStep;
+      indicator.className = `rounded-lg border p-3 text-xs ${
+        isActive
+          ? "border-cyan-400 bg-cyan-500/10"
+          : "border-slate-700 bg-slate-950/50"
+      }`;
+    });
+
+    stepPrev.disabled = currentStep === 1;
+    stepNext.classList.toggle("hidden", currentStep === totalSteps);
+  }
+
+  function validateCurrentStep() {
+    if (currentStep === 1) {
+      const targetInput = guidedForm.querySelector("input[name='target']");
+      const goalInput = guidedForm.querySelector("input[name='learning_goal']:checked");
+      if (!targetInput || !targetInput.value.trim()) {
+        targetInput?.reportValidity();
+        return false;
+      }
+      if (!goalInput) {
+        const firstGoal = guidedForm.querySelector("input[name='learning_goal']");
+        firstGoal?.reportValidity();
+        return false;
+      }
+    }
+
+    if (currentStep === 3) {
+      const requiredChecks = guidedForm.querySelectorAll(
+        "input[name='accept_privacy'], input[name='accept_terms']"
+      );
+      for (const check of requiredChecks) {
+        if (!check.checked) {
+          check.reportValidity();
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  stepNext.addEventListener("click", () => {
+    if (!validateCurrentStep()) {
+      return;
+    }
+    currentStep = Math.min(totalSteps, currentStep + 1);
+    updateStepperUi();
+  });
+
+  stepPrev.addEventListener("click", () => {
+    currentStep = Math.max(1, currentStep - 1);
+    updateStepperUi();
+  });
+
   renderFilters();
   renderCards();
   renderCompare();
   registerGlossaryInteractions();
+  updateStepperUi();
 })();
