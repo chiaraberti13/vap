@@ -168,6 +168,26 @@ def _scan_catalog_for_ui() -> List[Dict[str, Any]]:
     return [catalog[scan_type] for scan_type in SCAN_TYPES if scan_type in catalog]
 
 
+def _scan_catalog_by_id() -> Dict[str, Dict[str, Any]]:
+    return {entry["id"]: entry for entry in get_scan_catalog()}
+
+
+def _learning_now(status: str) -> str:
+    status_key = (status or "").lower()
+    status_map = {
+        "queued": "La scansione è in coda: il motore sta preparando i tool e validando il target.",
+        "running": "La scansione è in esecuzione: i moduli raccolgono evidenze e aggiornano progressivamente i log.",
+        "completed": "La scansione è completata: è il momento di analizzare i finding e validare i falsi positivi.",
+        "report_failed": "La scansione è terminata con errore di report: verifica i log per capire il punto di rottura.",
+        "canceled": "La scansione è stata annullata: puoi rilanciarla con un profilo più adatto allo scope.",
+        "failed": "La scansione è fallita: controlla i prerequisiti tecnici e la raggiungibilità del target.",
+    }
+    return status_map.get(
+        status_key,
+        "Stato non standard: usa progressione e log per capire il comportamento corrente della scansione.",
+    )
+
+
 def _cache_key(*parts: str) -> str:
     return ":".join([settings.api_cache_prefix, *parts])
 
@@ -977,6 +997,16 @@ def scan_detail(request: Request, scan_id: int, db: Session = Depends(get_db)) -
 
     findings = _prepare_findings_for_ui(_load_json_list(scan.findings_json))
     logs = _load_json_list(scan.logs_json)
+    scan_catalog_entry = _scan_catalog_by_id().get(scan.scan_type, {})
+    learning_sidebar = {
+        "now": _learning_now(scan.status),
+        "why_tool": scan_catalog_entry.get(
+            "learning_objective",
+            "Ogni tool produce segnali diversi: scegli in base a obiettivo, scope e impatto operativo.",
+        ),
+        "safe_log_reading": "Evita di condividere token, session ID, credenziali e dati personali presenti nei log.",
+        "interpretation_guide": scan_catalog_entry.get("interpretation_guide"),
+    }
     api_key = request.query_params.get("api_key")
     download_url = None
     if scan.report_path:
@@ -990,6 +1020,7 @@ def scan_detail(request: Request, scan_id: int, db: Session = Depends(get_db)) -
             "scan": scan,
             "findings": findings,
             "logs": logs,
+            "learning_sidebar": learning_sidebar,
             "download_url": download_url,
             "api_key": api_key,
         },

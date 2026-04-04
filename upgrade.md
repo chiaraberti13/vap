@@ -155,7 +155,7 @@ Criterio di successo:
 **Obiettivo:** sfruttare `scan_detail.html` come aula operativa.
 
 Interventi:
-1. “Learning sidebar” nel dettaglio scansione con:
+1. [x] “Learning sidebar” nel dettaglio scansione con:
    - cosa sta succedendo ora,
    - perché il tool attuale viene lanciato,
    - come leggere i log in sicurezza.

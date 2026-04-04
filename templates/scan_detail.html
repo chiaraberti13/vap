@@ -92,8 +92,8 @@
         <p class="mt-3 text-sm text-slate-300">Progresso: <span id="scan-progress-value">{{ scan.progress or 0 }}</span>%</p>
       </section>
 
-      <!-- Logs & Notifications -->
-      <section class="grid gap-4 md:grid-cols-2">
+      <!-- Logs, Notifications & Learning Sidebar -->
+      <section class="grid gap-4 lg:grid-cols-3">
         <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-6">
           <h2 class="text-xl font-semibold mb-4">Log streaming</h2>
           <div id="scan-logs" class="space-y-1 text-xs font-mono text-slate-300 max-h-60 overflow-y-auto">
@@ -110,6 +110,24 @@
             <p class="text-slate-500">In attesa di eventi critici.</p>
           </div>
         </div>
+        <aside class="bg-slate-900/80 border border-cyan-900/50 rounded-2xl p-6 space-y-4" aria-label="Learning sidebar">
+          <h2 class="text-xl font-semibold text-cyan-200">Learning sidebar</h2>
+          <div class="rounded-lg border border-slate-700 bg-slate-950/60 p-4">
+            <p class="text-xs uppercase tracking-wider text-slate-400 mb-2">Cosa sta succedendo ora</p>
+            <p class="text-sm text-slate-200">{{ learning_sidebar.now }}</p>
+          </div>
+          <div class="rounded-lg border border-slate-700 bg-slate-950/60 p-4">
+            <p class="text-xs uppercase tracking-wider text-slate-400 mb-2">Perché questo tool</p>
+            <p class="text-sm text-slate-200">{{ learning_sidebar.why_tool }}</p>
+          </div>
+          <div class="rounded-lg border border-amber-700/60 bg-amber-500/10 p-4">
+            <p class="text-xs uppercase tracking-wider text-amber-300 mb-2">Come leggere i log in sicurezza</p>
+            <p class="text-sm text-amber-100">{{ learning_sidebar.safe_log_reading }}</p>
+          </div>
+          {% if learning_sidebar.interpretation_guide %}
+          <p class="text-xs text-slate-400">Interpretazione consigliata: {{ learning_sidebar.interpretation_guide }}</p>
+          {% endif %}
+        </aside>
       </section>
 
       <!-- Findings -->
