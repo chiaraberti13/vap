@@ -164,7 +164,7 @@ Interventi:
    - “rischio business”,
    - “verifica manuale consigliata”,
    - “skill da studiare dopo”.
-3. Introduzione confidence rubric (confirmed/probable/needs-validation) chiara.
+3. [x] Introduzione confidence rubric (confirmed/probable/needs-validation) chiara.
 4. Remediation roadmap ordinata per impatto + effort + prerequisiti.
 
 Deliverable:

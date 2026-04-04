@@ -605,6 +605,65 @@ def _build_learning_blocks_for_finding(finding: Dict[str, Any]) -> Dict[str, str
     }
 
 
+def _build_confidence_rubric_for_finding(finding: Dict[str, Any]) -> Dict[str, str]:
+    confirmed = finding.get("confirmed")
+    confidence = finding.get("confidence")
+    false_positive_label = str(finding.get("false_positive_label") or "").strip().lower()
+
+    if confirmed is True:
+        return {
+            "level": "confirmed",
+            "label": "Confirmed",
+            "description": "Evidenza forte: finding verificato con alta affidabilità operativa.",
+        }
+
+    confidence_ratio: Optional[float] = None
+    if isinstance(confidence, (int, float)):
+        confidence_ratio = float(confidence)
+    elif isinstance(confidence, str):
+        normalized = confidence.strip().lower()
+        if normalized in {"confirmed", "probable", "needs-validation"}:
+            mapped_level = normalized
+            return {
+                "level": mapped_level,
+                "label": mapped_level.replace("-", " ").title(),
+                "description": {
+                    "confirmed": "Evidenza forte: finding verificato con alta affidabilità operativa.",
+                    "probable": "Segnale credibile: raccomandata validazione manuale rapida prima della remediation.",
+                    "needs-validation": "Segnale preliminare: richiesta verifica manuale approfondita prima di classificare il rischio.",
+                }[mapped_level],
+            }
+        try:
+            confidence_ratio = float(normalized)
+        except ValueError:
+            confidence_ratio = None
+
+    if confidence_ratio is not None and confidence_ratio >= 0.8:
+        level = "probable"
+    elif false_positive_label == "alto":
+        level = "needs-validation"
+    elif confidence_ratio is not None and confidence_ratio >= 0.5:
+        level = "probable"
+    else:
+        level = "needs-validation"
+
+    rubric_map = {
+        "probable": {
+            "label": "Probable",
+            "description": "Segnale credibile: raccomandata validazione manuale rapida prima della remediation.",
+        },
+        "needs-validation": {
+            "label": "Needs validation",
+            "description": "Segnale preliminare: richiesta verifica manuale approfondita prima di classificare il rischio.",
+        },
+    }
+    return {
+        "level": level,
+        "label": rubric_map[level]["label"],
+        "description": rubric_map[level]["description"],
+    }
+
+
 def _prepare_findings_for_ui(findings: List[Any]) -> List[Dict[str, Any]]:
     prepared: List[Dict[str, Any]] = []
     for finding in findings:
@@ -628,6 +687,7 @@ def _prepare_findings_for_ui(findings: List[Any]) -> List[Dict[str, Any]]:
             max_length=160,
         )
         finding_copy["learning_blocks"] = _build_learning_blocks_for_finding(finding_copy)
+        finding_copy["confidence_rubric"] = _build_confidence_rubric_for_finding(finding_copy)
         prepared.append(finding_copy)
     return prepared
 
