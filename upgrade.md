@@ -211,7 +211,7 @@ Interventi:
    - regression OWASP Top 10 rilevante,
    - fuzzing input target/scan_type,
    - rate-limit abuse scenarios.
-5. Introduzione quality thresholds bloccanti in CI.
+5. [x] Introduzione quality thresholds bloccanti in CI.
 
 Deliverable:
 - workflow CI aggiornato
@@ -315,3 +315,9 @@ Una release è “done” quando:
 ## 9) Risultato atteso
 
 Al termine dell’upgrade, VAP resta un motore di scansione solido ma diventa anche un **ambiente di apprendimento professionale**: l’utente non “clicca e basta”, ma capisce **cosa sta facendo, perché, con quali limiti e con quali azioni correttive**.
+
+---
+
+## 10) Errori pre-esistenti rilevati durante l'upgrade
+
+- [ ] **Test regressione WordPress profile fallisce (pre-esistente):** `tests/test_wpscan_scanner.py::test_get_scanner_classes_supports_wordpress_scan_type` attualmente si aspetta `NucleiScanner`, ma il runtime restituisce `WordpressNucleiScanner` (diff all'indice 3). Verificare se aggiornare il test o riallineare la mappa scanner per `scan_type="wordpress"`.
