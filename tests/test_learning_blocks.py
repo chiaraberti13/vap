@@ -5,7 +5,7 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from app import _build_learning_blocks_for_finding
+from app import _build_confidence_rubric_for_finding, _build_learning_blocks_for_finding
 
 
 def test_learning_blocks_use_impact_and_recommendation_when_present() -> None:
@@ -36,3 +36,19 @@ def test_learning_blocks_fallbacks_for_missing_fields() -> None:
     assert "segnale informativo" in blocks["business_risk"]
     assert "verifica manuale controllata" in blocks["manual_verification"]
     assert "severità info" in blocks["next_skill"]
+
+
+def test_confidence_rubric_confirmed_when_finding_is_confirmed() -> None:
+    rubric = _build_confidence_rubric_for_finding({"confirmed": True, "confidence": 0.2})
+
+    assert rubric["level"] == "confirmed"
+    assert rubric["label"] == "Confirmed"
+
+
+def test_confidence_rubric_needs_validation_when_false_positive_risk_is_high() -> None:
+    rubric = _build_confidence_rubric_for_finding(
+        {"confirmed": False, "confidence": 0.75, "false_positive_label": "alto"}
+    )
+
+    assert rubric["level"] == "needs-validation"
+    assert rubric["label"] == "Needs validation"
