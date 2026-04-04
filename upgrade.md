@@ -232,7 +232,7 @@ Interventi:
    - esempi output,
    - errori comuni,
    - remediation checklist.
-3. Collegamenti a documentazione ufficiale framework/librerie usate.
+3. [x] Collegamenti a documentazione ufficiale framework/librerie usate.
 4. Glossario cyber e FAQ operative.
 
 Deliverable:
