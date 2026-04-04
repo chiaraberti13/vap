@@ -123,7 +123,7 @@ Interventi UI:
    - indicatori visivi: difficoltà, durata, invasività, copertura;
    - confronto rapido tra 2-3 scansioni.
 2. [x] Pannello “Perché scegliere questa analisi” dinamico.
-3. Tooltip/accessory “Termini tecnici” (OWASP, CVSS, false positive).
+3. [x] Tooltip/accessory “Termini tecnici” (OWASP, CVSS, false positive).
 4. Stepper guidato pre-esecuzione:
    - Step 1: obiettivo utente;
    - Step 2: scelta scansione consigliata;

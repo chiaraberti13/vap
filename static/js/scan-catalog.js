@@ -10,6 +10,9 @@
   const whyWhenNotToUse = document.getElementById("scan-why-when-not-to-use");
   const whyOutput = document.getElementById("scan-why-output");
   const whyLimits = document.getElementById("scan-why-limits");
+  const glossaryTooltip = document.getElementById("glossary-tooltip");
+  const glossaryTooltipContent = document.getElementById("glossary-tooltip-content");
+  const glossaryButtons = document.querySelectorAll("[data-glossary-term]");
 
   if (
     !payloadNode ||
@@ -22,7 +25,10 @@
     !whyWhenToUse ||
     !whyWhenNotToUse ||
     !whyOutput ||
-    !whyLimits
+    !whyLimits ||
+    !glossaryTooltip ||
+    !glossaryTooltipContent ||
+    glossaryButtons.length === 0
   ) {
     return;
   }
@@ -46,6 +52,14 @@
     beginner: "bg-emerald-500/20 text-emerald-200 border-emerald-400/40",
     intermediate: "bg-amber-500/20 text-amber-200 border-amber-400/40",
     pro: "bg-rose-500/20 text-rose-200 border-rose-400/40",
+  };
+  const glossaryDefinitions = {
+    owasp:
+      "OWASP Top 10 è una lista aggiornata periodicamente delle vulnerabilità web più critiche.",
+    cvss:
+      "CVSS è il punteggio standard (0-10) che stima la gravità tecnica di una vulnerabilità.",
+    false_positive:
+      "Un false positive è un alert non confermato: richiede sempre validazione manuale prima della remediation.",
   };
 
   function normalizeLevel(level) {
@@ -192,7 +206,26 @@
     });
   }
 
+  function showGlossaryTerm(termKey) {
+    const definition = glossaryDefinitions[termKey];
+    if (!definition) {
+      return;
+    }
+    glossaryTooltipContent.textContent = definition;
+    glossaryTooltip.classList.remove("hidden");
+  }
+
+  function registerGlossaryInteractions() {
+    glossaryButtons.forEach((button) => {
+      const term = button.dataset.glossaryTerm;
+      button.addEventListener("mouseenter", () => showGlossaryTerm(term));
+      button.addEventListener("focus", () => showGlossaryTerm(term));
+      button.addEventListener("click", () => showGlossaryTerm(term));
+    });
+  }
+
   renderFilters();
   renderCards();
   renderCompare();
+  registerGlossaryInteractions();
 })();
