@@ -187,6 +187,7 @@ class Settings:
     scan_archive_after_days: int = int(os.getenv("VAP_SCAN_ARCHIVE_AFTER_DAYS", "7"))
     scheduled_scans: str = os.getenv("VAP_SCHEDULED_SCANS", "[]")
     websocket_poll_seconds: float = float(os.getenv("VAP_WEBSOCKET_POLL_SECONDS", "2.0"))
+    ui_guided_scan_explorer_enabled: bool = os.getenv("VAP_UI_GUIDED_SCAN_EXPLORER_ENABLED", "true").lower() == "true"
 
 
 settings = Settings()

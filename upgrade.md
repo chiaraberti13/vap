@@ -294,7 +294,7 @@ Una release è “done” quando:
 - POC UI cards per 3 scan type principali.
 
 ## Sprint 2
-- Fase 2 completa con rollout feature-flag.
+- [x] Fase 2 completa con rollout feature-flag.
 - Test E2E journey “nuova scansione”.
 
 ## Sprint 3
