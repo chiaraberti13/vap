@@ -255,13 +255,13 @@ Deliverable:
 - Copywriting didattico minimo per full/light/wordpress + top tool.
 
 ## P1 (breve termine)
-- Learning sidebar su scan detail.
-- Confidence model UI e remediation roadmap.
+- [x] Learning sidebar su scan detail (2026-04-04): sidebar didattica attiva in `templates/scan_detail.html` con test integrazione dedicati.
+- [x] Confidence model UI e remediation roadmap (2026-04-04): rubric `confirmed/probable/needs-validation` e roadmap remediation prioritaria renderizzate nel dettaglio scansione.
 - [x] A11y audit completo e fix (2026-04-04): introdotti skip-link tastiera su homepage/dettaglio scansione e alert region ARIA per errori bloccanti (`templates/index.html`, `templates/scan_detail.html`) con regressione automatica in `tests/test_accessibility_checks.py`.
 
 ## P2 (medio termine)
-- RBAC + allowlist target + hardening CSP.
-- Lighthouse CI + security pipeline avanzata.
+- [x] RBAC + allowlist target + hardening CSP (2026-04-04): controlli ruolo viewer/operator/admin, policy target allowlist opzionale e CSP hardenizzata senza `unsafe-inline` per script.
+- [x] Lighthouse CI + security pipeline avanzata (2026-04-04): quality gate CI con soglie Lighthouse >=90 + test OWASP/rate-limit/fuzzing input.
 - [x] Percorsi didattici multipli con progress tracking (2026-04-04): aggiunti endpoint `POST/GET /api/v1/learning-progress` con persistenza per-subject e audit event `learning_progress_updated`.
 
 ---
