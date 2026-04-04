@@ -22,6 +22,10 @@ def _split_env_list(value: str) -> List[str]:
     return [item.strip() for item in value.split(",") if item.strip()]
 
 
+def _split_env_roles(value: str) -> List[str]:
+    return [item.lower() for item in _split_env_list(value)]
+
+
 @dataclass(frozen=True)
 class Settings:
     app_name: str = "Vulnerability Assessment Platform"
@@ -49,6 +53,17 @@ class Settings:
     jwt_required: bool = os.getenv("VAP_JWT_REQUIRED", "false").lower() == "true"
     jwt_demo_user: str = os.getenv("VAP_JWT_DEMO_USER", "")
     jwt_demo_password: str = os.getenv("VAP_JWT_DEMO_PASSWORD", "")
+    jwt_demo_role: str = os.getenv("VAP_JWT_DEMO_ROLE", "admin").lower()
+    rbac_enabled: bool = os.getenv("VAP_RBAC_ENABLED", "true").lower() == "true"
+    rbac_viewer_roles: List[str] = field(
+        default_factory=lambda: _split_env_roles(os.getenv("VAP_RBAC_VIEWER_ROLES", "viewer,operator,admin"))
+    )
+    rbac_operator_roles: List[str] = field(
+        default_factory=lambda: _split_env_roles(os.getenv("VAP_RBAC_OPERATOR_ROLES", "operator,admin"))
+    )
+    rbac_admin_roles: List[str] = field(
+        default_factory=lambda: _split_env_roles(os.getenv("VAP_RBAC_ADMIN_ROLES", "admin"))
+    )
     trusted_proxy_ip: str = os.getenv("VAP_TRUSTED_PROXY_IP", "")
     cors_allowed_origins: List[str] = field(
         default_factory=lambda: _split_env_list(os.getenv("VAP_CORS_ALLOWED_ORIGINS", ""))

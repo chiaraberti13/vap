@@ -466,6 +466,47 @@ def enforce_jwt(request: Request) -> None:
         raise HTTPException(status_code=401, detail="JWT non valido") from exc
 
 
+def _resolve_user_role_from_request(request: Request) -> str:
+    if not settings.jwt_required:
+        return "admin"
+    token = request.headers.get("Authorization", "")
+    if not token.lower().startswith("bearer "):
+        raise HTTPException(status_code=401, detail="JWT mancante")
+    try:
+        claims = verify_jwt_token(token.split(" ", 1)[1].strip())
+    except ValueError as exc:
+        log_audit_event("jwt_invalid", request=request)
+        raise HTTPException(status_code=401, detail="JWT non valido") from exc
+    return str(claims.get("role", "viewer")).lower()
+
+
+def _enforce_roles(request: Request, allowed_roles: Set[str]) -> str:
+    if not settings.rbac_enabled:
+        return _resolve_user_role_from_request(request)
+    user_role = _resolve_user_role_from_request(request)
+    if user_role not in allowed_roles:
+        log_audit_event(
+            "rbac_access_denied",
+            request=request,
+            role=user_role,
+            allowed_roles=sorted(allowed_roles),
+        )
+        raise HTTPException(status_code=403, detail="Permessi insufficienti per questa operazione")
+    return user_role
+
+
+def enforce_viewer_role(request: Request) -> str:
+    return _enforce_roles(request, set(settings.rbac_viewer_roles))
+
+
+def enforce_operator_role(request: Request) -> str:
+    return _enforce_roles(request, set(settings.rbac_operator_roles))
+
+
+def enforce_admin_role(request: Request) -> str:
+    return _enforce_roles(request, set(settings.rbac_admin_roles))
+
+
 def enforce_csrf(request: Request, token: str) -> None:
     if request.method in {"GET", "HEAD", "OPTIONS"}:
         return
@@ -831,7 +872,9 @@ def issue_token(
             username=username,
         )
         raise HTTPException(status_code=401, detail="Credenziali non valide")
-    token = create_access_token(username)
+    if settings.jwt_demo_role not in {"viewer", "operator", "admin"}:
+        raise HTTPException(status_code=503, detail="Ruolo JWT demo non configurato correttamente")
+    token = create_access_token(username, extra_claims={"role": settings.jwt_demo_role})
     _record_audit(
         db,
         request,
@@ -1145,7 +1188,7 @@ def create_scan(
     payload: ScanCreate,
     db: Session = Depends(get_db),
     _: None = Depends(enforce_api_key),
-    __: None = Depends(enforce_jwt),
+    __: str = Depends(enforce_operator_role),
 ) -> ScanStatus:
     try:
         scan_type = payload.scan_type.lower().strip()
@@ -1370,7 +1413,7 @@ def download_report_ui(
     scan_id: int,
     db: Session = Depends(get_db),
     _: None = Depends(enforce_api_key),
-    __: None = Depends(enforce_jwt),
+    __: str = Depends(enforce_viewer_role),
 ) -> FileResponse:
     scan = _active_scan_query(db).filter(Scan.id == scan_id).first()
     if not scan or not scan.report_path:
@@ -1398,7 +1441,7 @@ def list_scans(
     request: Request,
     db: Session = Depends(get_db),
     _: None = Depends(enforce_api_key),
-    __: None = Depends(enforce_jwt),
+    __: str = Depends(enforce_viewer_role),
 ) -> List[ScanStatus]:
     cache_key = _cache_key("scans:list")
     cached_payload = _get_cached_json(cache_key)
@@ -1433,7 +1476,7 @@ def scan_status(
     scan_id: int,
     db: Session = Depends(get_db),
     _: None = Depends(enforce_api_key),
-    __: None = Depends(enforce_jwt),
+    __: str = Depends(enforce_viewer_role),
 ) -> ScanStatus:
     cache_key = _cache_key("scans", str(scan_id), "status")
     cached_payload = _get_cached_json(cache_key)
@@ -1464,7 +1507,7 @@ def download_report(
     scan_id: int,
     db: Session = Depends(get_db),
     _: None = Depends(enforce_api_key),
-    __: None = Depends(enforce_jwt),
+    __: str = Depends(enforce_viewer_role),
 ) -> FileResponse:
     scan = _active_scan_query(db).filter(Scan.id == scan_id).first()
     if not scan or not scan.report_path:
@@ -1493,7 +1536,7 @@ def scan_task_status(
     scan_id: int,
     db: Session = Depends(get_db),
     _: None = Depends(enforce_api_key),
-    __: None = Depends(enforce_jwt),
+    __: str = Depends(enforce_viewer_role),
 ) -> Dict[str, Any]:
     scan = _active_scan_query(db).filter(Scan.id == scan_id).first()
     if not scan:
@@ -1516,7 +1559,7 @@ def cancel_scan(
     scan_id: int,
     db: Session = Depends(get_db),
     _: None = Depends(enforce_api_key),
-    __: None = Depends(enforce_jwt),
+    __: str = Depends(enforce_operator_role),
 ) -> Dict[str, Any]:
     scan = _active_scan_query(db).filter(Scan.id == scan_id).first()
     if not scan:
@@ -1558,7 +1601,7 @@ def soft_delete_scan(
     payload: ScanDelete = Body(default=ScanDelete()),
     db: Session = Depends(get_db),
     _: None = Depends(enforce_api_key),
-    __: None = Depends(enforce_jwt),
+    __: str = Depends(enforce_admin_role),
 ) -> ScanStatus:
     scan = _active_scan_query(db).filter(Scan.id == scan_id).first()
     if not scan:

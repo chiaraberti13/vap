@@ -14,7 +14,7 @@ def _clear_scans() -> None:
 def test_list_scans_empty():
     _clear_scans()
     app.app.dependency_overrides[app.enforce_api_key] = lambda: None
-    app.app.dependency_overrides[app.enforce_jwt] = lambda: None
+    app.app.dependency_overrides[app.enforce_viewer_role] = lambda: "viewer"
 
     with TestClient(app.app) as client:
         response = client.get("/api/v1/scans")
@@ -27,7 +27,7 @@ def test_list_scans_empty():
 def test_create_scan(monkeypatch):
     _clear_scans()
     app.app.dependency_overrides[app.enforce_api_key] = lambda: None
-    app.app.dependency_overrides[app.enforce_jwt] = lambda: None
+    app.app.dependency_overrides[app.enforce_operator_role] = lambda: "operator"
 
     class DummyResult:
         id = "dummy-task"
@@ -88,3 +88,34 @@ def test_scan_detail_displays_learning_sidebar():
     assert response.status_code == 200
     assert "Learning sidebar" in response.text
     assert "Comprendere una valutazione completa multi-tool end-to-end." in response.text
+
+
+def test_list_scans_forbidden_for_role_not_allowed():
+    _clear_scans()
+    app.app.dependency_overrides[app.enforce_api_key] = lambda: None
+    app.app.dependency_overrides[app.enforce_viewer_role] = lambda: (_ for _ in ()).throw(
+        app.HTTPException(status_code=403, detail="Permessi insufficienti per questa operazione")
+    )
+
+    with TestClient(app.app) as client:
+        response = client.get("/api/v1/scans")
+
+    assert response.status_code == 403
+    app.app.dependency_overrides.clear()
+
+
+def test_create_scan_forbidden_for_viewer_role():
+    _clear_scans()
+    app.app.dependency_overrides[app.enforce_api_key] = lambda: None
+    app.app.dependency_overrides[app.enforce_operator_role] = lambda: (_ for _ in ()).throw(
+        app.HTTPException(status_code=403, detail="Permessi insufficienti per questa operazione")
+    )
+
+    with TestClient(app.app) as client:
+        response = client.post(
+            "/api/v1/scans",
+            json={"target": "example.com", "scan_type": "full", "priority": 3, "accept_privacy": True, "accept_terms": True},
+        )
+
+    assert response.status_code == 403
+    app.app.dependency_overrides.clear()
