@@ -286,6 +286,7 @@ def api_key_ui_exception_handler(request: Request, exc: APIKeyUIError) -> Respon
         kpi_metrics = _build_kpi_metrics(db)
     dashboard_timestamp = datetime.now(timezone.utc)
     response = templates.TemplateResponse(
+        request,
         "index.html",
         {
             "request": request,
@@ -847,6 +848,7 @@ def index(request: Request, db: Session = Depends(get_db)) -> Response:
     kpi_metrics = _build_kpi_metrics(db)
     dashboard_timestamp = datetime.now(timezone.utc)
     response = templates.TemplateResponse(
+        request,
         "index.html",
         {
             "request": request,
@@ -875,6 +877,7 @@ def index(request: Request, db: Session = Depends(get_db)) -> Response:
 @app.get("/privacy-policy", response_class=HTMLResponse)
 def privacy_policy(request: Request) -> Response:
     return templates.TemplateResponse(
+        request,
         "privacy_policy.html",
         {
             "request": request,
@@ -886,6 +889,7 @@ def privacy_policy(request: Request) -> Response:
 @app.get("/terms-of-service", response_class=HTMLResponse)
 def terms_of_service(request: Request) -> Response:
     return templates.TemplateResponse(
+        request,
         "terms_of_service.html",
         {
             "request": request,
@@ -957,6 +961,7 @@ def create_scan_form(
         kpi_metrics = _build_kpi_metrics(db)
         dashboard_timestamp = datetime.now(timezone.utc)
         response = templates.TemplateResponse(
+            request,
             "index.html",
             {
                 "request": request,
@@ -987,6 +992,7 @@ def create_scan_form(
         kpi_metrics = _build_kpi_metrics(db)
         dashboard_timestamp = datetime.now(timezone.utc)
         response = templates.TemplateResponse(
+            request,
             "index.html",
             {
                 "request": request,
@@ -1022,6 +1028,7 @@ def create_scan_form(
             kpi_metrics = _build_kpi_metrics(db)
             dashboard_timestamp = datetime.now(timezone.utc)
             response = templates.TemplateResponse(
+                request,
                 "index.html",
                 {
                     "request": request,
@@ -1133,6 +1140,7 @@ def create_scan_form(
             kpi_metrics = _build_kpi_metrics(db)
             dashboard_timestamp = datetime.now(timezone.utc)
             response = templates.TemplateResponse(
+                request,
                 "index.html",
                 {
                     "request": request,
@@ -1181,6 +1189,7 @@ def scans_list(request: Request, db: Session = Depends(get_db)) -> Response:
     scans = _active_scan_query(db).order_by(Scan.created_at.desc()).all()
     api_key = request.query_params.get("api_key")
     return templates.TemplateResponse(
+        request,
         "scans_list.html",
         {
             "request": request,
@@ -1215,6 +1224,7 @@ def scan_detail(request: Request, scan_id: int, db: Session = Depends(get_db)) -
         if api_key:
             download_url = f"{download_url}?api_key={api_key}"
     return templates.TemplateResponse(
+        request,
         "scan_detail.html",
         {
             "request": request,

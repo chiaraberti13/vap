@@ -13,6 +13,7 @@ from config import settings
 
 @dataclass
 class TestsslScanner:
+    __test__ = False
     enable_live_scans: bool = False
     _ID_RULES: ClassVar[Dict[str, Dict[str, str]]] = {
         "ssl": {
