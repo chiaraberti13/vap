@@ -227,7 +227,7 @@ Interventi:
    - beginner path (fondamentali + safe practice),
    - analyst path,
    - professional path.
-2. Schede scansione (una per tipo) con:
+2. [x] Schede scansione (una per tipo) con:
    - teoria minima,
    - esempi output,
    - errori comuni,

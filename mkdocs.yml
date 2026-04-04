@@ -33,6 +33,13 @@ nav:
   - Troubleshooting: troubleshooting.md
   - Contributing: contributing.md
   - Video Tutorials: video-tutorials.md
+  - Percorsi Formativi:
+      - Panoramica: learning-paths/README.md
+      - Beginner Path: learning-paths/beginner-path.md
+      - Analyst Path: learning-paths/analyst-path.md
+      - Professional Path: learning-paths/professional-path.md
+  - Scan Playbooks:
+      - Panoramica: scan-playbooks/README.md
   - Riferimenti Ufficiali: official-references.md
 
 markdown_extensions:
