@@ -190,8 +190,8 @@ Interventi prioritari:
    - checklist automatica startup con severity.
 
 Deliverable:
-- `docs/security-hardening-roadmap.md`
-- test di sicurezza dedicati (CSRF/JWT/input tampering/IDOR)
+- [x] `docs/security-hardening-roadmap.md`
+- [x] test di sicurezza dedicati (CSRF/JWT/input tampering/IDOR)
 
 ---
 
@@ -321,3 +321,4 @@ Al termine dell’upgrade, VAP resta un motore di scansione solido ma diventa an
 ## 10) Errori pre-esistenti rilevati durante l'upgrade
 
 - [ ] **Test regressione WordPress profile fallisce (pre-esistente):** `tests/test_wpscan_scanner.py::test_get_scanner_classes_supports_wordpress_scan_type` attualmente si aspetta `NucleiScanner`, ma il runtime restituisce `WordpressNucleiScanner` (diff all'indice 3). Verificare se aggiornare il test o riallineare la mappa scanner per `scan_type="wordpress"`.
+- [ ] **Conferma 2026-04-04:** failure riprodotta con `PYTHONPATH=. pytest -q` (1 failed, 108 passed), nessuna regressione introdotta da questo ciclo.
