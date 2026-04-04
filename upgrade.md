@@ -183,7 +183,7 @@ Interventi prioritari:
 3. [x] Audit trail esteso per azioni didattiche e export sensibili.
 4. Hardening frontend:
    - riduzione inline scripts/styles (progressivo),
-   - CSP più restrittiva,
+   - [x] CSP più restrittiva (rimossa `unsafe-inline` da `script-src` di default),
    - valutazione migrazione da Tailwind CDN a build locale.
    - [x] Step 1 completato: script inline di `scan_detail.html` estratto in `static/js/scan-detail.js` con rendering DOM sicuro.
 5. [x] Secrets governance:
