@@ -129,7 +129,7 @@ Interventi UI:
    - Step 2: scelta scansione consigliata;
    - Step 3: conferma legale/consenso;
    - Step 4: run.
-5. Mobile-first: cards verticali su small viewport, confronti collapsable.
+5. [x] Mobile-first: cards verticali su small viewport, confronti collapsable.
 6. Accessibilità:
    - semantic landmarks,
    - focus states,
