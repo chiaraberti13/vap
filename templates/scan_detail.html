@@ -115,7 +115,7 @@
       <!-- Findings -->
       <section>
         <div class="flex items-center justify-between mb-4">
-          <h2 class="text-2xl font-semibold">Findings
+          <h2 class="text-2xl font-semibold">Findings (sintesi video)
             {% if findings %}
             <span class="ml-2 text-base font-normal text-slate-400">({{ findings | length }})</span>
             {% endif %}
@@ -142,7 +142,7 @@
         <div class="space-y-4">
           {% for finding in findings %}
           {% set sev = finding.severity | lower if finding.severity else 'info' %}
-          <details class="group border border-slate-800 rounded-xl overflow-hidden border-l-4 border-l-{{ sev }}" open>
+          <details class="group border border-slate-800 rounded-xl overflow-hidden border-l-4 border-l-{{ sev }}">
             <!-- Finding Header -->
             <summary class="bg-{{ sev }}-faint px-5 py-4">
               <div class="flex items-start gap-3">
@@ -161,9 +161,9 @@
                     {% endif %}
                   </div>
                   <h3 class="text-base font-semibold mt-1 leading-snug">{{ finding.title }}</h3>
-                  {% if finding.host or finding.url or finding.path %}
+                  {% if finding.location_preview %}
                   <p class="text-xs text-slate-400 mt-1 font-mono truncate">
-                    {{ finding.host or '' }}{{ finding.path or '' }}{{ finding.url or '' }}
+                    {{ finding.location_preview }}
                   </p>
                   {% endif %}
                 </div>
@@ -172,6 +172,25 @@
 
             <!-- Finding Body -->
             <div class="bg-slate-900/60 border-t border-slate-800 px-5 py-5 space-y-5">
+              <div class="rounded-lg border border-slate-700/80 bg-slate-950/50 p-4 space-y-2">
+                <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Sintesi rapida</p>
+                {% if finding.description_preview %}
+                <p class="text-sm text-slate-200"><span class="text-slate-400">Descrizione:</span> {{ finding.description_preview }}</p>
+                {% endif %}
+                {% if finding.impact_preview %}
+                <p class="text-sm text-slate-200"><span class="text-slate-400">Impatto:</span> {{ finding.impact_preview }}</p>
+                {% endif %}
+                {% if finding.recommendation_preview %}
+                <p class="text-sm text-cyan-100"><span class="text-cyan-300">Fix:</span> {{ finding.recommendation_preview }}</p>
+                {% endif %}
+                {% if finding.evidence_preview %}
+                <p class="text-xs text-green-300 font-mono"><span class="text-slate-400 font-sans">Evidence:</span> {{ finding.evidence_preview }}</p>
+                {% endif %}
+              </div>
+
+              <details class="rounded-lg border border-slate-700/80">
+                <summary class="px-4 py-3 text-sm font-semibold text-slate-200 bg-slate-800/70">Mostra dettaglio completo</summary>
+                <div class="px-4 py-4 space-y-5 border-t border-slate-700/70">
 
               <!-- Two column meta grid -->
               <div class="grid md:grid-cols-2 gap-4">
@@ -374,6 +393,8 @@
                 <span>Parametro: <span class="font-mono text-slate-400">{{ finding.parameter }}</span></span>
                 {% endif %}
               </div>
+                </div>
+              </details>
 
             </div>
           </details>
