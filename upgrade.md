@@ -210,6 +210,7 @@ Interventi:
 2. [x] A11y e UX checks automatici (axe + keyboard traversal).
 3. [x] Performance gate:
    - [x] Lighthouse CI: Performance, Accessibility, Best Practices, SEO >= 90.
+   - [x] Console/runtime hardening gate (2026-04-04): aggiunte assertion Lighthouse `errors-in-console` e `csp-xss` per bloccare regressioni JS/CSP nei flussi principali.
 4. [x] Security testing:
    - [x] regression OWASP Top 10 rilevante,
    - [x] fuzzing input target/scan_type,

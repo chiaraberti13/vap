@@ -32,7 +32,10 @@
           {
             "minScore": 0.9
           }
-        ]
+        ],
+        "errors-in-console": "error",
+        "csp-xss": "error",
+        "is-on-https": "off"
       }
     },
     "upload": {
