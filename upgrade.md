@@ -94,7 +94,7 @@ Deliverable:
 **Obiettivo:** creare un layer semantico per spiegare le analisi senza toccare la logica core scanner.
 
 Interventi:
-1. Introdurre catalogo metadati scansioni (nuovo modulo, es. `scan_catalog.py`) con schema:
+1. [x] Introdurre catalogo metadati scansioni (nuovo modulo, es. `scan_catalog.py`) con schema:
    - `id`, `display_name`, `category`, `level` (beginner/intermediate/pro),
    - `learning_objective`, `when_to_use`, `when_not_to_use`,
    - `owasp_tags`, `mitre_tags`,
