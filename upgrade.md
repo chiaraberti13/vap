@@ -135,6 +135,7 @@ Interventi UI:
    - focus states,
    - ARIA per tooltip/dialog,
    - contrast ratio WCAG AA.
+   - [x] Stato stepper ARIA coerente con navigazione guidata (2026-04-04): `aria-current="step"` ora aggiornato dinamicamente in `static/js/scan-catalog.js` durante la progressione Step 1→4.
 
 Interventi backend/API:
 1. Endpoint read-only per catalogo scansioni didattico (es. `GET /api/v1/scan-catalog`).

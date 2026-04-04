@@ -266,6 +266,11 @@
           ? "border-cyan-400 bg-cyan-500/10"
           : "border-slate-700 bg-slate-950/50"
       }`;
+      if (isActive) {
+        indicator.setAttribute("aria-current", "step");
+      } else {
+        indicator.removeAttribute("aria-current");
+      }
     });
 
     stepPrev.disabled = currentStep === 1;
