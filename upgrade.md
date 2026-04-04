@@ -74,7 +74,7 @@ L’utente entry-level deve poter:
 **Obiettivo:** fotografare comportamento attuale e prevenire regressioni.
 
 Interventi:
-1. Inventario feature correnti (UI/API/CLI/report) in una matrice “must keep”.
+1. [x] Inventario feature correnti (UI/API/CLI/report) in una matrice “must keep”.
 2. Golden dataset di scansioni simulate per regression test.
 3. Snapshot UX baseline (flusso “nuova scansione” attuale).
 4. Definizione KPI di upgrade:
