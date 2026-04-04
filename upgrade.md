@@ -207,11 +207,11 @@ Interventi:
    - E2E: user journey selezione guidata.
 2. [x] A11y e UX checks automatici (axe + keyboard traversal).
 3. [x] Performance gate:
-   - Lighthouse CI: Performance, Accessibility, Best Practices, SEO >= 90.
-4. Security testing:
-   - regression OWASP Top 10 rilevante,
-   - fuzzing input target/scan_type,
-   - rate-limit abuse scenarios.
+   - [x] Lighthouse CI: Performance, Accessibility, Best Practices, SEO >= 90.
+4. [x] Security testing:
+   - [x] regression OWASP Top 10 rilevante,
+   - [x] fuzzing input target/scan_type,
+   - [x] rate-limit abuse scenarios (2026-04-04): aggiunto test `test_auth_token_endpoint_enforces_rate_limit` in `tests/test_api_integration.py`.
 5. [x] Introduzione quality thresholds bloccanti in CI.
 
 Deliverable:
