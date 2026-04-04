@@ -99,17 +99,20 @@
               />
             </label>
             {% endif %}
-            <label class="grid gap-2">
-              <span class="text-sm text-slate-300">Tipo di scansione</span>
-              <select
-                name="scan_type"
-                class="w-full rounded-lg border border-slate-700 bg-slate-950/70 px-4 py-3 text-slate-100 focus:border-cyan-400 focus:outline-none"
-              >
-                {% for scan_type in scan_types %}
-                <option value="{{ scan_type }}">{{ scan_type | upper }}</option>
-                {% endfor %}
-              </select>
-            </label>
+            <section class="grid gap-3" aria-labelledby="scan-explorer-title">
+              <div class="flex items-center justify-between gap-3 flex-wrap">
+                <h3 id="scan-explorer-title" class="text-sm text-slate-200 font-semibold tracking-wide">Scan Type Explorer</h3>
+                <p class="text-xs text-slate-400">Seleziona fino a 3 card per confronto rapido.</p>
+              </div>
+              <input id="scan-type-selected" type="hidden" name="scan_type" value="{{ scan_types[0] }}" />
+              <div id="scan-category-filters" class="flex flex-wrap gap-2" aria-label="Filtri categorie scansione"></div>
+              <div id="scan-cards-grid" class="grid gap-3 sm:grid-cols-2"></div>
+              <div id="scan-compare-panel" class="rounded-lg border border-slate-700 bg-slate-950/60 p-4 text-sm text-slate-200">
+                <p class="font-semibold">Confronto scansioni selezionate</p>
+                <p id="scan-compare-empty" class="text-slate-400 mt-2">Seleziona da 2 a 3 card per visualizzare il confronto.</p>
+                <div id="scan-compare-grid" class="mt-3 grid gap-3 md:grid-cols-3"></div>
+              </div>
+            </section>
             <label class="grid gap-2">
               <span class="text-sm text-slate-300">Priorità scansione</span>
               <select
@@ -195,5 +198,7 @@
       </div>
     </footer>
   </main>
+  <script id="scan-catalog-json" type="application/json">{{ scan_catalog_entries | tojson }}</script>
+  <script src="/static/js/scan-catalog.js"></script>
 </body>
 </html>

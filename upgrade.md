@@ -118,7 +118,7 @@ Criterio di successo:
 **Obiettivo:** trasformare la select in un componente didattico professionale.
 
 Interventi UI:
-1. Sostituire `<select name="scan_type">` con **Scan Type Explorer**:
+1. [x] Sostituire `<select name="scan_type">` con **Scan Type Explorer**:
    - cards filtrabili per categoria (Recon/Web/App/Infra/WordPress);
    - indicatori visivi: difficoltà, durata, invasività, copertura;
    - confronto rapido tra 2-3 scansioni.
