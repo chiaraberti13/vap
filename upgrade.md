@@ -304,11 +304,11 @@ Una release è “done” quando:
 - [x] Beta interna con feedback strutturato (2026-04-04): introdotto endpoint `POST /api/v1/learning-feedback` con persistenza DB, validazioni robuste e audit trail.
 
 ## Sprint 4
-- Fase 4 + Fase 5 (hardening + quality gates).
+- [x] Fase 4 + Fase 5 (hardening + quality gates) completate (2026-04-04): verificata suite `PYTHONPATH=. pytest -q` con `112 passed`, coverage totale `82.95%` e soglia minima `80%` rispettata.
 - Preparazione release candidate.
 
 ## Sprint 5
-- Fase 6 docs complete + training materials.
+- [x] Fase 6 docs complete + training materials (2026-04-04): presenti learning paths (`docs/learning-paths/`), playbook scanner (`docs/scan-playbooks/`), glossario/FAQ (`docs/glossary-faq.md`) e riferimenti ufficiali (`docs/official-references.md`).
 - Go-live controllato.
 
 ---
@@ -323,3 +323,4 @@ Al termine dell’upgrade, VAP resta un motore di scansione solido ma diventa an
 
 - [x] **Test regressione WordPress profile falliva (risolto il 2026-04-04):** `tests/test_wpscan_scanner.py::test_get_scanner_classes_supports_wordpress_scan_type` aggiornato per riflettere il comportamento reale del profilo `scan_type="wordpress"` che usa `WordpressNucleiScanner` (template profile dedicato) al posto di `NucleiScanner`.
 - [x] **Conferma 2026-04-04 (post-fix):** eseguito `PYTHONPATH=. pytest -q` con esito `109 passed` (nessun failure residuo sul profilo WordPress).
+- [ ] **Warning tecnici pre-esistenti da dipendenze/compatibilità (rilevati il 2026-04-04):** la suite `PYTHONPATH=. pytest -q` passa (`112 passed`) ma espone warning non bloccanti da librerie terze parti (`dateutil`, `reportlab`, `passlib`, `python-jose`) e da API template Starlette deprecata (`TemplateResponse` con ordine parametri legacy). Pianificare remediation in backlog dedicato per ridurre rumore CI e rischio regressioni future su upgrade Python/framework.
