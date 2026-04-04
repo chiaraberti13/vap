@@ -8,6 +8,7 @@ Benvenuto nella documentazione ufficiale di **Vulnerability Assessment Platform*
 - **Deployment** su Docker e Kubernetes.
 - **Linee guida** per sicurezza, troubleshooting e contribuzione.
 - **Percorsi formativi** progressivi (beginner, analyst, professional).
+- **Riferimenti ufficiali** a framework/librerie usate (backend, sicurezza, UX, testing).
 
 ## Avvio rapido
 
@@ -29,3 +30,8 @@ Consulta la nuova sezione dedicata:
 - `docs/learning-paths/beginner-path.md`
 - `docs/learning-paths/analyst-path.md`
 - `docs/learning-paths/professional-path.md`
+
+
+## Riferimenti ufficiali
+
+- `docs/official-references.md`

@@ -33,6 +33,7 @@ nav:
   - Troubleshooting: troubleshooting.md
   - Contributing: contributing.md
   - Video Tutorials: video-tutorials.md
+  - Riferimenti Ufficiali: official-references.md
 
 markdown_extensions:
   - admonition
