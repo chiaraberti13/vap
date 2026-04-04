@@ -22,3 +22,19 @@ def test_engine_scan_type_choices_have_catalog_metadata() -> None:
     catalog_ids = set(SCAN_CATALOG.keys())
     missing = sorted(set(SCAN_TYPE_CHOICES) - catalog_ids)
     assert not missing, f"Metadati mancanti per scan types engine: {', '.join(missing)}"
+
+
+def test_top_tools_have_dedicated_learning_copy() -> None:
+    """I tool core devono avere copywriting didattico specifico e non generico."""
+    expected_markers = {
+        "nuclei": "template",
+        "nmap": "superficie di attacco",
+        "zap": "OWASP",
+        "sqlmap": "SQL Injection",
+        "wpscan": "WordPress",
+    }
+
+    for scan_id, marker in expected_markers.items():
+        entry = SCAN_CATALOG[scan_id]
+        assert marker.lower() in entry.learning_objective.lower()
+        assert entry.expected_duration != "10-45 min"

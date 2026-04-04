@@ -253,7 +253,7 @@ Deliverable:
 - Catalogo metadati scansioni + API read-only.
 - Refactor UI selezione scan in cards guidate.
 - [x] Anti-regression test funzionalità attuali (2026-04-04): aggiunto test integrazione `test_download_report_endpoint_preserves_pdf_delivery_and_audit` per garantire continuità download PDF e audit trail `report_downloaded`.
-- Copywriting didattico minimo per full/light/wordpress + top tool.
+- [x] Copywriting didattico minimo per full/light/wordpress + top tool (2026-04-04): arricchiti metadati didattici con contenuti specifici per `nuclei`, `nmap`, `zap`, `sqlmap`, `wpscan` e aggiunta regressione `test_top_tools_have_dedicated_learning_copy`.
 
 ## P1 (breve termine)
 - [x] Learning sidebar su scan detail (2026-04-04): sidebar didattica attiva in `templates/scan_detail.html` con test integrazione dedicati.
