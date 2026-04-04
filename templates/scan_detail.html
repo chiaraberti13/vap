@@ -93,10 +93,10 @@
       </section>
 
       <!-- Logs, Notifications & Learning Sidebar -->
-      <section class="grid gap-4 lg:grid-cols-3">
+      <section class="grid gap-4 lg:grid-cols-3" aria-label="Telemetria scansione e supporto didattico">
         <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-6">
           <h2 class="text-xl font-semibold mb-4">Log streaming</h2>
-          <div id="scan-logs" class="space-y-1 text-xs font-mono text-slate-300 max-h-60 overflow-y-auto">
+          <div id="scan-logs" class="space-y-1 text-xs font-mono text-slate-300 max-h-60 overflow-y-auto" role="log" aria-live="polite" aria-relevant="additions text">
             {% for entry in logs %}
             <p>[{{ entry.timestamp }}] <span class="text-cyan-400">{{ entry.level | upper }}</span> — {{ entry.message }}</p>
             {% else %}
@@ -106,7 +106,7 @@
         </div>
         <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-6">
           <h2 class="text-xl font-semibold mb-4">Notifiche critiche</h2>
-          <div id="scan-notifications" class="space-y-3 text-sm">
+          <div id="scan-notifications" class="space-y-3 text-sm" role="status" aria-live="assertive">
             <p class="text-slate-500">In attesa di eventi critici.</p>
           </div>
         </div>

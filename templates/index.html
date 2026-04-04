@@ -17,12 +17,12 @@
       </div>
     </header>
 
-    <section class="px-6 py-8 border-b border-slate-800/60">
+    <section class="px-6 py-8 border-b border-slate-800/60" aria-labelledby="dashboard-kpi-title">
       <div class="max-w-6xl mx-auto">
         <div class="flex items-center justify-between gap-4 flex-wrap">
           <div>
             <p class="text-sm uppercase tracking-[0.25em] text-slate-500">Dashboard KPI</p>
-            <h2 class="text-2xl font-semibold mt-1">Stato operativo in tempo reale</h2>
+            <h2 id="dashboard-kpi-title" class="text-2xl font-semibold mt-1">Stato operativo in tempo reale</h2>
           </div>
           <div class="text-sm text-slate-400">
             Ultimo aggiornamento: {{ dashboard_timestamp.strftime("%d/%m/%Y %H:%M") }}
@@ -63,10 +63,10 @@
       </div>
     </section>
 
-    <section class="flex-1 px-6 py-10">
+    <section class="flex-1 px-6 py-10" aria-labelledby="new-scan-title">
       <div class="max-w-6xl mx-auto grid lg:grid-cols-[1.2fr_0.8fr] gap-8">
         <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 md:p-8 shadow-xl">
-          <h2 class="text-xl font-semibold">Avvia una nuova scansione</h2>
+          <h2 id="new-scan-title" class="text-xl font-semibold">Avvia una nuova scansione</h2>
           <p class="text-slate-400 mt-2">Inserisci un URL o un IP autorizzato. Le scansioni live sono disabilitate di default per sicurezza.</p>
 
           {% if error %}
@@ -79,7 +79,7 @@
           <form class="mt-6 grid gap-5" method="post" action="/scans" id="guided-scan-form">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
             <ol id="scan-stepper-nav" class="grid gap-2 sm:grid-cols-4" aria-label="Stepper pre-esecuzione scansione">
-              <li class="rounded-lg border border-cyan-400 bg-cyan-500/10 p-3 text-xs" data-step-indicator="1"><span class="font-semibold">Step 1</span><p class="mt-1 text-slate-300">Obiettivo utente</p></li>
+              <li class="rounded-lg border border-cyan-400 bg-cyan-500/10 p-3 text-xs" data-step-indicator="1" aria-current="step"><span class="font-semibold">Step 1</span><p class="mt-1 text-slate-300">Obiettivo utente</p></li>
               <li class="rounded-lg border border-slate-700 bg-slate-950/50 p-3 text-xs" data-step-indicator="2"><span class="font-semibold">Step 2</span><p class="mt-1 text-slate-300">Scansione consigliata</p></li>
               <li class="rounded-lg border border-slate-700 bg-slate-950/50 p-3 text-xs" data-step-indicator="3"><span class="font-semibold">Step 3</span><p class="mt-1 text-slate-300">Consenso legale</p></li>
               <li class="rounded-lg border border-slate-700 bg-slate-950/50 p-3 text-xs" data-step-indicator="4"><span class="font-semibold">Step 4</span><p class="mt-1 text-slate-300">Conferma ed esecuzione</p></li>
