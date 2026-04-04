@@ -187,7 +187,8 @@ Interventi prioritari:
    - [x] riduzione `unsafe-inline` anche su `style-src` (2026-04-04): estratti gli stili inline da `scan_detail.html` in `static/css/style.css` e barra progresso inizializzata via JS senza attributi `style`.
    - [x] valutazione migrazione da Tailwind CDN a build locale (2026-04-04): analisi completata in `docs/tailwind-local-migration-assessment.md` con decisione architetturale e piano di adozione.
    - [x] Step 1 completato: script inline di `scan_detail.html` estratto in `static/js/scan-detail.js` con rendering DOM sicuro.
-5. [x] Secrets governance:
+5. [x] Hardening input didattici API (2026-04-04): endpoint `POST /api/v1/learning-feedback` ora normalizza `notes` e rifiuta tag HTML/caratteri di controllo per ridurre rischio XSS/log injection.
+6. [x] Secrets governance:
    - checklist automatica startup con severity.
 
 Deliverable:
