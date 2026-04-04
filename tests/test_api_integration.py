@@ -1,7 +1,7 @@
 from fastapi.testclient import TestClient
 
 import app
-from database import AuditEvent, Scan, SessionLocal, init_db
+from database import AuditEvent, LearningFeedback, Scan, SessionLocal, init_db
 
 
 def _clear_scans() -> None:
@@ -9,6 +9,7 @@ def _clear_scans() -> None:
     with SessionLocal() as session:
         session.query(Scan).delete()
         session.query(AuditEvent).delete()
+        session.query(LearningFeedback).delete()
         session.commit()
 
 
@@ -243,4 +244,59 @@ def test_guided_scan_form_end_to_end_journey(monkeypatch):
         assert saved_scan.scan_type == "wordpress"
         assert saved_scan.priority == 7
 
+    app.app.dependency_overrides.clear()
+
+
+def test_submit_learning_feedback_persists_and_normalizes_notes():
+    _clear_scans()
+    app.app.dependency_overrides[app.enforce_api_key] = lambda: None
+    app.app.dependency_overrides[app.enforce_viewer_role] = lambda: "viewer"
+
+    with TestClient(app.app) as client:
+        response = client.post(
+            "/api/v1/learning-feedback",
+            json={
+                "scan_type": "FULL",
+                "target_experience_level": "beginner",
+                "rating": 5,
+                "clarity_score": 4,
+                "confidence_after_scan": 4,
+                "notes": "  ottima   guida   passo-passo  ",
+            },
+        )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["scan_type"] == "full"
+    assert payload["notes"] == "ottima guida passo-passo"
+    assert payload["rating"] == 5
+
+    with SessionLocal() as session:
+        saved = session.query(LearningFeedback).filter(LearningFeedback.id == payload["id"]).one_or_none()
+        assert saved is not None
+        assert saved.target_experience_level == "beginner"
+        assert saved.clarity_score == 4
+
+    app.app.dependency_overrides.clear()
+
+
+def test_submit_learning_feedback_rejects_unknown_scan_type():
+    _clear_scans()
+    app.app.dependency_overrides[app.enforce_api_key] = lambda: None
+    app.app.dependency_overrides[app.enforce_viewer_role] = lambda: "viewer"
+
+    with TestClient(app.app) as client:
+        response = client.post(
+            "/api/v1/learning-feedback",
+            json={
+                "scan_type": "unknown_type",
+                "target_experience_level": "beginner",
+                "rating": 3,
+                "clarity_score": 3,
+                "confidence_after_scan": 2,
+            },
+        )
+
+    assert response.status_code == 400
+    assert "catalogo didattico" in response.json()["detail"]
     app.app.dependency_overrides.clear()
