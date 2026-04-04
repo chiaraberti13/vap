@@ -13,6 +13,7 @@ from typing import Any, Dict, Optional
 import structlog
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 from jose import JWTError, jwt
+from passlib.exc import UnknownHashError
 from passlib.context import CryptContext
 from starlette.requests import Request
 
@@ -48,7 +49,10 @@ def verify_api_key(raw_key: str) -> bool:
     if not raw_key:
         return False
     if settings.api_key_hash:
-        return pwd_context.verify(raw_key, settings.api_key_hash)
+        try:
+            return pwd_context.verify(raw_key, settings.api_key_hash)
+        except (UnknownHashError, ValueError):
+            return False
     if settings.api_key:
         return hmac.compare_digest(raw_key, settings.api_key)
     return False
