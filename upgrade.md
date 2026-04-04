@@ -179,7 +179,7 @@ Deliverable:
 
 Interventi prioritari:
 1. [x] Autorizzazioni di ruolo (viewer/operator/admin) per scansioni e download report.
-2. Policy di target allowlist opzionale in produzione.
+2. [x] Policy di target allowlist opzionale in produzione.
 3. Audit trail esteso per azioni didattiche e export sensibili.
 4. Hardening frontend:
    - riduzione inline scripts/styles (progressivo),

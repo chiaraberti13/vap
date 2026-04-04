@@ -74,6 +74,7 @@ Usa `.env.example` come base e compila solo le variabili che ti servono.
 | `VAP_JWT_DEMO_USER` | `` | Username opzionale per endpoint demo `/auth/token`. In produzione lasciarlo vuoto o disabilitare endpoint. |
 | `VAP_JWT_DEMO_PASSWORD` | `` | Password opzionale per endpoint demo `/auth/token`. Deve essere impostata esplicitamente. |
 | `VAP_TRUSTED_PROXY_IP` | `` | IP del reverse proxy fidato da cui accettare `X-Forwarded-For`. |
+| `VAP_TARGET_ALLOWLIST` | `""` | Lista target consentiti in produzione (domini, wildcard `*.example.com`, IP/CIDR). |
 
 ## CORS
 
