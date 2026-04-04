@@ -1,3 +1,4 @@
+import json
 import re
 
 from fastapi.testclient import TestClient
@@ -15,6 +16,44 @@ def _clear_scans() -> None:
         session.query(LearningPathProgress).delete()
         session.commit()
 
+
+
+
+def test_download_report_endpoint_preserves_pdf_delivery_and_audit(tmp_path):
+    _clear_scans()
+    report_file = tmp_path / "scan-report.pdf"
+    report_file.write_bytes(b"%PDF-1.4\n% regression fixture\n")
+
+    with SessionLocal() as session:
+        scan = Scan(
+            target="example.com",
+            scan_type="full",
+            status="completed",
+            report_path=str(report_file),
+            data_classification="internal",
+        )
+        session.add(scan)
+        session.commit()
+        session.refresh(scan)
+        scan_id = scan.id
+
+    app.app.dependency_overrides[app.enforce_api_key] = lambda: None
+    app.app.dependency_overrides[app.enforce_viewer_role] = lambda: "viewer"
+
+    with TestClient(app.app) as client:
+        response = client.get(f"/api/v1/scans/{scan_id}/report/download")
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("application/pdf")
+    assert response.content.startswith(b"%PDF-1.4")
+
+    with SessionLocal() as session:
+        audit_event = session.query(AuditEvent).filter(AuditEvent.event == "report_downloaded").order_by(AuditEvent.id.desc()).first()
+
+    assert audit_event is not None
+    metadata = json.loads(audit_event.metadata_json or "{}")
+    assert metadata["scan_id"] == scan_id
+    app.app.dependency_overrides.clear()
 
 def test_list_scans_empty():
     _clear_scans()
