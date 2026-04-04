@@ -29,6 +29,16 @@ def test_hash_and_verify_api_key_with_hash(monkeypatch):
     assert security.verify_api_key("other") is False
 
 
+def test_verify_api_key_with_invalid_hash_fails_closed(monkeypatch):
+    monkeypatch.setattr(
+        security,
+        "settings",
+        SimpleNamespace(api_key="", api_key_hash="not-a-valid-passlib-hash"),
+    )
+
+    assert security.verify_api_key("my-key") is False
+
+
 def test_redact_api_key_returns_hash_prefix():
     redacted = security.redact_api_key("topsecret")
 
