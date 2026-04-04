@@ -290,7 +290,7 @@ Una release è “done” quando:
 ## 8) Piano di esecuzione iterativo consigliato (sprint)
 
 ## Sprint 1 (1-2 settimane)
-- Fase 0 + Fase 1 complete.
+- [x] Fase 0 + Fase 1 complete.
 - POC UI cards per 3 scan type principali.
 
 ## Sprint 2
