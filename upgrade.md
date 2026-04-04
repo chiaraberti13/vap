@@ -122,7 +122,7 @@ Interventi UI:
    - cards filtrabili per categoria (Recon/Web/App/Infra/WordPress);
    - indicatori visivi: difficoltà, durata, invasività, copertura;
    - confronto rapido tra 2-3 scansioni.
-2. Pannello “Perché scegliere questa analisi” dinamico.
+2. [x] Pannello “Perché scegliere questa analisi” dinamico.
 3. Tooltip/accessory “Termini tecnici” (OWASP, CVSS, false positive).
 4. Stepper guidato pre-esecuzione:
    - Step 1: obiettivo utente;

@@ -5,8 +5,25 @@
   const hiddenScanType = document.getElementById("scan-type-selected");
   const compareGrid = document.getElementById("scan-compare-grid");
   const compareEmpty = document.getElementById("scan-compare-empty");
+  const whyObjective = document.getElementById("scan-why-objective");
+  const whyWhenToUse = document.getElementById("scan-why-when-to-use");
+  const whyWhenNotToUse = document.getElementById("scan-why-when-not-to-use");
+  const whyOutput = document.getElementById("scan-why-output");
+  const whyLimits = document.getElementById("scan-why-limits");
 
-  if (!payloadNode || !filtersNode || !cardsNode || !hiddenScanType || !compareGrid || !compareEmpty) {
+  if (
+    !payloadNode ||
+    !filtersNode ||
+    !cardsNode ||
+    !hiddenScanType ||
+    !compareGrid ||
+    !compareEmpty ||
+    !whyObjective ||
+    !whyWhenToUse ||
+    !whyWhenNotToUse ||
+    !whyOutput ||
+    !whyLimits
+  ) {
     return;
   }
 
@@ -89,6 +106,23 @@
 
   function updateSelectedScan(scanType) {
     hiddenScanType.value = scanType;
+    const selectedEntry = catalog.find((entry) => entry.id === scanType);
+    if (!selectedEntry) {
+      return;
+    }
+
+    whyObjective.textContent = selectedEntry.learning_objective || "Nessun obiettivo didattico disponibile.";
+    whyWhenToUse.textContent = selectedEntry.when_to_use || "Indicazioni non disponibili.";
+    whyWhenNotToUse.textContent = selectedEntry.when_not_to_use || "Limitazioni non disponibili.";
+    whyOutput.textContent = selectedEntry.interpretation_guide || "Guida all'interpretazione non disponibile.";
+
+    const falsePositives = Array.isArray(selectedEntry.common_false_positives)
+      ? selectedEntry.common_false_positives
+      : [];
+    whyLimits.textContent =
+      falsePositives.length > 0
+        ? falsePositives.join(" · ")
+        : "Possibili falsi positivi non documentati per questa tipologia di analisi.";
   }
 
   function renderCards() {
