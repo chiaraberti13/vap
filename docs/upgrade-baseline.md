@@ -25,3 +25,24 @@ Questo documento fotografa lo stato attuale della piattaforma VAP prima dell'upg
 ## Criterio di accettazione della baseline
 
 Una modifica proposta in fase di upgrade è accettabile solo se non degrada nessuna feature marcata "must keep" nella matrice sopra.
+
+
+## Snapshot UX baseline — flusso "Nuova scansione" (stato attuale)
+
+### Percorso utente osservato
+1. Apertura dashboard (`/`) con form di avvio scansione in alto.
+2. Inserimento target (URL/host) nel campo testuale principale.
+3. Selezione `scan_type` tramite menu a tendina semplice (senza contenuto didattico inline).
+4. Attivazione opzioni avanzate (opzionali) e invio form con pulsante di avvio.
+5. Redirect alla pagina dettaglio scansione con avanzamento realtime e log progressivi.
+6. Consultazione findings, severità e azioni di reporting/export dopo il completamento.
+
+### Frizioni UX rilevate (baseline da migliorare)
+- La select `scan_type` non esplicita in modo immediato prerequisiti, rischio operativo o livello consigliato.
+- Manca una guida contestuale alla scelta per utenti entry-level (quando usare un tipo scansione vs un altro).
+- I concetti specialistici (OWASP, false positive, confidenza) non sono spiegati nel punto decisionale.
+
+### Invarianti da preservare nel redesign
+- Il form deve continuare a permettere avvio rapido scansione in pochi step.
+- Il binding server-side tra scelta utente e `scan_type` effettivo deve restare validato.
+- Il flusso post-submit (progress realtime + dettaglio risultati) deve rimanere invariato a livello funzionale.
