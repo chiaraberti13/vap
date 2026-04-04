@@ -300,3 +300,39 @@ def test_submit_learning_feedback_rejects_unknown_scan_type():
     assert response.status_code == 400
     assert "catalogo didattico" in response.json()["detail"]
     app.app.dependency_overrides.clear()
+
+
+def test_auth_token_endpoint_enforces_rate_limit(monkeypatch):
+    """
+    Regression security test: simula un brute-force burst su /auth/token
+    e verifica che il rate-limit applicativo risponda con HTTP 429.
+    """
+    _clear_scans()
+    app.limiter._storage.reset()
+    original_settings = app.settings
+    monkeypatch.setattr(
+        app,
+        "settings",
+        type(
+            "S",
+            (),
+            {
+                **original_settings.__dict__,
+                "jwt_secret": "a" * 32,
+                "jwt_demo_user": "admin",
+                "jwt_demo_password": "change-me",
+            },
+        )(),
+    )
+
+    with TestClient(app.app) as client:
+        status_codes = []
+        for _ in range(16):
+            response = client.post(
+                "/auth/token",
+                data={"username": "admin", "password": "wrong-password"},
+            )
+            status_codes.append(response.status_code)
+
+    assert all(code in {401, 429} for code in status_codes)
+    assert 429 in status_codes
