@@ -79,6 +79,9 @@ class Settings:
         )
     )
     cors_allow_credentials: bool = os.getenv("VAP_CORS_ALLOW_CREDENTIALS", "false").lower() == "true"
+    target_allowlist: List[str] = field(
+        default_factory=lambda: _split_env_list(os.getenv("VAP_TARGET_ALLOWLIST", ""))
+    )
     rate_limit_default: str = os.getenv("VAP_RATE_LIMIT_DEFAULT", "120/minute")
     rate_limit_create_scan: str = os.getenv("VAP_RATE_LIMIT_CREATE_SCAN", "10/minute")
     rate_limit_auth: str = os.getenv("VAP_RATE_LIMIT_AUTH", "15/minute")

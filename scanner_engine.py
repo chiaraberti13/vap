@@ -156,6 +156,98 @@ class ScanValidationError(ValueError):
     pass
 
 
+def _normalize_allowlist_entry(entry: str) -> str:
+    normalized = entry.strip().lower()
+    if normalized.startswith("*."):
+        return normalized[2:]
+    return normalized
+
+
+def _is_hostname_allowed(hostname: str) -> bool:
+    if settings.app_env != "production" or not settings.target_allowlist:
+        return True
+
+    candidate = hostname.strip().lower()
+    for raw_entry in settings.target_allowlist:
+        entry = _normalize_allowlist_entry(raw_entry)
+        if not entry or "/" in entry:
+            continue
+        if candidate == entry or candidate.endswith(f".{entry}"):
+            return True
+    return False
+
+
+def _is_ip_allowed(value: str) -> bool:
+    if settings.app_env != "production" or not settings.target_allowlist:
+        return True
+
+    try:
+        candidate_ip = ip_address(value)
+    except ValueError:
+        return False
+
+    for raw_entry in settings.target_allowlist:
+        entry = _normalize_allowlist_entry(raw_entry)
+        if not entry:
+            continue
+        if "/" in entry:
+            try:
+                if candidate_ip in ip_network(entry, strict=False):
+                    return True
+            except ValueError:
+                continue
+            continue
+        if re.fullmatch(r"\d+(?:\.\d+){3}", entry):
+            try:
+                if candidate_ip == ip_address(entry):
+                    return True
+            except ValueError:
+                continue
+    return False
+
+
+def _assert_target_in_allowlist(target_value: str) -> None:
+    if settings.app_env != "production" or not settings.target_allowlist:
+        return
+
+    if re.fullmatch(r"\d+(?:\.\d+){3}", target_value):
+        is_allowed = _is_ip_allowed(target_value)
+    else:
+        is_allowed = _is_hostname_allowed(target_value)
+
+    if not is_allowed:
+        raise ScanValidationError(
+            "Target non consentito dalla allowlist di produzione. "
+            "Configura VAP_TARGET_ALLOWLIST per autorizzarlo."
+        )
+
+
+def _assert_network_target_in_allowlist(target_value: str) -> None:
+    try:
+        candidate_network = ip_network(target_value, strict=False)
+    except ValueError as exc:
+        raise ScanValidationError("CIDR non valido.") from exc
+
+    if settings.app_env != "production" or not settings.target_allowlist:
+        return
+
+    for raw_entry in settings.target_allowlist:
+        entry = _normalize_allowlist_entry(raw_entry)
+        if "/" not in entry:
+            continue
+        try:
+            allowed_network = ip_network(entry, strict=False)
+        except ValueError:
+            continue
+        if candidate_network.subnet_of(allowed_network):
+            return
+
+    raise ScanValidationError(
+        "Target CIDR non consentito dalla allowlist di produzione. "
+        "Configura VAP_TARGET_ALLOWLIST per autorizzarlo."
+    )
+
+
 def validate_target(target: str) -> str:
     if not target or len(target) > 255:
         raise ScanValidationError("Target non valido o troppo lungo.")
@@ -175,6 +267,7 @@ def validate_target(target: str) -> str:
             ip_address(hostname)
         except ValueError as exc:
             raise ScanValidationError("IP non valido.") from exc
+    _assert_target_in_allowlist(hostname)
 
     return target
 
@@ -231,13 +324,11 @@ def validate_nmap_target(target: str) -> str:
                 ip_address(parsed.hostname)
             except ValueError as exc:
                 raise ScanValidationError("IP non valido.") from exc
+        _assert_target_in_allowlist(parsed.hostname)
         return parsed.hostname
 
     if "/" in target:
-        try:
-            ip_network(target, strict=False)
-        except ValueError as exc:
-            raise ScanValidationError("CIDR non valido.") from exc
+        _assert_network_target_in_allowlist(target)
         return target
 
     if "-" in target:
@@ -284,6 +375,7 @@ def validate_nmap_target(target: str) -> str:
             ip_address(hostname)
         except ValueError as exc:
             raise ScanValidationError("IP non valido.") from exc
+    _assert_target_in_allowlist(hostname)
 
     return target
 
