@@ -182,7 +182,7 @@ Interventi prioritari:
 2. [x] Policy di target allowlist opzionale in produzione.
 3. [x] Audit trail esteso per azioni didattiche e export sensibili.
 4. Hardening frontend:
-   - riduzione inline scripts/styles (progressivo),
+   - [x] riduzione inline scripts/styles (progressivo, 2026-04-04): introdotta regression suite `tests/test_template_inline_hardening.py` che blocca attributi `style`/event handler inline e script inline eseguibili nei template.
    - [x] CSP più restrittiva (rimossa `unsafe-inline` da `script-src` di default),
    - [x] riduzione `unsafe-inline` anche su `style-src` (2026-04-04): estratti gli stili inline da `scan_detail.html` in `static/css/style.css` e barra progresso inizializzata via JS senza attributi `style`.
    - [x] valutazione migrazione da Tailwind CDN a build locale (2026-04-04): analisi completata in `docs/tailwind-local-migration-assessment.md` con decisione architetturale e piano di adozione.
