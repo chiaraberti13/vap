@@ -517,6 +517,43 @@ def _load_json_list(value: Optional[str]) -> List[Any]:
     return payload if isinstance(payload, list) else []
 
 
+def _truncate_preview_text(value: Any, max_length: int = 220) -> Optional[str]:
+    if not isinstance(value, str):
+        return None
+    normalized = " ".join(value.split())
+    if not normalized:
+        return None
+    if len(normalized) <= max_length:
+        return normalized
+    return f"{normalized[: max_length - 1].rstrip()}…"
+
+
+def _prepare_findings_for_ui(findings: List[Any]) -> List[Dict[str, Any]]:
+    prepared: List[Dict[str, Any]] = []
+    for finding in findings:
+        if not isinstance(finding, dict):
+            continue
+        finding_copy = dict(finding)
+        location_parts = [
+            str(finding_copy.get("host") or "").strip(),
+            str(finding_copy.get("path") or "").strip(),
+            str(finding_copy.get("url") or "").strip(),
+        ]
+        finding_copy["location_preview"] = "".join(part for part in location_parts if part)
+        finding_copy["description_preview"] = _truncate_preview_text(finding_copy.get("description"))
+        finding_copy["impact_preview"] = _truncate_preview_text(finding_copy.get("impact"), max_length=180)
+        finding_copy["recommendation_preview"] = _truncate_preview_text(
+            finding_copy.get("recommendation"),
+            max_length=180,
+        )
+        finding_copy["evidence_preview"] = _truncate_preview_text(
+            finding_copy.get("evidence"),
+            max_length=160,
+        )
+        prepared.append(finding_copy)
+    return prepared
+
+
 def _build_scan_payload(scan: Scan) -> Dict[str, Any]:
     return {
         "id": scan.id,
@@ -926,7 +963,7 @@ def scan_detail(request: Request, scan_id: int, db: Session = Depends(get_db)) -
     if not scan:
         raise HTTPException(status_code=404, detail="Scan non trovata")
 
-    findings = json.loads(scan.findings_json or "[]")
+    findings = _prepare_findings_for_ui(_load_json_list(scan.findings_json))
     logs = _load_json_list(scan.logs_json)
     api_key = request.query_params.get("api_key")
     download_url = None
