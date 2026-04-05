@@ -789,6 +789,145 @@ def _build_confidence_rubric_for_finding(finding: Dict[str, Any]) -> Dict[str, s
     }
 
 
+_SEVERITY_IMPACT_SCORE: Dict[str, int] = {
+    "critical": 5,
+    "high": 4,
+    "medium": 3,
+    "low": 2,
+    "info": 1,
+}
+
+_EFFORT_SCORE: Dict[str, int] = {"basso": 1, "medio": 2, "alto": 3}
+
+_QUICK_FIX_KEYWORDS = frozenset([
+    "header", "cookie", "policy", "redirect", "tls", "ssl", "certificate",
+    "hsts", "csp", "cors", "clickjack", "x-frame", "x-content", "referrer",
+    "version", "update", "upgrade", "patch",
+])
+
+_HIGH_EFFORT_KEYWORDS = frozenset([
+    "injection", "deserialization", "rce", "remote code", "code execution",
+    "authentication", "authorization", "privilege", "traversal", "path traversal",
+    "business logic", "race condition",
+])
+
+_HIGH_EFFORT_CWES = frozenset([
+    "CWE-89", "CWE-78", "CWE-287", "CWE-306", "CWE-94", "CWE-434",
+    "CWE-502", "CWE-22", "CWE-352", "CWE-295",
+])
+
+_LOW_EFFORT_CWES = frozenset([
+    "CWE-16", "CWE-693", "CWE-614", "CWE-116", "CWE-1021",
+])
+
+
+def _estimate_remediation_effort(finding: Dict[str, Any]) -> str:
+    """Estimate remediation effort: 'basso' | 'medio' | 'alto'."""
+    severity = _normalize_severity(finding.get("severity"))
+    combined_text = " ".join([
+        str(finding.get("recommendation") or ""),
+        str(finding.get("title") or ""),
+        str(finding.get("description") or ""),
+    ]).lower()
+    cwe_set = frozenset(str(c) for c in (finding.get("cwe") or []))
+
+    if any(kw in combined_text for kw in _HIGH_EFFORT_KEYWORDS) or cwe_set & _HIGH_EFFORT_CWES:
+        return "alto"
+    if any(kw in combined_text for kw in _QUICK_FIX_KEYWORDS) or cwe_set & _LOW_EFFORT_CWES:
+        return "basso"
+    if severity in ("critical", "high"):
+        return "alto"
+    if severity == "medium":
+        return "medio"
+    return "basso"
+
+
+def _build_remediation_roadmap(prepared_findings: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """
+    Build a prioritized remediation roadmap from prepared findings.
+
+    Priority score = impact_score * 2 - effort_score
+    This favours high-impact/low-effort items (quick wins) and surfaces
+    critical issues even when they require significant effort.
+
+    Tiers:
+    - immediato  : critical/high impact  AND effort=basso  (score >= 7)
+    - pianifica  : critical/high impact  OR  high score     (score >= 4)
+    - quick_win  : medium/low impact + effort=basso         (score == 4 or 3 and effort basso)
+    - monitora   : everything else
+    """
+    roadmap: List[Dict[str, Any]] = []
+
+    _EFFORT_LABEL: Dict[str, str] = {"basso": "Basso", "medio": "Medio", "alto": "Alto"}
+    _TIER_LABELS: Dict[str, Dict[str, str]] = {
+        "immediato": {
+            "label": "Azione immediata",
+            "desc": "Vulnerabilità ad alto impatto risolvibili rapidamente: priorità assoluta.",
+            "color": "rose",
+        },
+        "pianifica": {
+            "label": "Pianifica a breve",
+            "desc": "Impatto significativo che richiede intervento strutturato nel prossimo sprint.",
+            "color": "orange",
+        },
+        "quick_win": {
+            "label": "Quick win",
+            "desc": "Rischio contenuto ma risolvibile con poco sforzo: approfittane subito.",
+            "color": "amber",
+        },
+        "monitora": {
+            "label": "Monitora",
+            "desc": "Impatto basso o segnale informativo: accetta il rischio o rivedi in futuro.",
+            "color": "slate",
+        },
+    }
+
+    for idx, finding in enumerate(prepared_findings):
+        sev = _normalize_severity(finding.get("severity"))
+        effort = _estimate_remediation_effort(finding)
+        impact = _SEVERITY_IMPACT_SCORE.get(sev, 1)
+        effort_score = _EFFORT_SCORE.get(effort, 2)
+        priority_score = impact * 2 - effort_score
+
+        if impact >= 4 and effort_score == 1:
+            tier = "immediato"
+        elif impact >= 4 or priority_score >= 6:
+            tier = "pianifica"
+        elif effort_score == 1 and impact >= 2:
+            tier = "quick_win"
+        else:
+            tier = "monitora"
+
+        tier_meta = _TIER_LABELS[tier]
+
+        roadmap.append({
+            "rank": 0,  # filled after sort
+            "finding_index": idx,
+            "title": str(finding.get("title") or "Finding senza titolo"),
+            "severity": sev,
+            "effort": effort,
+            "effort_label": _EFFORT_LABEL[effort],
+            "impact_score": impact,
+            "priority_score": priority_score,
+            "tier": tier,
+            "tier_label": tier_meta["label"],
+            "tier_desc": tier_meta["desc"],
+            "tier_color": tier_meta["color"],
+            "recommendation_preview": finding.get("recommendation_preview") or "",
+            "tool": finding.get("tool") or "",
+            "confidence_level": (finding.get("confidence_rubric") or {}).get("level", "needs-validation"),
+        })
+
+    # Sort: tier order, then priority_score desc, then impact desc
+    tier_order = {"immediato": 0, "pianifica": 1, "quick_win": 2, "monitora": 3}
+    roadmap.sort(key=lambda r: (tier_order[r["tier"]], -r["priority_score"], -r["impact_score"]))
+
+    for rank, item in enumerate(roadmap, start=1):
+        item["rank"] = rank
+
+    return roadmap
+
+
 def _prepare_findings_for_ui(findings: List[Any]) -> List[Dict[str, Any]]:
     prepared: List[Dict[str, Any]] = []
     for finding in findings:
@@ -1260,6 +1399,7 @@ def scan_detail(request: Request, scan_id: int, db: Session = Depends(get_db)) -
         "safe_log_reading": "Evita di condividere token, session ID, credenziali e dati personali presenti nei log.",
         "interpretation_guide": scan_catalog_entry.get("interpretation_guide"),
     }
+    remediation_roadmap = _build_remediation_roadmap(findings)
     api_key = request.query_params.get("api_key")
     download_url = None
     if scan.report_path:
@@ -1275,6 +1415,7 @@ def scan_detail(request: Request, scan_id: int, db: Session = Depends(get_db)) -
             "findings": findings,
             "logs": logs,
             "learning_sidebar": learning_sidebar,
+            "remediation_roadmap": remediation_roadmap,
             "download_url": download_url,
             "api_key": api_key,
         },
