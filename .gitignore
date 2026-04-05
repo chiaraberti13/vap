@@ -41,5 +41,10 @@ Thumbs.db
 *.tmp
 *.temp
 
+# Coverage
+.coverage
+coverage.xml
+htmlcov/
+
 # Security tools
 security-tools/
