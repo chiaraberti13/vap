@@ -166,7 +166,7 @@ Interventi:
    - “verifica manuale consigliata”,
    - “skill da studiare dopo”.
 3. [x] Introduzione confidence rubric (confirmed/probable/needs-validation) chiara.
-4. Remediation roadmap ordinata per impatto + effort + prerequisiti.
+4. [x] Remediation roadmap ordinata per impatto + effort + prerequisiti (2026-04-05): introdotta funzione `_build_remediation_roadmap()` in `app.py` che calcola score impatto×effort, assegna tier (immediato/pianifica/quick_win/monitora) e ordina i findings; sezione dedicata renderizzata in `scan_detail.html` con badge tier, rank numerico, chip effort e legenda prerequisiti; 19 test di regressione in `tests/test_remediation_roadmap.py`.
 
 Deliverable:
 - aggiornamento renderer findings/report pipeline
