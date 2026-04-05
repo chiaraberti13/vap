@@ -250,8 +250,8 @@ Deliverable:
 ## 5) Backlog tecnico dettagliato (priorità)
 
 ## P0 (immediato)
-- Catalogo metadati scansioni + API read-only.
-- Refactor UI selezione scan in cards guidate.
+- [x] Catalogo metadati scansioni + API read-only (verifica regressione 2026-04-05): confermati modulo `scan_catalog.py`, endpoint `GET /api/v1/scan-catalog` e test dedicati (`tests/test_scan_catalog.py`, `tests/test_api_integration.py::test_get_scan_catalog_endpoint`).
+- [x] Refactor UI selezione scan in cards guidate (verifica regressione 2026-04-05): confermata homepage con Scan Type Explorer e cards POC top-3 tramite `tests/test_api_integration.py::test_homepage_guided_explorer_exposes_top3_poc_scan_cards`.
 - [x] Anti-regression test funzionalità attuali (2026-04-04): aggiunto test integrazione `test_download_report_endpoint_preserves_pdf_delivery_and_audit` per garantire continuità download PDF e audit trail `report_downloaded`.
 - [x] Copywriting didattico minimo per full/light/wordpress + top tool (2026-04-04): arricchiti metadati didattici con contenuti specifici per `nuclei`, `nmap`, `zap`, `sqlmap`, `wpscan` e aggiunta regressione `test_top_tools_have_dedicated_learning_copy`.
 
