@@ -120,6 +120,22 @@ def test_homepage_exposes_microcopy_guidance_for_target_and_scan_type():
     assert "light" in html and "wordpress" in html
 
 
+def test_homepage_has_accessible_error_summary_for_guided_form_validation():
+    with TestClient(app.app) as client:
+        response = client.get("/")
+
+    assert response.status_code == 200
+    html = response.text
+
+    assert 'id="guided-form-error-summary"' in html
+    assert 'id="guided-form-error-list"' in html
+    assert 'role="alert"' in html
+    assert 'id="target-error"' in html
+    assert 'id="learning-goal-error"' in html
+    assert 'id="consent-error"' in html
+    assert 'id="guided-scan-form" novalidate' in html
+
+
 def test_homepage_uses_typography_tokens_for_consistent_readability():
     with TestClient(app.app) as client:
         response = client.get("/")
