@@ -301,7 +301,8 @@ Una release è “done” quando:
 
 ## Sprint 2
 - [x] Fase 2 completa con rollout feature-flag.
-- Test E2E journey “nuova scansione”.
+- [x] Test E2E journey “nuova scansione” (2026-04-06): coperto il flusso guidato completo homepage → submit form → redirect al dettaglio scansione con `tests/test_api_integration.py::test_guided_scan_form_end_to_end_journey`.
+- [x] Hardening journey guidato su consenso obbligatorio (2026-04-06): aggiunto test negativo `tests/test_api_integration.py::test_guided_scan_form_blocks_submission_without_required_consents` per garantire blocco fail-closed (HTTP 403), messaggio UX esplicito e assenza di creazione scansione senza accettazione termini.
 
 ## Sprint 3
 - [x] Fase 3 su scan detail + remediation roadmap.
