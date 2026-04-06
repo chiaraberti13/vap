@@ -48,3 +48,22 @@ def test_security_headers_include_origin_isolation_baseline():
     assert response.headers.get("Cross-Origin-Opener-Policy") == "same-origin"
     assert response.headers.get("Cross-Origin-Resource-Policy") == "same-origin"
     assert response.headers.get("Origin-Agent-Cluster") == "?1"
+
+
+def test_permissions_policy_disables_high_risk_browser_capabilities_by_default():
+    with TestClient(app.app) as client:
+        response = client.get("/")
+
+    assert response.status_code == 200
+    permissions_policy = response.headers.get("Permissions-Policy", "")
+    expected_fragments = [
+        "camera=()",
+        "microphone=()",
+        "geolocation=()",
+        "clipboard-read=()",
+        "clipboard-write=()",
+        "publickey-credentials-get=()",
+        "usb=()",
+    ]
+    for fragment in expected_fragments:
+        assert fragment in permissions_policy
