@@ -42,6 +42,7 @@ nav:
       - Panoramica: scan-playbooks/README.md
   - Glossario & FAQ Operative: glossary-faq.md
   - Riferimenti Ufficiali: official-references.md
+  - Release Candidate Checklist: release-candidate.md
 
 markdown_extensions:
   - admonition

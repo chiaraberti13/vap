@@ -310,7 +310,7 @@ Una release è “done” quando:
 
 ## Sprint 4
 - [x] Fase 4 + Fase 5 (hardening + quality gates) completate (2026-04-04): verificata suite `PYTHONPATH=. pytest -q` con `112 passed`, coverage totale `82.95%` e soglia minima `80%` rispettata.
-- Preparazione release candidate.
+- [x] Preparazione release candidate (2026-04-06): aggiunta checklist operativa RC in `docs/release-candidate.md` con gate funzionali, UX/a11y, sicurezza e qualità, più integrazione in navigazione documentazione MkDocs.
 
 ## Sprint 5
 - [x] Fase 6 docs complete + training materials (2026-04-04): presenti learning paths (`docs/learning-paths/`), playbook scanner (`docs/scan-playbooks/`), glossario/FAQ (`docs/glossary-faq.md`) e riferimenti ufficiali (`docs/official-references.md`).
