@@ -252,6 +252,28 @@ def build_startup_security_checklist() -> List[Dict[str, str]]:
                 "remediation": "Limitare VAP_HOST a interfacce autorizzate quando possibile.",
             }
         )
+    if not settings.rbac_enabled:
+        checks.append(
+            {
+                "severity": "high",
+                "code": "rbac_disabled",
+                "message": "VAP_RBAC_ENABLED=false: controllo ruolo disattivato su endpoint sensibili.",
+                "remediation": "Impostare VAP_RBAC_ENABLED=true in produzione.",
+            }
+        )
+    if not settings.target_allowlist:
+        checks.append(
+            {
+                "severity": "medium",
+                "code": "target_allowlist_missing",
+                "message": (
+                    "VAP_TARGET_ALLOWLIST vuota: possibile abuso scansioni verso target non autorizzati."
+                ),
+                "remediation": (
+                    "Definire VAP_TARGET_ALLOWLIST con domini/IP consentiti per deployment production."
+                ),
+            }
+        )
 
     return checks
 
