@@ -72,6 +72,8 @@ def test_homepage_has_core_accessibility_landmarks_and_keyboard_controls():
 
     guided_form = parser.ids.get("guided-scan-form")
     assert guided_form is not None
+    assert "scan-journey-nav" in parser.ids
+    assert "scan-current-step-label" in parser.ids
 
     csrf_inputs = [
         field
@@ -84,6 +86,7 @@ def test_homepage_has_core_accessibility_landmarks_and_keyboard_controls():
     prev_button = parser.buttons.get("scan-step-prev")
     assert next_button is not None and next_button.get("type") == "button"
     assert prev_button is not None and prev_button.get("type") == "button"
+    assert 'data-step-indicator="1" data-step-variant="compact" aria-current="step"' in response.text
 
     compare_toggle = parser.buttons.get("scan-compare-toggle")
     assert compare_toggle is not None
