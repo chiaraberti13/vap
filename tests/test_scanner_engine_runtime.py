@@ -45,6 +45,14 @@ class CrashScanner:
         raise RuntimeError("boom")
 
 
+class PluginScanner:
+    def __init__(self, enable_live_scans: bool):
+        self.enable_live_scans = enable_live_scans
+
+    def run(self, _target: str):
+        return {"status": "completed", "findings": []}
+
+
 def test_collect_findings_applies_max_limit(monkeypatch):
     monkeypatch.setattr(scanner_engine, "settings", SimpleNamespace(max_findings=2, enable_live_scans=False))
     findings = scanner_engine._collect_findings(
@@ -175,6 +183,56 @@ def test_run_scan_nmap_path(monkeypatch):
     assert result.target == "validated-127.0.0.1"
     assert result.status == "completed"
     assert result.findings[0]["enriched"] is True
+
+
+def test_register_scanner_plugin_updates_runtime_maps(monkeypatch):
+    monkeypatch.setattr(scanner_engine, "SCANNERS_MAP", {"nmap": DummyScanner})
+    monkeypatch.setattr(scanner_engine, "TOOL_DISPLAY_NAMES", {})
+    monkeypatch.setattr(scanner_engine, "SCAN_TYPE_PROFILES", {"light": ["nmap"], "wordpress": []})
+
+    scanner_engine.register_scanner_plugin(
+        scanner_engine.ScannerPluginSpec(
+            scanner_name="custom_plugin",
+            scanner_class=PluginScanner,
+            display_name="Custom Plugin",
+            profile_assignments=["light"],
+        )
+    )
+
+    assert "custom_plugin" in scanner_engine.SCANNERS_MAP
+    assert scanner_engine.TOOL_DISPLAY_NAMES["custom_plugin"] == "Custom Plugin"
+    assert "custom_plugin" in scanner_engine.SCAN_TYPE_PROFILES["light"]
+    assert "custom_plugin" in scanner_engine.get_scan_type_choices()
+
+
+def test_register_scanner_plugin_rejects_unsupported_contract_version(monkeypatch):
+    monkeypatch.setattr(scanner_engine, "SCANNERS_MAP", {"nmap": DummyScanner})
+    monkeypatch.setattr(scanner_engine, "SCAN_TYPE_PROFILES", {"light": ["nmap"], "wordpress": []})
+
+    with pytest.raises(scanner_engine.ScanValidationError, match="Versione richiesta"):
+        scanner_engine.register_scanner_plugin(
+            scanner_engine.ScannerPluginSpec(
+                scanner_name="legacy_plugin",
+                scanner_class=PluginScanner,
+                contract_version="0.9.0",
+            )
+        )
+
+
+def test_register_scanner_plugin_rejects_invalid_profile_without_mutating_maps(monkeypatch):
+    monkeypatch.setattr(scanner_engine, "SCANNERS_MAP", {"nmap": DummyScanner})
+    monkeypatch.setattr(scanner_engine, "SCAN_TYPE_PROFILES", {"light": ["nmap"], "wordpress": []})
+
+    with pytest.raises(scanner_engine.ScanValidationError, match="Profilo plugin non riconosciuto"):
+        scanner_engine.register_scanner_plugin(
+            scanner_engine.ScannerPluginSpec(
+                scanner_name="bad_profile",
+                scanner_class=PluginScanner,
+                profile_assignments=["enterprise"],
+            )
+        )
+
+    assert "bad_profile" not in scanner_engine.SCANNERS_MAP
 
 
 def test_serialize_findings_and_cli_parser(monkeypatch, tmp_path):
