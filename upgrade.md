@@ -40,7 +40,6 @@ Questa repository contiene una web app **FastAPI + Jinja + Tailwind CSS** per vu
 ### ⚠️ Parziale / da completare
 
 - Tailwind in CDN ancora presente: hardening/controllo supply-chain migliorabile con build locale.
-- Plugin architecture per scanner dinamici non ancora formalizzata (rischio drift tra mappa scanner e scelte esposte).
 - Dependency hygiene con policy trimestrale formalizzata; mantenere monitoraggio warning/deprecazioni transitive.
 - Osservabilità runtime centralizzata (metriche/alerting esterno) non completamente product-grade.
 
@@ -48,11 +47,9 @@ Questa repository contiene una web app **FastAPI + Jinja + Tailwind CSS** per vu
 
 - Migrazione completa a design system frontend self-hosted (CSS pipeline locale e policy CSP ancora più stringente).
 - Gate CI security avanzato DAST autenticato in pre-release ancora da integrare stabilmente.
-- Strategia formalizzata di estensione scanner via plugin con contratto versionato.
 
 ### 🐞 Debito tecnico pre-esistente monitorato
 
-- Potenziale incoerenza tra enumerazioni di `scan_type` e registrazione scanner in scenari evolutivi.
 - Warnings/deprecazioni da dipendenze terze parti da monitorare con policy di upgrade.
 
 ### Focus UX layout home (stato reale)
@@ -106,9 +103,9 @@ Done quando: Upgrade plan e documentazione learning risultano coerenti.
 Descrizione: Stabilire soglie test, coverage e controlli automatici.  
 Done quando: CI blocca merge su regressioni.
 
-[ ] Formalizzare policy plugin scanner versionata  
+[x] Formalizzare policy plugin scanner versionata  
 Descrizione: Definire contratto ufficiale per aggiunta scanner dinamici e compatibilità.  
-Done quando: Esiste specifica plugin + test contract.
+Done quando: Esiste specifica plugin + test contract. ✅ Completato con contratto `ScannerPluginSpec` versionato (`1.0.0`), funzione `register_scanner_plugin` fail-closed, test runtime e documento dedicato.
 
 ### B. Setup / Configurazione
 

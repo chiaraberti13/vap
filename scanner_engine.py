@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import argparse
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import json
@@ -51,6 +51,7 @@ IPV4_ADDRESS_REGEX = rf"{IPV4_OCTET_REGEX}(?:\.{IPV4_OCTET_REGEX}){{3}}"
 TARGET_REGEX = re.compile(
     rf"^(https?://)?([a-zA-Z0-9.-]+|{IPV4_ADDRESS_REGEX})(:\d{{1,5}})?(/.*)?$"
 )
+SCANNER_NAME_REGEX = re.compile(r"^[a-z0-9_]+$")
 
 
 class WordpressNucleiScanner(NucleiScanner):
@@ -139,6 +140,7 @@ SCAN_TYPE_PROFILES = {
     "light": ["whatweb", "nikto_headers", "nmap_top_ports", "httpx"],
     "wordpress": ["wpscan", "whatweb", "nikto", "nuclei_wordpress", "nmap", "wafw00f"],
 }
+PLUGIN_CONTRACT_VERSION = "1.0.0"
 
 
 def get_scan_type_choices() -> List[str]:
@@ -152,6 +154,72 @@ def get_scan_type_choices() -> List[str]:
 
 
 SCAN_TYPE_CHOICES = get_scan_type_choices()
+
+
+@dataclass
+class ScannerPluginSpec:
+    scanner_name: str
+    scanner_class: type
+    display_name: str | None = None
+    profile_assignments: List[str] = field(default_factory=list)
+    contract_version: str = PLUGIN_CONTRACT_VERSION
+
+
+def _validate_plugin_contract_version(contract_version: str) -> None:
+    if contract_version != PLUGIN_CONTRACT_VERSION:
+        raise ScanValidationError(
+            "Scanner plugin contract non supportato. "
+            f"Versione richiesta: {PLUGIN_CONTRACT_VERSION}, ricevuta: {contract_version}."
+        )
+
+
+def _validate_plugin_name(scanner_name: str) -> str:
+    normalized_name = scanner_name.lower().strip()
+    if not SCANNER_NAME_REGEX.fullmatch(normalized_name):
+        raise ScanValidationError(
+            "Nome scanner plugin non valido: usare solo caratteri [a-z0-9_]."
+        )
+    if normalized_name in {"full", *SCAN_TYPE_PROFILES.keys()}:
+        raise ScanValidationError(
+            "Nome scanner plugin riservato: conflitto con scan type di sistema."
+        )
+    return normalized_name
+
+
+def register_scanner_plugin(spec: ScannerPluginSpec) -> None:
+    """Registra scanner esterni secondo contratto versionato.
+
+    Il contratto è intenzionalmente fail-closed: se il plugin non rispetta naming,
+    versione o profili supportati, viene rifiutato.
+    """
+    _validate_plugin_contract_version(spec.contract_version)
+    scanner_name = _validate_plugin_name(spec.scanner_name)
+
+    if not callable(spec.scanner_class):
+        raise ScanValidationError("scanner_class plugin non valido: oggetto non istanziabile.")
+    if scanner_name in SCANNERS_MAP:
+        raise ScanValidationError(f"Scanner plugin '{scanner_name}' già registrato.")
+
+    normalized_profiles: List[str] = []
+    for profile_name in spec.profile_assignments:
+        normalized_profile = profile_name.lower().strip()
+        if normalized_profile not in SCAN_TYPE_PROFILES:
+            raise ScanValidationError(
+                f"Profilo plugin non riconosciuto: '{profile_name}'. "
+                f"Profili supportati: {', '.join(sorted(SCAN_TYPE_PROFILES.keys()))}."
+            )
+        normalized_profiles.append(normalized_profile)
+
+    SCANNERS_MAP[scanner_name] = spec.scanner_class
+    if spec.display_name:
+        TOOL_DISPLAY_NAMES[scanner_name] = spec.display_name
+
+    for normalized_profile in normalized_profiles:
+        if scanner_name not in SCAN_TYPE_PROFILES[normalized_profile]:
+            SCAN_TYPE_PROFILES[normalized_profile].append(scanner_name)
+
+    global SCAN_TYPE_CHOICES
+    SCAN_TYPE_CHOICES = get_scan_type_choices()
 
 @dataclass
 class ScanResult:
