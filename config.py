@@ -94,6 +94,12 @@ class Settings:
         "frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; "
         "manifest-src 'self'; block-all-mixed-content; upgrade-insecure-requests",
     )
+    permissions_policy: str = os.getenv(
+        "VAP_PERMISSIONS_POLICY",
+        "accelerometer=(), autoplay=(), camera=(), clipboard-read=(), clipboard-write=(), "
+        "display-capture=(), fullscreen=(self), geolocation=(), gyroscope=(), microphone=(), payment=(), "
+        "publickey-credentials-get=(), usb=(), web-share=()",
+    )
     security_headers_enabled: bool = os.getenv("VAP_SECURITY_HEADERS", "true").lower() == "true"
     audit_logging_enabled: bool = os.getenv("VAP_AUDIT_LOGGING", "true").lower() == "true"
     privacy_policy_version: str = os.getenv("VAP_PRIVACY_POLICY_VERSION", "2024-01")
