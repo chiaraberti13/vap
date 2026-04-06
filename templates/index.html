@@ -12,11 +12,40 @@
     Salta al form di nuova scansione
   </a>
   <main class="min-h-screen flex flex-col">
-    <header class="px-6 py-6 border-b border-slate-800">
-      <div class="max-w-6xl mx-auto flex flex-col gap-2">
-        <p class="text-sm uppercase tracking-[0.3em] text-slate-400">Security Operations</p>
-        <h1 class="text-3xl md:text-4xl font-semibold">Vulnerability Assessment Platform</h1>
-        <p class="text-slate-400 max-w-2xl">Esegui scan mirati o completi, genera report PDF professionali e monitora i risultati in tempo reale.</p>
+    <header class="border-b border-slate-800 bg-slate-950/80 px-6 py-10 md:py-14" aria-labelledby="hero-title">
+      <div class="mx-auto grid max-w-6xl gap-8 lg:grid-cols-[1.25fr_0.75fr] lg:items-end">
+        <div class="space-y-4">
+          <p class="text-xs font-semibold uppercase tracking-[0.28em] text-cyan-300">Security Operations</p>
+          <h1 id="hero-title" class="text-balance text-3xl font-semibold leading-tight text-slate-50 sm:text-4xl md:text-5xl">
+            Guided Security Analysis per team tecnici e compliance.
+          </h1>
+          <p class="max-w-2xl text-base leading-relaxed text-slate-300 sm:text-lg">
+            Pianifica la scansione in 4 step, riduci errori operativi e genera report professionali con evidenze utili a remediation e audit.
+          </p>
+          <div class="flex flex-wrap items-center gap-3 pt-2">
+            <a
+              href="#new-scan-title"
+              class="inline-flex items-center justify-center rounded-lg bg-cyan-500 px-5 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-300"
+            >
+              Avvia nuova scansione
+            </a>
+            <a
+              href="/scans"
+              class="inline-flex items-center justify-center rounded-lg border border-slate-600 px-5 py-2.5 text-sm font-medium text-slate-200 transition hover:border-slate-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-cyan-300"
+            >
+              Apri storico scansioni
+            </a>
+          </div>
+        </div>
+        <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 shadow-lg">
+          <p class="text-xs uppercase tracking-[0.2em] text-slate-400">Flusso consigliato</p>
+          <ol class="mt-3 space-y-2 text-sm text-slate-200">
+            <li><span class="font-semibold text-cyan-200">Step 1:</span> Definisci obiettivo e target autorizzato.</li>
+            <li><span class="font-semibold text-cyan-200">Step 2:</span> Scegli il tipo di scansione più adatto.</li>
+            <li><span class="font-semibold text-cyan-200">Step 3:</span> Conferma consenso legale e policy.</li>
+            <li><span class="font-semibold text-cyan-200">Step 4:</span> Esegui e monitora i risultati.</li>
+          </ol>
+        </div>
       </div>
     </header>
 
