@@ -154,7 +154,7 @@ Criterio di successo:
 Problema segnalato (2026-04-06): la pagina `http://localhost:8000/` risulta priva di layout coerente, poco leggibile e non intuitiva.
 
 Interventi immediati (priorità massima):
-1. [ ] Ripristinare gerarchia visiva della hero e del form principale (titolo, sottotitolo, CTA primaria) con spaziatura consistente e contrasto WCAG AA.
+1. [x] Ripristinare gerarchia visiva della hero e del form principale (titolo, sottotitolo, CTA primaria) con spaziatura consistente e contrasto WCAG AA (2026-04-06): hero sopra la fold ridisegnata in `templates/index.html` con titolo ad alta priorità visiva, microcopy orientata al flusso guidato, CTA primaria verso il form e card laterale “Flusso consigliato”.
 2. [ ] Definire una griglia responsive stabile per la home (mobile-first) evitando blocchi “full width” disallineati e sezioni senza contenitore.
 3. [ ] Introdurre navigation pattern chiaro “Step 1→4” above-the-fold con stato corrente sempre visibile.
 4. [ ] Uniformare tipografia e scale token (font-size/line-height/spacing) per eliminare effetto “pagina rotta”.
