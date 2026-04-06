@@ -209,9 +209,9 @@ Done quando: Roadmap visibile in scan detail e testata.
 Descrizione: Garantire export stabile e audit su download report.  
 Done quando: Test regressione report passanti.
 
-[ ] Aggiungere confronto temporale report (trend)  
+[x] Aggiungere confronto temporale report (trend)  
 Descrizione: Evolvere report da snapshot a visione progressiva per target.  
-Done quando: Disponibile timeline comparativa findings nel tempo.
+Done quando: Disponibile timeline comparativa findings nel tempo. ✅ Completato con sezione trend in `scan_detail` (delta vs baseline precedente, KPI severità e timeline ultime scansioni target) + test di regressione.
 
 ### I. Data & Persistenza
 

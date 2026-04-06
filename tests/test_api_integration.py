@@ -177,6 +177,64 @@ def test_scan_detail_displays_learning_sidebar():
     assert '<script src="/static/js/scan-detail.js"></script>' in response.text
 
 
+def test_scan_detail_displays_trend_summary_with_previous_baseline():
+    _clear_scans()
+    with SessionLocal() as session:
+        baseline = Scan(
+            target="example.com",
+            scan_type="full",
+            status="completed",
+            data_classification="internal",
+            findings_json='[{"title":"Legacy issue","severity":"high","confidence":0.9},{"title":"Minor","severity":"low","confidence":0.5}]',
+            logs_json="[]",
+        )
+        current = Scan(
+            target="example.com",
+            scan_type="full",
+            status="completed",
+            data_classification="internal",
+            findings_json='[{"title":"Current issue","severity":"critical","confidence":0.95}]',
+            logs_json="[]",
+        )
+        session.add_all([baseline, current])
+        session.commit()
+        session.refresh(current)
+        scan_id = current.id
+
+    with TestClient(app.app) as client:
+        response = client.get(f"/scans/{scan_id}")
+
+    assert response.status_code == 200
+    assert "Trend report (target)" in response.text
+    assert "Delta findings" in response.text
+    assert "Delta critici/alti" in response.text
+    assert "Nessuna baseline precedente disponibile" not in response.text
+
+
+def test_scan_detail_trend_summary_handles_missing_baseline_gracefully():
+    _clear_scans()
+    with SessionLocal() as session:
+        current = Scan(
+            target="new-target.example",
+            scan_type="light",
+            status="completed",
+            data_classification="internal",
+            findings_json='[{"title":"Only finding","severity":"medium","confidence":0.7}]',
+            logs_json="[]",
+        )
+        session.add(current)
+        session.commit()
+        session.refresh(current)
+        scan_id = current.id
+
+    with TestClient(app.app) as client:
+        response = client.get(f"/scans/{scan_id}")
+
+    assert response.status_code == 200
+    assert "Trend report (target)" in response.text
+    assert "Nessuna baseline precedente disponibile" in response.text
+
+
 def test_homepage_uses_legacy_form_when_guided_explorer_flag_is_disabled(monkeypatch):
     _clear_scans()
     monkeypatch.setattr(

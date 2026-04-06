@@ -446,6 +446,75 @@
         </div>
       </section>
 
+      {% if trend_summary %}
+      <section aria-labelledby="trend-heading" class="mt-8">
+        <div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
+          <div class="flex items-start justify-between gap-4 flex-wrap">
+            <div>
+              <h2 id="trend-heading" class="text-2xl font-semibold">Trend report (target)</h2>
+              <p class="text-sm text-slate-400 mt-1">
+                Confronto rapido con l'ultima baseline disponibile: <span class="text-slate-200">{{ trend_summary.previous_label }}</span>.
+              </p>
+            </div>
+            <span class="text-xs text-slate-500">Target: {{ scan.target }}</span>
+          </div>
+
+          <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div class="rounded-lg border border-slate-800 bg-slate-950/60 p-3">
+              <p class="text-xs uppercase tracking-wide text-slate-500">Findings correnti</p>
+              <p class="mt-1 text-2xl font-semibold text-slate-100">{{ trend_summary.current_total_findings }}</p>
+            </div>
+            <div class="rounded-lg border border-slate-800 bg-slate-950/60 p-3">
+              <p class="text-xs uppercase tracking-wide text-slate-500">Findings critici/alti</p>
+              <p class="mt-1 text-2xl font-semibold text-rose-300">{{ trend_summary.current_high_risk_findings }}</p>
+            </div>
+            <div class="rounded-lg border border-slate-800 bg-slate-950/60 p-3">
+              <p class="text-xs uppercase tracking-wide text-slate-500">Delta findings</p>
+              <p class="mt-1 text-2xl font-semibold {% if trend_summary.delta_total_findings > 0 %}text-rose-300{% elif trend_summary.delta_total_findings < 0 %}text-emerald-300{% else %}text-slate-300{% endif %}">
+                {% if trend_summary.delta_total_findings > 0 %}+{% endif %}{{ trend_summary.delta_total_findings }}
+              </p>
+            </div>
+            <div class="rounded-lg border border-slate-800 bg-slate-950/60 p-3">
+              <p class="text-xs uppercase tracking-wide text-slate-500">Delta critici/alti</p>
+              <p class="mt-1 text-2xl font-semibold {% if trend_summary.delta_high_risk_findings > 0 %}text-rose-300{% elif trend_summary.delta_high_risk_findings < 0 %}text-emerald-300{% else %}text-slate-300{% endif %}">
+                {% if trend_summary.delta_high_risk_findings > 0 %}+{% endif %}{{ trend_summary.delta_high_risk_findings }}
+              </p>
+            </div>
+          </div>
+
+          {% if trend_summary.timeline %}
+          <div class="mt-5 overflow-x-auto">
+            <table class="min-w-full text-sm">
+              <thead>
+                <tr class="text-left text-slate-400 border-b border-slate-800">
+                  <th class="py-2 pr-4">Data</th>
+                  <th class="py-2 pr-4">Scan</th>
+                  <th class="py-2 pr-4">Stato</th>
+                  <th class="py-2 pr-4">Findings</th>
+                  <th class="py-2 pr-0">Critici/Alti</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for entry in trend_summary.timeline %}
+                <tr class="border-b border-slate-900/80 text-slate-300">
+                  <td class="py-2 pr-4">{{ entry.created_at }}</td>
+                  <td class="py-2 pr-4">
+                    #{{ entry.scan_id }}
+                    {% if entry.is_current %}<span class="ml-2 rounded bg-cyan-500/15 px-2 py-0.5 text-xs text-cyan-200">corrente</span>{% endif %}
+                  </td>
+                  <td class="py-2 pr-4">{{ entry.status }}</td>
+                  <td class="py-2 pr-4 tabular-nums">{{ entry.total_findings }}</td>
+                  <td class="py-2 pr-0 tabular-nums">{{ entry.critical_high_findings }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% endif %}
+        </div>
+      </section>
+      {% endif %}
+
       <!-- Remediation Roadmap -->
       {% if remediation_roadmap %}
       <section aria-labelledby="roadmap-heading">
