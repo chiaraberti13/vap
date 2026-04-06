@@ -138,6 +138,11 @@
           {% if scan_explorer_enabled %}
           <form class="mt-6 grid gap-5" method="post" action="/scans" id="guided-scan-form" novalidate>
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+            <noscript>
+              <div class="rounded-lg border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-100" role="status">
+                JavaScript disabilitato: il wizard guidato viene mostrato in modalità lineare. Compila i campi dall'alto verso il basso e invia il form dal bottone finale.
+              </div>
+            </noscript>
             <div
               id="guided-form-error-summary"
               class="hidden rounded-lg border border-red-400/40 bg-red-500/10 px-4 py-3 text-sm text-red-100"
@@ -194,7 +199,7 @@
               </fieldset>
             </section>
 
-            <section class="grid gap-3 hidden" data-step-panel="2" aria-labelledby="scan-explorer-title">
+            <section class="grid gap-3" data-step-panel="2" aria-labelledby="scan-explorer-title">
               <div class="flex items-center justify-between gap-3 flex-wrap">
                 <h3 id="scan-explorer-title" class="text-sm text-slate-200 font-semibold tracking-wide">Scan Type Explorer</h3>
                 <p class="text-xs text-slate-400">Seleziona fino a 3 card per confronto rapido.</p>
@@ -218,7 +223,19 @@
                   <p id="glossary-tooltip-content"></p>
                 </div>
               </div>
-              <input id="scan-type-selected" type="hidden" name="scan_type" value="{{ scan_types[0] }}" />
+              <div id="scan-type-fallback-wrapper" class="rounded-lg border border-slate-700/70 bg-slate-950/40 p-3">
+                <label for="scan-type-field" class="text-xs font-semibold uppercase tracking-wide text-slate-300">Fallback senza JavaScript</label>
+                <p class="home-microcopy mt-1 text-slate-400">Se JavaScript non è disponibile puoi comunque scegliere il tipo scansione da questo menu.</p>
+                <select
+                  id="scan-type-field"
+                  name="scan_type"
+                  class="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-slate-100 focus:border-cyan-400 focus:outline-none"
+                >
+                  {% for scan_type in scan_types %}
+                  <option value="{{ scan_type }}" {% if loop.first %}selected{% endif %}>{{ scan_type | upper }}</option>
+                  {% endfor %}
+                </select>
+              </div>
               <div id="scan-category-filters" class="flex flex-wrap gap-2" aria-label="Filtri categorie scansione"></div>
               <div id="scan-cards-grid" class="grid gap-3 sm:grid-cols-2"></div>
               <article id="scan-why-panel" class="rounded-lg border border-cyan-500/40 bg-cyan-500/5 p-4 text-sm text-slate-100" aria-live="polite">
@@ -260,7 +277,7 @@
                 </div>
               </div>
             </section>
-            <section class="grid gap-4 hidden" data-step-panel="3">
+            <section class="grid gap-4" data-step-panel="3">
               <h3 class="text-sm text-slate-200 font-semibold tracking-wide">Step 3 · Conferma legale e consenso</h3>
               <div class="rounded-lg border border-slate-800 bg-slate-950/50 p-4 text-sm text-slate-300">
                 <p class="font-semibold text-slate-200">Consenso e compliance GDPR</p>
@@ -285,7 +302,7 @@
                 <p id="consent-error" class="home-microcopy hidden text-red-200 mt-3">Per motivi legali devi confermare entrambi i consensi prima del run. Se invii comunque, il server bloccherà la richiesta (HTTP 403).</p>
               </div>
             </section>
-            <section class="grid gap-4 hidden" data-step-panel="4">
+            <section class="grid gap-4" data-step-panel="4">
               <h3 class="text-sm text-slate-200 font-semibold tracking-wide">Step 4 · Run scansione</h3>
               <p class="text-sm text-slate-400">Ricontrolla la priorità e la classificazione dati prima dell'esecuzione.</p>
               <article id="scan-risk-panel" class="rounded-lg border border-amber-400/40 bg-amber-500/10 p-4" aria-live="polite">
@@ -336,8 +353,8 @@
               </button>
             </section>
             <div class="flex items-center justify-between gap-3 border-t border-slate-800/60 pt-4">
-              <button type="button" id="scan-step-prev" data-action-priority="secondary" class="rounded-lg px-3 py-2 text-sm font-medium text-slate-400 underline decoration-slate-600 decoration-1 underline-offset-4 transition hover:text-slate-200 hover:decoration-cyan-300 disabled:opacity-40 disabled:cursor-not-allowed">Indietro</button>
-              <button type="button" id="scan-step-next" data-action-priority="primary" class="rounded-lg bg-cyan-500 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-300">Continua</button>
+              <button type="button" id="scan-step-prev" data-action-priority="secondary" class="hidden rounded-lg px-3 py-2 text-sm font-medium text-slate-400 underline decoration-slate-600 decoration-1 underline-offset-4 transition hover:text-slate-200 hover:decoration-cyan-300 disabled:opacity-40 disabled:cursor-not-allowed">Indietro</button>
+              <button type="button" id="scan-step-next" data-action-priority="primary" class="hidden rounded-lg bg-cyan-500 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-300">Continua</button>
             </div>
           </form>
           {% else %}

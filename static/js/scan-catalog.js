@@ -2,7 +2,8 @@
   const payloadNode = document.getElementById("scan-catalog-json");
   const filtersNode = document.getElementById("scan-category-filters");
   const cardsNode = document.getElementById("scan-cards-grid");
-  const hiddenScanType = document.getElementById("scan-type-selected");
+  const scanTypeField = document.getElementById("scan-type-field");
+  const scanTypeFallbackWrapper = document.getElementById("scan-type-fallback-wrapper");
   const compareGrid = document.getElementById("scan-compare-grid");
   const compareEmpty = document.getElementById("scan-compare-empty");
   const compareToggle = document.getElementById("scan-compare-toggle");
@@ -37,7 +38,7 @@
     !payloadNode ||
     !filtersNode ||
     !cardsNode ||
-    !hiddenScanType ||
+    !scanTypeField ||
     !compareGrid ||
     !compareEmpty ||
     !compareToggle ||
@@ -82,6 +83,9 @@
   }
 
   const categories = ["Tutte", ...new Set(catalog.map((entry) => entry.category))];
+  if (!scanTypeField.value && catalog[0]?.id) {
+    scanTypeField.value = catalog[0].id;
+  }
   const selectedForCompare = new Set();
   let activeCategory = "Tutte";
   let currentStep = 1;
@@ -260,7 +264,7 @@
   }
 
   function updateSelectedScan(scanType) {
-    hiddenScanType.value = scanType;
+    scanTypeField.value = scanType;
     const selectedEntry = catalog.find((entry) => entry.id === scanType);
     if (!selectedEntry) {
       return;
@@ -286,7 +290,7 @@
     cardsNode.innerHTML = "";
 
     entries.forEach((entry, index) => {
-      const isSelected = hiddenScanType.value === entry.id || (!hiddenScanType.value && index === 0);
+      const isSelected = scanTypeField.value === entry.id || (!scanTypeField.value && index === 0);
       if (isSelected) {
         updateSelectedScan(entry.id);
       }
@@ -510,6 +514,12 @@
   });
 
   window.addEventListener("resize", updateCompareToggleUi);
+
+  stepNext.classList.remove("hidden");
+  stepPrev.classList.remove("hidden");
+  if (scanTypeFallbackWrapper) {
+    scanTypeFallbackWrapper.classList.add("hidden");
+  }
 
   renderFilters();
   renderCards();
