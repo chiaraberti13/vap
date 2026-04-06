@@ -151,6 +151,21 @@ def test_homepage_shows_scan_risk_badges_before_submit():
     assert "Rumore: medio" in html
 
 
+def test_homepage_uses_single_primary_action_in_hero_and_stepper_navigation():
+    with TestClient(app.app) as client:
+        response = client.get("/")
+
+    assert response.status_code == 200
+    html = response.text
+
+    assert 'href="#new-scan-title"' in html
+    assert 'href="/scans"' in html
+    assert 'href="#new-scan-title"\n              data-action-priority="primary"' in html
+    assert 'href="/scans"\n              data-action-priority="secondary"' in html
+    assert 'id="scan-step-next" data-action-priority="primary"' in html
+    assert 'id="scan-step-prev" data-action-priority="secondary"' in html
+
+
 def test_scan_detail_has_live_regions_and_single_main_landmark():
     _clear_scans()
     with SessionLocal() as session:
