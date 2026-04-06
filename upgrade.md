@@ -149,6 +149,22 @@ Deliverable:
 Criterio di successo:
 - L’utente capisce prima del run: obiettivo, rischio, output e limiti della scansione scelta.
 
+### Backlog urgente UX — Home (`/`) da sistemare subito
+
+Problema segnalato (2026-04-06): la pagina `http://localhost:8000/` risulta priva di layout coerente, poco leggibile e non intuitiva.
+
+Interventi immediati (priorità massima):
+1. [ ] Ripristinare gerarchia visiva della hero e del form principale (titolo, sottotitolo, CTA primaria) con spaziatura consistente e contrasto WCAG AA.
+2. [ ] Definire una griglia responsive stabile per la home (mobile-first) evitando blocchi “full width” disallineati e sezioni senza contenitore.
+3. [ ] Introdurre navigation pattern chiaro “Step 1→4” above-the-fold con stato corrente sempre visibile.
+4. [ ] Uniformare tipografia e scale token (font-size/line-height/spacing) per eliminare effetto “pagina rotta”.
+5. [ ] Aggiungere microcopy guidata vicino ai campi critici (`target`, `scan_type`) con esempi validi e hint sugli errori più frequenti.
+6. [ ] Rendere evidente il livello di rischio/invasività della scansione prima del submit con badge colore + testo esplicativo.
+7. [ ] Eliminare frizioni nel primo flusso utente: massimo 1 azione primaria per sezione, pulsanti secondari de-enfatizzati.
+8. [ ] Hardening UX+Security del form: validazione client-side non bloccante + validazione server-side già esistente, error summary accessibile e messaggi non ambigui.
+9. [ ] Verificare fallback senza JS: la home deve restare utilizzabile e comprensibile anche con script disabilitati.
+10. [ ] Aggiungere regression test UI per la home (layout smoke + a11y keyboard flow) per prevenire nuovi regressi visivi/funzionali.
+
 ---
 
 ## Fase 3 — Esperienza didattica durante e dopo la scansione
