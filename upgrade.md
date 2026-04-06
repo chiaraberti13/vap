@@ -121,7 +121,7 @@ Done quando: Setup documentato e verificabile.
 Descrizione: Esecuzione test suite + quality checks ad ogni push/PR.  
 Done quando: Workflow `.github/workflows/ci-quality-gates.yml` operativo.
 
-[ ] Integrare security scanner CI aggiuntivi (Bandit/Pip-audit)  
+[x] Integrare security scanner CI aggiuntivi (Bandit/Pip-audit)  
 Descrizione: Automatizzare controllo vulnerabilità dipendenze/codice Python.  
 Done quando: Pipeline fallisce su finding critici.
 
@@ -303,4 +303,3 @@ Descrizione: Chiudere gap residui su plugin contract, CSS self-hosted, security 
 2. **Plugin contract scanner + allineamento scan-type runtime** (impatto: stabilità architetturale).
 3. **Security CI avanzata (Bandit + Pip-audit + DAST staging)** (impatto: hardening continuo).
 4. **Osservabilità centralizzata e alerting** (impatto: affidabilità operativa in produzione).
-
