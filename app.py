@@ -44,6 +44,7 @@ from database import AuditEvent, ConsentRecord, LearningFeedback, LearningPathPr
 from scan_catalog import get_scan_catalog
 from scanner_engine import (
     ScanValidationError,
+    get_scan_type_choices,
     validate_nmap_target,
     validate_target,
 )
@@ -129,25 +130,7 @@ if settings.cors_allowed_origins:
 
 templates = Jinja2Templates(directory="templates")
 
-SCAN_TYPES = [
-    "full",
-    "light",
-    "wordpress",
-    "nuclei",
-    "nmap",
-    "whatweb",
-    "subfinder",
-    "nikto",
-    "dirsearch",
-    "sqlmap",
-    "xsstrike",
-    "zap",
-    "burp",
-    "wapiti",
-    "commix",
-    "acunetix",
-    "nessus",
-]
+SCAN_TYPES = get_scan_type_choices()
 
 
 def _init_api_cache() -> Optional[Redis]:

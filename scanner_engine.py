@@ -139,7 +139,19 @@ SCAN_TYPE_PROFILES = {
     "light": ["whatweb", "nikto_headers", "nmap_top_ports", "httpx"],
     "wordpress": ["wpscan", "whatweb", "nikto", "nuclei_wordpress", "nmap", "wafw00f"],
 }
-SCAN_TYPE_CHOICES = ["full", "light", "wordpress", *SCANNERS_MAP.keys()]
+
+
+def get_scan_type_choices() -> List[str]:
+    """Restituisce i tipi di scansione validi allineati a mappe scanner/profili."""
+    ordered_choices = ["full", *SCAN_TYPE_PROFILES.keys(), *SCANNERS_MAP.keys()]
+    deduped_choices: List[str] = []
+    for scan_type in ordered_choices:
+        if scan_type not in deduped_choices:
+            deduped_choices.append(scan_type)
+    return deduped_choices
+
+
+SCAN_TYPE_CHOICES = get_scan_type_choices()
 
 @dataclass
 class ScanResult:
@@ -681,7 +693,7 @@ def _build_cli_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--scan-type",
         default="full",
-        choices=SCAN_TYPE_CHOICES,
+        choices=get_scan_type_choices(),
         help="Tipo di scansione da eseguire.",
     )
     parser.add_argument(

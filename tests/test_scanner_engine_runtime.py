@@ -101,6 +101,14 @@ def test_run_scanner_error_mapping(monkeypatch, scanner_cls, error_type, expecte
     assert result["message"] == expected_message
 
 
+
+def test_get_scan_type_choices_stays_aligned_with_runtime_maps(monkeypatch):
+    monkeypatch.setattr(scanner_engine, "SCANNERS_MAP", {"dummy": DummyScanner, "nmap": DummyScanner})
+    monkeypatch.setattr(scanner_engine, "SCAN_TYPE_PROFILES", {"light": ["dummy"], "wordpress": ["dummy"]})
+
+    assert scanner_engine.get_scan_type_choices() == ["full", "light", "wordpress", "dummy", "nmap"]
+
+
 def test_get_scanner_classes_and_single_scanner(monkeypatch):
     monkeypatch.setattr(scanner_engine, "SCANNERS_MAP", {"dummy": DummyScanner})
     monkeypatch.setattr(

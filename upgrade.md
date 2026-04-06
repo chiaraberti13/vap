@@ -135,7 +135,7 @@ Done quando: Test engine e test scanner passano stabilmente.
 Descrizione: Prevenire input malformati/abuso su endpoint scan.  
 Done quando: Validazione coperta da test sicurezza.
 
-[ ] Ridurre rischio drift enum scan type  
+[x] Ridurre rischio drift enum scan type  
 Descrizione: Allineare dinamicamente choices e mappa scanner in modo robusto.  
 Done quando: Nessuna divergenza possibile tra runtime map e API/form choices.
 
