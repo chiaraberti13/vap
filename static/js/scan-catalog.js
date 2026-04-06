@@ -21,6 +21,7 @@
   const stepIndicators = document.querySelectorAll("[data-step-indicator]");
   const stepNext = document.getElementById("scan-step-next");
   const stepPrev = document.getElementById("scan-step-prev");
+  const currentStepLabel = document.getElementById("scan-current-step-label");
 
   if (
     !payloadNode ||
@@ -79,6 +80,12 @@
       "CVSS è il punteggio standard (0-10) che stima la gravità tecnica di una vulnerabilità.",
     false_positive:
       "Un false positive è un alert non confermato: richiede sempre validazione manuale prima della remediation.",
+  };
+  const stepLabels = {
+    1: "Obiettivo utente",
+    2: "Scansione consigliata",
+    3: "Consenso legale",
+    4: "Conferma ed esecuzione",
   };
 
   function escapeHtml(value) {
@@ -292,7 +299,9 @@
     stepIndicators.forEach((indicator) => {
       const indicatorStep = Number(indicator.dataset.stepIndicator);
       const isActive = indicatorStep === currentStep;
-      indicator.className = `rounded-lg border p-3 text-xs ${
+      const variant = indicator.dataset.stepVariant === "compact" ? "compact" : "default";
+      const spacingClasses = variant === "compact" ? "px-3 py-2 text-[11px]" : "p-3 text-xs";
+      indicator.className = `rounded-lg border ${spacingClasses} ${
         isActive
           ? "border-cyan-400 bg-cyan-500/10"
           : "border-slate-700 bg-slate-950/50"
@@ -306,6 +315,9 @@
 
     stepPrev.disabled = currentStep === 1;
     stepNext.classList.toggle("hidden", currentStep === totalSteps);
+    if (currentStepLabel) {
+      currentStepLabel.textContent = `Step corrente: ${currentStep}/${totalSteps} · ${stepLabels[currentStep] || "Flusso guidato"}`;
+    }
   }
 
   function validateCurrentStep() {

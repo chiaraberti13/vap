@@ -48,6 +48,23 @@
         </div>
       </div>
     </header>
+    {% if scan_explorer_enabled %}
+    <section class="sticky top-0 z-40 border-b border-slate-800/80 bg-slate-950/95 px-4 py-3 backdrop-blur sm:px-6" aria-label="Navigazione step guidati">
+      <div class="home-container">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <ol id="scan-journey-nav" class="grid flex-1 gap-2 sm:grid-cols-4" aria-label="Stato corrente flusso step 1-4">
+            <li class="rounded-lg border border-cyan-400 bg-cyan-500/10 px-3 py-2 text-[11px]" data-step-indicator="1" data-step-variant="compact" aria-current="step"><span class="font-semibold">Step 1</span><p class="mt-0.5 text-slate-300">Obiettivo</p></li>
+            <li class="rounded-lg border border-slate-700 bg-slate-950/50 px-3 py-2 text-[11px]" data-step-indicator="2" data-step-variant="compact"><span class="font-semibold">Step 2</span><p class="mt-0.5 text-slate-300">Scansione</p></li>
+            <li class="rounded-lg border border-slate-700 bg-slate-950/50 px-3 py-2 text-[11px]" data-step-indicator="3" data-step-variant="compact"><span class="font-semibold">Step 3</span><p class="mt-0.5 text-slate-300">Consenso</p></li>
+            <li class="rounded-lg border border-slate-700 bg-slate-950/50 px-3 py-2 text-[11px]" data-step-indicator="4" data-step-variant="compact"><span class="font-semibold">Step 4</span><p class="mt-0.5 text-slate-300">Run</p></li>
+          </ol>
+          <p id="scan-current-step-label" class="text-xs font-medium text-cyan-200" aria-live="polite">
+            Step corrente: 1/4 · Obiettivo utente
+          </p>
+        </div>
+      </div>
+    </section>
+    {% endif %}
 
     <section class="border-b border-slate-800/60 px-4 py-8 sm:px-6" aria-labelledby="dashboard-kpi-title">
       <div class="home-container">
