@@ -337,6 +337,7 @@ async def add_security_headers(request: Request, call_next):
         response.headers["Content-Security-Policy"] = settings.csp_policy
         response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
         response.headers["Cross-Origin-Resource-Policy"] = "same-origin"
+        response.headers["Origin-Agent-Cluster"] = "?1"
         if settings.require_https:
             response.headers["Strict-Transport-Security"] = f"max-age={settings.hsts_max_age}"
     return response

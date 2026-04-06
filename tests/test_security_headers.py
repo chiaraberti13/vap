@@ -38,3 +38,13 @@ def test_csp_disallows_inline_scripts_by_default():
     assert manifest_src == "'self'"
     assert block_all_mixed_content is True
     assert upgrade_insecure_requests is True
+
+
+def test_security_headers_include_origin_isolation_baseline():
+    with TestClient(app.app) as client:
+        response = client.get("/")
+
+    assert response.status_code == 200
+    assert response.headers.get("Cross-Origin-Opener-Policy") == "same-origin"
+    assert response.headers.get("Cross-Origin-Resource-Policy") == "same-origin"
+    assert response.headers.get("Origin-Agent-Cluster") == "?1"
