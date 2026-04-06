@@ -182,6 +182,23 @@ def test_homepage_uses_single_primary_action_in_hero_and_stepper_navigation():
     assert 'id="scan-step-prev" data-action-priority="secondary"' in html
 
 
+
+def test_homepage_remains_usable_without_javascript_fallback_controls():
+    with TestClient(app.app) as client:
+        response = client.get("/")
+
+    assert response.status_code == 200
+    html = response.text
+
+    assert 'id="scan-type-fallback-wrapper"' in html
+    assert 'id="scan-type-field"' in html
+    assert 'name="scan_type"' in html
+    assert "JavaScript disabilitato" in html
+    assert 'data-step-panel="2"' in html and 'data-step-panel="2"' in html
+    assert 'data-step-panel="3"' in html and 'data-step-panel="4"' in html
+    assert 'id="scan-step-next" data-action-priority="primary" class="hidden' in html
+    assert 'id="scan-step-prev" data-action-priority="secondary" class="hidden' in html
+
 def test_scan_detail_has_live_regions_and_single_main_landmark():
     _clear_scans()
     with SessionLocal() as session:
