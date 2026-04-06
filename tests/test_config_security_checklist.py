@@ -20,18 +20,22 @@ def test_build_startup_security_checklist_returns_expected_findings(monkeypatch)
             api_key_hash="",
             require_https=False,
             host="0.0.0.0",
+            rbac_enabled=False,
+            target_allowlist=[],
         ),
     )
 
     checks = config.build_startup_security_checklist()
     codes = {check["code"] for check in checks}
 
-    assert len(checks) == 5
+    assert len(checks) == 7
     assert "jwt_secret_missing" in codes
     assert "csrf_secret_missing" in codes
     assert "api_key_missing" in codes
     assert "https_not_enforced" in codes
     assert "host_exposed" in codes
+    assert "rbac_disabled" in codes
+    assert "target_allowlist_missing" in codes
 
 
 def test_build_startup_security_checklist_skips_passing_controls(monkeypatch):
@@ -46,6 +50,8 @@ def test_build_startup_security_checklist_skips_passing_controls(monkeypatch):
             api_key="",
             require_https=True,
             host="127.0.0.1",
+            rbac_enabled=True,
+            target_allowlist=["example.com"],
         ),
     )
 

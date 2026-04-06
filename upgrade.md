@@ -210,6 +210,7 @@ Interventi prioritari:
 5. [x] Hardening input didattici API (2026-04-04): endpoint `POST /api/v1/learning-feedback` ora normalizza `notes` e rifiuta tag HTML/caratteri di controllo per ridurre rischio XSS/log injection.
 6. [x] Secrets governance:
    - checklist automatica startup con severity.
+   - [x] Estensione controlli startup production (2026-04-06): aggiunti warning bloccanti su `VAP_RBAC_ENABLED=false` e su `VAP_TARGET_ALLOWLIST` vuota per ridurre rischio abuso/IDOR operativo in ambienti reali.
 
 Deliverable:
 - [x] `docs/security-hardening-roadmap.md`
