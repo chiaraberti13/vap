@@ -291,7 +291,16 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 Minimum is macOS 11 (Big Sur). Upgrade macOS or use Docker: `docker-compose up`
 
 **WhatWeb installation fails (psych gem build error)**
-Known issue with Ruby's psych gem on some macOS versions. The installer automatically falls back to a local WhatWeb wrapper — functionality is not affected.
+Known issue with Ruby's psych gem on some macOS versions.
+Try this before re-running the installer:
+```bash
+brew install libyaml
+export CPPFLAGS="-I$(brew --prefix libyaml)/include"
+export LDFLAGS="-L$(brew --prefix libyaml)/lib"
+export PKG_CONFIG_PATH="$(brew --prefix libyaml)/lib/pkgconfig"
+gem install psych -v '5.3.1' --source 'https://rubygems.org/'
+```
+The installer now attempts this psych preflight automatically on macOS; if it still fails, it falls back to a local WhatWeb wrapper.
 
 ---
 
@@ -632,7 +641,16 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 Il minimo supportato e macOS 11 (Big Sur). Aggiorna macOS oppure usa Docker: `docker-compose up`
 
 **L'installazione di WhatWeb fallisce (errore di build gem psych)**
-Problema noto con il gem Ruby psych su alcune versioni di macOS. L'installer passa automaticamente a un wrapper locale — la funzionalita non e compromessa.
+Problema noto con il gem Ruby psych su alcune versioni di macOS.
+Prima di rilanciare l'installer, prova:
+```bash
+brew install libyaml
+export CPPFLAGS="-I$(brew --prefix libyaml)/include"
+export LDFLAGS="-L$(brew --prefix libyaml)/lib"
+export PKG_CONFIG_PATH="$(brew --prefix libyaml)/lib/pkgconfig"
+gem install psych -v '5.3.1' --source 'https://rubygems.org/'
+```
+L'installer ora prova automaticamente questo preflight su macOS; se fallisce ancora, passa al wrapper locale di WhatWeb.
 
 ---
 
