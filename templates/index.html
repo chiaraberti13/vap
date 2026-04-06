@@ -264,6 +264,22 @@
             <section class="grid gap-4 hidden" data-step-panel="4">
               <h3 class="text-sm text-slate-200 font-semibold tracking-wide">Step 4 · Run scansione</h3>
               <p class="text-sm text-slate-400">Ricontrolla la priorità e la classificazione dati prima dell'esecuzione.</p>
+              <article id="scan-risk-panel" class="rounded-lg border border-amber-400/40 bg-amber-500/10 p-4" aria-live="polite">
+                <div class="flex flex-wrap items-center gap-2">
+                  <span id="scan-risk-badge" class="inline-flex items-center rounded-full border border-amber-300/60 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-amber-100">
+                    Rischio medio
+                  </span>
+                  <span id="scan-invasiveness-badge" class="inline-flex items-center rounded-full border border-slate-600 px-2.5 py-1 text-xs text-slate-200">
+                    Invasività: media
+                  </span>
+                  <span id="scan-noise-badge" class="inline-flex items-center rounded-full border border-slate-600 px-2.5 py-1 text-xs text-slate-200">
+                    Rumore: medio
+                  </span>
+                </div>
+                <p id="scan-risk-summary" class="home-microcopy mt-2 text-amber-50">
+                  Verifica che il target sia autorizzato: questa scansione può generare traffico operativo visibile.
+                </p>
+              </article>
               <label class="grid gap-2">
               <span class="text-sm text-slate-300">Priorità scansione</span>
               <select
