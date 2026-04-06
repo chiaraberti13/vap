@@ -25,6 +25,8 @@ def test_csp_disallows_inline_scripts_by_default():
     base_uri = directives.get("base-uri", "")
     form_action = directives.get("form-action", "")
     manifest_src = directives.get("manifest-src", "")
+    block_all_mixed_content = "block-all-mixed-content" in directives
+    upgrade_insecure_requests = "upgrade-insecure-requests" in directives
     assert "'unsafe-inline'" not in script_src
     assert "'unsafe-inline'" not in style_src
     assert script_src == "'self' https://cdn.tailwindcss.com"
@@ -34,3 +36,5 @@ def test_csp_disallows_inline_scripts_by_default():
     assert base_uri == "'self'"
     assert form_action == "'self'"
     assert manifest_src == "'self'"
+    assert block_all_mixed_content is True
+    assert upgrade_insecure_requests is True
