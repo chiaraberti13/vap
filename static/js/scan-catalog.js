@@ -26,6 +26,12 @@
   const invasivenessBadge = document.getElementById("scan-invasiveness-badge");
   const noiseBadge = document.getElementById("scan-noise-badge");
   const riskSummary = document.getElementById("scan-risk-summary");
+  const errorSummary = document.getElementById("guided-form-error-summary");
+  const errorSummaryList = document.getElementById("guided-form-error-list");
+  const targetInput = guidedForm?.querySelector("input[name='target']");
+  const targetError = document.getElementById("target-error");
+  const learningGoalError = document.getElementById("learning-goal-error");
+  const consentError = document.getElementById("consent-error");
 
   if (
     !payloadNode ||
@@ -53,6 +59,12 @@
     !invasivenessBadge ||
     !noiseBadge ||
     !riskSummary ||
+    !errorSummary ||
+    !errorSummaryList ||
+    !targetInput ||
+    !targetError ||
+    !learningGoalError ||
+    !consentError ||
     glossaryButtons.length === 0
   ) {
     return;
@@ -401,38 +413,70 @@
   }
 
   function validateCurrentStep() {
-    if (currentStep === 1) {
-      const targetInput = guidedForm.querySelector("input[name='target']");
+    return validateSteps([currentStep]);
+  }
+
+  function validateSteps(stepsToValidate) {
+    const shouldValidate = (stepNumber) => stepsToValidate.includes(stepNumber);
+    const messages = [];
+
+    if (shouldValidate(1)) {
       const goalInput = guidedForm.querySelector("input[name='learning_goal']:checked");
-      if (!targetInput || !targetInput.value.trim()) {
-        targetInput?.reportValidity();
-        return false;
+      if (!targetInput.value.trim()) {
+        messages.push("Inserisci un target valido (dominio, URL base o IP autorizzato).");
+        targetInput.setAttribute("aria-invalid", "true");
+        targetError.classList.remove("hidden");
+        targetError.textContent =
+          "Target mancante: inserisci dominio/IP senza path o query (esempio: https://example.com).";
+      } else {
+        targetInput.setAttribute("aria-invalid", "false");
+        targetError.classList.add("hidden");
+        targetError.textContent = "";
       }
       if (!goalInput) {
-        const firstGoal = guidedForm.querySelector("input[name='learning_goal']");
-        firstGoal?.reportValidity();
-        return false;
+        messages.push("Seleziona un obiettivo utente per rendere la raccomandazione di scan_type più chiara.");
+        learningGoalError.classList.remove("hidden");
+      } else {
+        learningGoalError.classList.add("hidden");
       }
     }
 
-    if (currentStep === 3) {
+    if (shouldValidate(3)) {
       const requiredChecks = guidedForm.querySelectorAll(
         "input[name='accept_privacy'], input[name='accept_terms']"
       );
-      for (const check of requiredChecks) {
-        if (!check.checked) {
-          check.reportValidity();
-          return false;
-        }
+      const hasMissingConsent = Array.from(requiredChecks).some((check) => !check.checked);
+      requiredChecks.forEach((check) => {
+        check.setAttribute("aria-invalid", hasMissingConsent && !check.checked ? "true" : "false");
+      });
+
+      if (hasMissingConsent) {
+        messages.push("Conferma entrambi i consensi legali: Privacy Policy e Termini di Servizio.");
+        consentError.classList.remove("hidden");
+      } else {
+        consentError.classList.add("hidden");
       }
     }
-    return true;
+
+    if (messages.length === 0) {
+      errorSummary.classList.add("hidden");
+      errorSummaryList.innerHTML = "";
+      return true;
+    }
+
+    errorSummaryList.innerHTML = "";
+    messages.forEach((message) => {
+      const listItem = document.createElement("li");
+      listItem.textContent = message;
+      errorSummaryList.appendChild(listItem);
+    });
+    errorSummary.classList.remove("hidden");
+    errorSummary.focus();
+    return false;
   }
 
   stepNext.addEventListener("click", () => {
-    if (!validateCurrentStep()) {
-      return;
-    }
+    validateCurrentStep();
     currentStep = Math.min(totalSteps, currentStep + 1);
     updateStepperUi();
   });
@@ -440,6 +484,21 @@
   stepPrev.addEventListener("click", () => {
     currentStep = Math.max(1, currentStep - 1);
     updateStepperUi();
+  });
+
+  guidedForm.addEventListener("submit", () => {
+    validateSteps([1, 3]);
+    currentStep = 4;
+    updateStepperUi();
+  });
+
+  targetInput.addEventListener("input", () => {
+    if (!targetInput.value.trim()) {
+      return;
+    }
+    targetInput.setAttribute("aria-invalid", "false");
+    targetError.classList.add("hidden");
+    targetError.textContent = "";
   });
 
   compareToggle.addEventListener("click", () => {

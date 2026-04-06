@@ -121,14 +121,33 @@
           <p class="home-body-text text-slate-400 mt-2">Inserisci un URL o un IP autorizzato. Le scansioni live sono disabilitate di default per sicurezza.</p>
 
           {% if error %}
-          <div class="mt-4 p-3 bg-red-500/20 border border-red-400/40 rounded-lg text-red-100" role="alert" aria-live="assertive">
-            {{ error }}
+          <div
+            id="server-error-summary"
+            class="mt-4 p-3 bg-red-500/20 border border-red-400/40 rounded-lg text-red-100"
+            role="alert"
+            aria-live="assertive"
+            tabindex="-1"
+          >
+            <p class="font-semibold">Correggi i seguenti errori prima di riprovare:</p>
+            <ul class="mt-2 list-disc pl-5">
+              <li>{{ error }}</li>
+            </ul>
           </div>
           {% endif %}
 
           {% if scan_explorer_enabled %}
-          <form class="mt-6 grid gap-5" method="post" action="/scans" id="guided-scan-form">
+          <form class="mt-6 grid gap-5" method="post" action="/scans" id="guided-scan-form" novalidate>
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+            <div
+              id="guided-form-error-summary"
+              class="hidden rounded-lg border border-red-400/40 bg-red-500/10 px-4 py-3 text-sm text-red-100"
+              role="alert"
+              aria-live="assertive"
+              tabindex="-1"
+            >
+              <p class="font-semibold">Controlla i campi evidenziati:</p>
+              <ul id="guided-form-error-list" class="mt-2 list-disc pl-5"></ul>
+            </div>
             <ol id="scan-stepper-nav" class="grid gap-2 sm:grid-cols-4" aria-label="Stepper pre-esecuzione scansione">
               <li class="rounded-lg border border-cyan-400 bg-cyan-500/10 p-3 text-xs" data-step-indicator="1" aria-current="step"><span class="font-semibold">Step 1</span><p class="mt-1 text-slate-300">Obiettivo utente</p></li>
               <li class="rounded-lg border border-slate-700 bg-slate-950/50 p-3 text-xs" data-step-indicator="2"><span class="font-semibold">Step 2</span><p class="mt-1 text-slate-300">Scansione consigliata</p></li>
@@ -147,11 +166,12 @@
                   placeholder="https://example.com"
                   aria-describedby="target-guidance"
                   class="w-full rounded-lg border border-slate-700 bg-slate-950/70 px-4 py-3 text-slate-100 focus:border-cyan-400 focus:outline-none"
-                  required
+                  aria-invalid="false"
                 />
                 <span id="target-guidance" class="home-microcopy text-slate-400">
                   Esempi validi: <code class="font-mono text-slate-200">https://example.com</code>, <code class="font-mono text-slate-200">https://staging.example.com</code>, <code class="font-mono text-slate-200">10.10.10.20</code>. Evita URL con path/query (errore frequente: target troppo specifico come <code class="font-mono text-slate-200">/login?next=</code>).
                 </span>
+                <span id="target-error" class="home-microcopy hidden text-red-200"></span>
               </label>
               {% if api_key_required %}
               <label class="grid gap-2">
@@ -167,9 +187,10 @@
               {% endif %}
               <fieldset class="grid gap-2">
                 <legend class="text-sm text-slate-300">Obiettivo principale</legend>
-                <label class="flex items-start gap-2 text-sm text-slate-300"><input type="radio" name="learning_goal" value="baseline" class="mt-1 accent-cyan-400" required />Mappare esposizione iniziale (baseline).</label>
+                <label class="flex items-start gap-2 text-sm text-slate-300"><input type="radio" name="learning_goal" value="baseline" class="mt-1 accent-cyan-400" />Mappare esposizione iniziale (baseline).</label>
                 <label class="flex items-start gap-2 text-sm text-slate-300"><input type="radio" name="learning_goal" value="verification" class="mt-1 accent-cyan-400" />Verificare fix o remediation già eseguite.</label>
                 <label class="flex items-start gap-2 text-sm text-slate-300"><input type="radio" name="learning_goal" value="deep_dive" class="mt-1 accent-cyan-400" />Approfondimento tecnico su stack specifico.</label>
+                <span id="learning-goal-error" class="home-microcopy hidden text-red-200">Seleziona un obiettivo per ricevere una scansione consigliata coerente.</span>
               </fieldset>
             </section>
 
@@ -245,7 +266,7 @@
                 <p class="font-semibold text-slate-200">Consenso e compliance GDPR</p>
                 <div class="mt-3 grid gap-2">
                   <label class="flex items-start gap-2">
-                    <input type="checkbox" name="accept_privacy" class="mt-1 accent-cyan-400" required />
+                    <input type="checkbox" name="accept_privacy" class="mt-1 accent-cyan-400" aria-invalid="false" />
                     <span>
                       Ho letto e accetto la
                       <a class="text-cyan-300 underline" href="/privacy-policy" target="_blank" rel="noopener">Privacy Policy</a>
@@ -253,7 +274,7 @@
                     </span>
                   </label>
                   <label class="flex items-start gap-2">
-                    <input type="checkbox" name="accept_terms" class="mt-1 accent-cyan-400" required />
+                    <input type="checkbox" name="accept_terms" class="mt-1 accent-cyan-400" aria-invalid="false" />
                     <span>
                       Accetto i
                       <a class="text-cyan-300 underline" href="/terms-of-service" target="_blank" rel="noopener">Termini di Servizio</a>
@@ -261,6 +282,7 @@
                     </span>
                   </label>
                 </div>
+                <p id="consent-error" class="home-microcopy hidden text-red-200 mt-3">Per motivi legali devi confermare entrambi i consensi prima del run. Se invii comunque, il server bloccherà la richiesta (HTTP 403).</p>
               </div>
             </section>
             <section class="grid gap-4 hidden" data-step-panel="4">
