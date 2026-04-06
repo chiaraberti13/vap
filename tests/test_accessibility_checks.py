@@ -1,9 +1,12 @@
 from html.parser import HTMLParser
+from pathlib import Path
 
 from fastapi.testclient import TestClient
 
 import app
 from database import AuditEvent, Scan, SessionLocal, init_db
+
+SCAN_CATALOG_JS = Path(__file__).resolve().parents[1] / "static/js/scan-catalog.js"
 
 
 class LandmarkParser(HTMLParser):
@@ -198,6 +201,35 @@ def test_homepage_remains_usable_without_javascript_fallback_controls():
     assert 'data-step-panel="3"' in html and 'data-step-panel="4"' in html
     assert 'id="scan-step-next" data-action-priority="primary" class="hidden' in html
     assert 'id="scan-step-prev" data-action-priority="secondary" class="hidden' in html
+
+
+def test_homepage_keyboard_flow_regression_contract():
+    with TestClient(app.app) as client:
+        response = client.get("/")
+
+    assert response.status_code == 200
+    html = response.text
+
+    assert "Salta al form di nuova scansione" in html
+    assert "focus:not-sr-only" in html
+    assert 'id="scan-step-next" data-action-priority="primary"' in html
+    assert 'id="scan-step-prev" data-action-priority="secondary"' in html
+    assert 'id="guided-form-error-summary"' in html
+    assert 'tabindex="-1"' in html
+    assert 'id="scan-compare-toggle"' in html
+    assert 'aria-controls="scan-compare-content"' in html
+
+
+def test_scan_catalog_js_supports_keyboard_navigation_and_focus_management():
+    content = SCAN_CATALOG_JS.read_text(encoding="utf-8")
+
+    assert 'card.setAttribute("tabindex", "0");' in content
+    assert 'card.addEventListener("keydown", (event) => {' in content
+    assert 'if (event.key === "Enter" || event.key === " ") {' in content
+    assert "event.preventDefault();" in content
+    assert "errorSummary.focus();" in content
+    assert 'button.addEventListener("focus", () => showGlossaryTerm(term));' in content
+
 
 def test_scan_detail_has_live_regions_and_single_main_landmark():
     _clear_scans()
