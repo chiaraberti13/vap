@@ -25,13 +25,15 @@
           <div class="flex flex-wrap items-center gap-3 pt-2">
             <a
               href="#new-scan-title"
+              data-action-priority="primary"
               class="inline-flex items-center justify-center rounded-lg bg-cyan-500 px-5 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-300"
             >
               Avvia nuova scansione
             </a>
             <a
               href="/scans"
-              class="inline-flex items-center justify-center rounded-lg border border-slate-600 px-5 py-2.5 text-sm font-medium text-slate-200 transition hover:border-slate-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-cyan-300"
+              data-action-priority="secondary"
+              class="inline-flex items-center justify-center rounded-lg px-2 py-2 text-sm font-medium text-slate-400 underline decoration-slate-600 decoration-1 underline-offset-4 transition hover:text-slate-200 hover:decoration-cyan-300 focus:outline-none focus:ring-2 focus:ring-cyan-300"
             >
               Apri storico scansioni
             </a>
@@ -312,8 +314,8 @@
               </button>
             </section>
             <div class="flex items-center justify-between gap-3 border-t border-slate-800/60 pt-4">
-              <button type="button" id="scan-step-prev" class="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:border-slate-500 disabled:opacity-40 disabled:cursor-not-allowed">Indietro</button>
-              <button type="button" id="scan-step-next" class="rounded-lg border border-cyan-500 px-4 py-2 text-sm text-cyan-200 hover:bg-cyan-500/10">Continua</button>
+              <button type="button" id="scan-step-prev" data-action-priority="secondary" class="rounded-lg px-3 py-2 text-sm font-medium text-slate-400 underline decoration-slate-600 decoration-1 underline-offset-4 transition hover:text-slate-200 hover:decoration-cyan-300 disabled:opacity-40 disabled:cursor-not-allowed">Indietro</button>
+              <button type="button" id="scan-step-next" data-action-priority="primary" class="rounded-lg bg-cyan-500 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-300">Continua</button>
             </div>
           </form>
           {% else %}
