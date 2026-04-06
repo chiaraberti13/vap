@@ -1,366 +1,306 @@
-# Piano di Upgrade Profondo — VAP come Tool Didattico + Professionale
+# Upgrade Plan — VAP (Vulnerability Assessment Platform)
 
-## 1) Executive Summary
+## 1) Panoramica progetto
 
-Obiettivo: evolvere VAP da piattaforma di scansione a **piattaforma di formazione operativa in cyber security** per utenti entry-level, mantenendo **intatte** le funzionalità attuali di scanning/reporting/API.
+Questa repository contiene una web app **FastAPI + Jinja + Tailwind CSS** per vulnerability assessment con orchestrazione multi-scanner, dashboard web, API REST, reporting PDF e componente didattica guidata nella scelta/interpretazione delle scansioni.
 
-Direzione strategica:
-- preservare pipeline esistente (scanner orchestration, enrichment, reporting);
-- introdurre un **Learning Layer** UI/API che spieghi *cosa* fa ogni analisi, *quando* usarla, *quali limiti* ha, *come leggere i risultati*;
-- rendere la selezione scansione in interfaccia browser molto più ricca e guidata;
-- aggiungere governance di sicurezza e qualità software (test, a11y, performance, secure coding) a livello enterprise.
+**Obiettivo finale prodotto**
 
----
+- Mantenere VAP come piattaforma professionale di scansione.
+- Rafforzare l’esperienza didattica “guided” senza degradare il core operativo.
+- Migliorare robustezza architetturale, UX (soprattutto homepage/form guided), sicurezza applicativa e governabilità CI/CD.
 
-## 2) Analisi architetturale attuale (as-is)
+**Stack tecnologico rilevato (attuale)**
 
-## 2.1 Stack e asset principali
-- Backend: FastAPI (`app.py`) con endpoint web + API, websocket progress, middleware sicurezza e rate limiting.
-- Engine: `scanner_engine.py` con validazione target, mappa scanner, profili (`light`, `wordpress`) e orchestrazione multi-tool.
-- Security: `security.py` + `config.py` con CSRF/JWT/API key, header policy e audit logging.
-- UI: template Jinja + Tailwind CDN (`templates/index.html`, `scan_detail.html`, `scans_list.html`) con dashboard e form scansione.
-- Persistence: SQLAlchemy + SQLite (`database.py`) per scansioni, findings, audit/consensi.
-- Async: Celery/Redis opzionale per coda scansioni.
-- Quality: suite test già presente in `tests/`.
+- Backend: `FastAPI`, `SQLAlchemy`, middleware sicurezza custom, rate limiting.
+- Engine dominio: orchestrazione scanner in `scanner_engine.py` + moduli scanner dedicati.
+- Frontend: `Jinja templates` + `Tailwind CDN` + JS vanilla (`static/js`).
+- Persistenza: SQLite (con supporto runtime asincrono via Celery/Redis opzionale).
+- Qualità: suite `pytest` con coverage gate, test sicurezza/accessibilità/layout e workflow CI.
 
-## 2.2 Punti di forza da non perdere (must-preserve)
-1. Copertura scanner ampia (nuclei, nmap, zap, sqlmap, ecc.).
-2. Distinzione profili scansione (`full`, `light`, `wordpress`, single tool).
-3. Guardrail sicurezza: validazione target, CSRF, API key/JWT, rate limiting.
-4. Reporting PDF e storico scansioni.
-5. KPI dashboard e progress realtime.
+**Ruolo del layout nel prodotto finale**
 
-## 2.3 Gap rispetto all’obiettivo “tool didattico”
-
-### UX/UI (gap critico)
-- Nel form scansione, `scan_type` è una select “piatta”: non comunica chiaramente differenze tra analisi, prerequisiti, tempo atteso, rischio/rumore.
-- Mancano “learning affordances”: glossario inline, scenari d’uso, explainability del perché scegliere un tipo di scan.
-- Mancano warning contestuali su aspetti legali/etici e su limiti della confidence.
-
-### Dominio formativo (gap critico)
-- Non esiste un modello dati didattico (obiettivi, livello, teoria minima, check di comprensione, next step).
-- Findings molto ricchi, ma manca un percorso “da junior a pro” guidato per priorità e remediation roadmap.
-
-### Engineering Quality
-- Mancano test E2E/UI espliciti per il percorso didattico (oggi focus più backend).
-- Nessun budget prestazionale definito per la UI (Lighthouse) e nessun gate CI formale su a11y/perf.
-- Tailwind via CDN: pratico ma non ideale per hardening/prod governance CSP nel lungo periodo.
+- La homepage (`templates/index.html`) è il principale punto di conversione e onboarding.
+- Il layout deve restare leggibile, guidato e mobile-first, preservando il flusso “obiettivo → scelta scan → consensi → esecuzione”.
 
 ---
 
-## 3) Target vision (to-be)
+## 2) Stato attuale (analisi reale repository)
 
-“**Guided Security Analysis Studio**”: ogni scansione viene scelta tramite una scheda esplicativa con:
-- obiettivo tecnico;
-- copertura OWASP/MITRE;
-- prerequisiti e limiti;
-- durata stimata;
-- impatto operativo (rumore, invasività, false positive);
-- output atteso e come interpretarlo;
-- modulo didattico suggerito prima/dopo scan.
+### ✅ Già implementato
 
-L’utente entry-level deve poter:
-1. capire quale analisi lanciare e perché;
-2. eseguire in sicurezza;
-3. interpretare il risultato;
-4. trasformare findings in piano remediation professionale.
+- Motore scansioni multi-tool con profili (`full`, `light`, `wordpress`) e mapping scanner esteso.
+- Catalogo didattico scansioni (`scan_catalog.py`) integrato in UI/API.
+- Guided Scan Type Explorer con stepper UX e microcopy contestuale.
+- Hardening sicurezza significativo (CSP, CSRF, JWT/API key, rate limit, audit trail, RBAC, allowlist opzionale target).
+- Sezione dettaglio scansione con learning blocks, confidence rubric e roadmap remediation.
+- Pipeline qualità con test automatici + coverage gate + Lighthouse CI.
+- Documentazione estesa (architettura, hardening, playbook, learning paths, go-live).
 
----
+### ⚠️ Parziale / da completare
 
-## 4) Programma dettagliato degli interventi (roadmap)
+- Tailwind in CDN ancora presente: hardening/controllo supply-chain migliorabile con build locale.
+- Plugin architecture per scanner dinamici non ancora formalizzata (rischio drift tra mappa scanner e scelte esposte).
+- Dependency hygiene da consolidare (warning/deprecazioni pacchetti transitive nel tempo).
+- Osservabilità runtime centralizzata (metriche/alerting esterno) non completamente product-grade.
 
-## Fase 0 — Baseline, osservabilità e freeze funzionale
+### ❌ Mancante (o non chiuso in modo definitivo)
 
-**Obiettivo:** fotografare comportamento attuale e prevenire regressioni.
+- Migrazione completa a design system frontend self-hosted (CSS pipeline locale e policy CSP ancora più stringente).
+- Piano strutturato di aggiornamento dipendenze sicurezza/compatibilità con test di regressione dedicati.
+- Gate CI security aggiuntivi (`pip-audit`, `bandit`) come blocco standard su PR.
+- Strategia formalizzata di estensione scanner via plugin con contratto versionato.
 
-Interventi:
-1. [x] Inventario feature correnti (UI/API/CLI/report) in una matrice “must keep”.
-2. [x] Golden dataset di scansioni simulate per regression test.
-3. [x] Snapshot UX baseline (flusso “nuova scansione” attuale).
-4. [x] Definizione KPI di upgrade:
-   - Task completion scan-type selection;
-   - riduzione errori selezione scan;
-   - tempo medio comprensione output;
-   - retention didattica (quiz/knowledge checks futuri).
+### 🐞 Debito tecnico pre-esistente monitorato
 
-Deliverable:
-- `docs/upgrade-baseline.md`
-- `tests/fixtures/golden_scans/*.json`
+- Potenziale incoerenza tra enumerazioni di `scan_type` e registrazione scanner in scenari evolutivi.
+- Warnings/deprecazioni da dipendenze terze parti da monitorare con policy di upgrade.
 
----
+### Focus UX layout home (stato reale)
 
-## Fase 1 — Modello didattico e metadati scansioni
+**Già buono e da preservare**
 
-**Obiettivo:** creare un layer semantico per spiegare le analisi senza toccare la logica core scanner.
+- Hero + CTA primaria chiara.
+- Stepper guided visibile e comprensibile.
+- Hint contestuali su campi critici e fallback no-JS.
 
-Interventi:
-1. [x] Introdurre catalogo metadati scansioni (nuovo modulo, es. `scan_catalog.py`) con schema:
-   - `id`, `display_name`, `category`, `level` (beginner/intermediate/pro),
-   - `learning_objective`, `when_to_use`, `when_not_to_use`,
-   - `owasp_tags`, `mitre_tags`,
-   - `expected_duration`, `invasiveness`, `noise_level`,
-   - `required_permissions`, `legal_notice`,
-   - `common_false_positives`, `interpretation_guide`, `next_learning_step`.
-2. [x] Mappare ogni scan type esistente del backend al catalogo senza rimuovere nulla.
-3. [x] Validare coerenza tra `SCAN_TYPES`/`SCAN_TYPE_CHOICES` e catalogo via test.
+**Da rifinire ulteriormente**
 
-Deliverable:
-- `scan_catalog.py`
-- test unit: `tests/test_scan_catalog.py`
-
-Criterio di successo:
-- 100% dei tipi scansione attuali hanno metadati didattici.
+- Ridurre dipendenza da utility class CDN per stabilità grafica long-term.
+- Consolidare token design in un layer CSS più sistematico.
+- Eseguire audit periodico su regressioni visuali cross-device.
 
 ---
 
-## Fase 2 — UX redesign: selezione scansione ricca e guidata
+## 3) Macro-aree di sviluppo
 
-**Obiettivo:** trasformare la select in un componente didattico professionale.
-
-Interventi UI:
-1. [x] Sostituire `<select name="scan_type">` con **Scan Type Explorer**:
-   - cards filtrabili per categoria (Recon/Web/App/Infra/WordPress);
-   - indicatori visivi: difficoltà, durata, invasività, copertura;
-   - confronto rapido tra 2-3 scansioni.
-2. [x] Pannello “Perché scegliere questa analisi” dinamico.
-3. [x] Tooltip/accessory “Termini tecnici” (OWASP, CVSS, false positive).
-4. [x] Stepper guidato pre-esecuzione:
-   - Step 1: obiettivo utente;
-   - Step 2: scelta scansione consigliata;
-   - Step 3: conferma legale/consenso;
-   - Step 4: run.
-5. [x] Mobile-first: cards verticali su small viewport, confronti collapsable.
-6. Accessibilità:
-   - semantic landmarks,
-   - focus states,
-   - ARIA per tooltip/dialog,
-   - contrast ratio WCAG AA.
-   - [x] Stato stepper ARIA coerente con navigazione guidata (2026-04-04): `aria-current="step"` ora aggiornato dinamicamente in `static/js/scan-catalog.js` durante la progressione Step 1→4.
-
-Interventi backend/API:
-1. [x] Endpoint read-only per catalogo scansioni didattico (2026-04-04): introdotto `GET /api/v1/scan-catalog` con policy di accesso viewer/API key e cache applicativa read-only.
-2. [x] Binding robusto tra card selezionata e `scan_type` effettivo (anti-tampering lato server, 2026-04-04): blocco esplicito di `scan_type` non presenti in `SCAN_TYPES` sia nel form web che nell'endpoint API.
-
-Deliverable:
-- update `templates/index.html`
-- eventuale JS dedicato (es. `static/js/scan-catalog.js`)
-- test integrazione UI/API
-
-Criterio di successo:
-- L’utente capisce prima del run: obiettivo, rischio, output e limiti della scansione scelta.
-
-### Backlog urgente UX — Home (`/`) da sistemare subito
-
-Problema segnalato (2026-04-06): la pagina `http://localhost:8000/` risulta priva di layout coerente, poco leggibile e non intuitiva.
-
-Interventi immediati (priorità massima):
-1. [x] Ripristinare gerarchia visiva della hero e del form principale (titolo, sottotitolo, CTA primaria) con spaziatura consistente e contrasto WCAG AA (2026-04-06): hero sopra la fold ridisegnata in `templates/index.html` con titolo ad alta priorità visiva, microcopy orientata al flusso guidato, CTA primaria verso il form e card laterale “Flusso consigliato”.
-2. [x] Definire una griglia responsive stabile per la home (mobile-first) evitando blocchi “full width” disallineati e sezioni senza contenitore (2026-04-06): introdotti container condivisi `home-container` e griglia `home-main-grid` tra hero/KPI/form/footer in `templates/index.html` + `static/css/style.css`, con regression test layout smoke `tests/test_accessibility_checks.py::test_homepage_uses_consistent_mobile_first_layout_containers`.
-3. [x] Introdurre navigation pattern chiaro “Step 1→4” above-the-fold con stato corrente sempre visibile (2026-04-06): aggiunta barra sticky di progressione nella home (`templates/index.html`) con stato `aria-current` e label live “Step corrente”, sincronizzata dinamicamente al wizard via `static/js/scan-catalog.js`; copertura regressione a11y/layout in `tests/test_accessibility_checks.py`.
-4. [x] Uniformare tipografia e scale token (font-size/line-height/spacing) per eliminare effetto “pagina rotta” (2026-04-06): introdotti typography tokens CSS (`home-eyebrow`, `home-hero-title`, `home-section-title`, `home-lead`, `home-body-text`, `home-microcopy`) in `static/css/style.css` e applicati ai blocchi principali della home in `templates/index.html`; aggiunta regressione `tests/test_accessibility_checks.py::test_homepage_uses_typography_tokens_for_consistent_readability`.
-5. [x] Aggiungere microcopy guidata vicino ai campi critici (`target`, `scan_type`) con esempi validi e hint sugli errori più frequenti (2026-04-06): aggiunti hint contestuali e `aria-describedby` su target/scan type in `templates/index.html` (guided + fallback no-JS), inclusi esempi validi/frequent mistakes; copertura regressione con `tests/test_accessibility_checks.py::test_homepage_exposes_microcopy_guidance_for_target_and_scan_type`.
-6. [x] Rendere evidente il livello di rischio/invasività della scansione prima del submit con badge colore + testo esplicativo (2026-04-06): aggiunto pannello rischio in Step 4 (`templates/index.html`) con badge dinamici rischio/invasività/rumore e microcopy esplicita aggiornata in tempo reale da `static/js/scan-catalog.js`; copertura regressione con `tests/test_accessibility_checks.py::test_homepage_shows_scan_risk_badges_before_submit`.
-7. [x] Eliminare frizioni nel primo flusso utente: massimo 1 azione primaria per sezione, pulsanti secondari de-enfatizzati (2026-04-06): hero aggiornata con CTA primaria unica verso il form e link secondario de-enfatizzato verso storico scansioni; navigazione stepper con `Continua` come unica azione primaria e `Indietro` in stile secondario. Aggiunta regressione `tests/test_accessibility_checks.py::test_homepage_uses_single_primary_action_in_hero_and_stepper_navigation`.
-8. [x] Hardening UX+Security del form (2026-04-06): introdotta validazione client-side non bloccante nel wizard (`novalidate` + warning ARIA) mantenendo i controlli server-side fail-closed, con error summary accessibile (`guided-form-error-summary`) e messaggi espliciti per target/obiettivo/consensi; aggiunta copertura regressione `tests/test_accessibility_checks.py::test_homepage_has_accessible_error_summary_for_guided_form_validation`.
-9. [x] Verificare fallback senza JS: la home deve restare utilizzabile e comprensibile anche con script disabilitati (2026-04-06): introdotto fallback progressivo nel form guidato con selettore `scan_type` non-JS (`#scan-type-field`), step mostrati in modalità lineare quando gli script non sono disponibili, avviso `<noscript>` e de-enfasi dei controlli wizard dipendenti da JavaScript; copertura regressione con `tests/test_accessibility_checks.py::test_homepage_remains_usable_without_javascript_fallback_controls`.
-10. [x] Aggiungere regression test UI per la home (layout smoke + a11y keyboard flow) per prevenire nuovi regressi visivi/funzionali (2026-04-06): estesa `tests/test_accessibility_checks.py` con `test_homepage_keyboard_flow_regression_contract` (skip-link, controlli stepper, summary error focusabile, contract compare toggle) e `test_scan_catalog_js_supports_keyboard_navigation_and_focus_management` (Enter/Space sulle card, focus glossary, focus management error summary).
+1. Setup / Configurazione
+2. Core Scanning Engine
+3. Backend API & Sicurezza
+4. Frontend Guided UX
+5. Layout / Design System
+6. Learning Layer & Contenuti didattici
+7. Scan Detail Explainability
+8. Reporting e Remediation
+9. Data & Persistenza
+10. Governance sicurezza applicativa
+11. Testing & CI/CD
+12. Performance & Osservabilità
+13. Documentazione prodotto
+14. Rilascio e Operatività
 
 ---
 
-## Fase 3 — Esperienza didattica durante e dopo la scansione
+## 4) Checklist operativa (CORE)
 
-**Obiettivo:** sfruttare `scan_detail.html` come aula operativa.
+### A. Fondazioni prodotto
 
-Interventi:
-1. [x] “Learning sidebar” nel dettaglio scansione con:
-   - cosa sta succedendo ora,
-   - perché il tool attuale viene lanciato,
-   - come leggere i log in sicurezza.
-2. [x] Per finding: aggiungere blocchi didattici standardizzati:
-   - “spiegazione per junior”,
-   - “rischio business”,
-   - “verifica manuale consigliata”,
-   - “skill da studiare dopo”.
-3. [x] Introduzione confidence rubric (confirmed/probable/needs-validation) chiara.
-4. [x] Remediation roadmap ordinata per impatto + effort + prerequisiti (2026-04-05): introdotta funzione `_build_remediation_roadmap()` in `app.py` che calcola score impatto×effort, assegna tier (immediato/pianifica/quick_win/monitora) e ordina i findings; sezione dedicata renderizzata in `scan_detail.html` con badge tier, rank numerico, chip effort e legenda prerequisiti; 19 test di regressione in `tests/test_remediation_roadmap.py`.
+[x] Definire baseline funzionale da preservare  
+Descrizione: Mappare capacità core scanner/API/report che non devono regredire.  
+Done quando: Documento baseline presente e usato come riferimento regressivo.
 
-Deliverable:
-- aggiornamento renderer findings/report pipeline
-- mapping knowledge snippets per severità/tipologia
+[x] Definire direzione “professional + educational”  
+Descrizione: Formalizzare obiettivi UX/didattici senza perdere affidabilità operativa.  
+Done quando: Upgrade plan e documentazione learning risultano coerenti.
+
+[x] Definire quality gate minimi  
+Descrizione: Stabilire soglie test, coverage e controlli automatici.  
+Done quando: CI blocca merge su regressioni.
+
+[ ] Formalizzare policy plugin scanner versionata  
+Descrizione: Definire contratto ufficiale per aggiunta scanner dinamici e compatibilità.  
+Done quando: Esiste specifica plugin + test contract.
+
+### B. Setup / Configurazione
+
+[x] Configurare ambiente locale riproducibile  
+Descrizione: Installer/documentazione per avvio coerente su Linux/macOS/Windows.  
+Done quando: Setup documentato e verificabile.
+
+[x] Configurare pipeline CI principale  
+Descrizione: Esecuzione test suite + quality checks ad ogni push/PR.  
+Done quando: Workflow `.github/workflows/ci-quality-gates.yml` operativo.
+
+[ ] Integrare security scanner CI aggiuntivi (Bandit/Pip-audit)  
+Descrizione: Automatizzare controllo vulnerabilità dipendenze/codice Python.  
+Done quando: Pipeline fallisce su finding critici.
+
+### C. Core scanning engine
+
+[x] Consolidare mappa scanner e profili principali  
+Descrizione: Supportare full/light/wordpress + tool dedicati senza rotture.  
+Done quando: Test engine e test scanner passano stabilmente.
+
+[x] Validazione target e guardrail input  
+Descrizione: Prevenire input malformati/abuso su endpoint scan.  
+Done quando: Validazione coperta da test sicurezza.
+
+[ ] Ridurre rischio drift enum scan type  
+Descrizione: Allineare dinamicamente choices e mappa scanner in modo robusto.  
+Done quando: Nessuna divergenza possibile tra runtime map e API/form choices.
+
+### D. Backend API & Sicurezza
+
+[x] Fornire endpoint catalogo scansioni didattico  
+Descrizione: Esposizione read-only metadati per UI guided explorer.  
+Done quando: Endpoint pubblico autenticato disponibile e testato.
+
+[x] Applicare hardening security headers  
+Descrizione: CSP + policy browser restrittive + protezioni anti-mixed content.  
+Done quando: Test header sicurezza passanti.
+
+[x] Applicare RBAC + audit logging  
+Descrizione: Tracciare azioni sensibili e limitare accesso per ruolo.  
+Done quando: Controlli accesso e audit coperti da test.
+
+[ ] Migliorare osservabilità API production-grade  
+Descrizione: Aggiungere metriche strutturate e alerting centralizzato (non solo log locali).  
+Done quando: Dashboard/alert esterni documentati e attivi.
+
+### E. Frontend guided UX
+
+[x] Implementare Scan Type Explorer a card  
+Descrizione: Sostituire select piatta con scelta guidata contestuale.  
+Done quando: Selezione scan comprensibile pre-submit.
+
+[x] Implementare stepper UX con consenso esplicito  
+Descrizione: Flusso guidato in step con validazioni e fallback no-JS.  
+Done quando: Journey completo testato end-to-end.
+
+[x] Migliorare accessibilità keyboard/ARIA  
+Descrizione: Focus states, skip-link, navigazione tastiera e messaggi di errore accessibili.  
+Done quando: Suite a11y automatica senza blocker.
+
+[ ] Completare visual regression cross-breakpoint  
+Descrizione: Rafforzare controllo regressioni layout su viewport chiave mobile/tablet/desktop.  
+Done quando: Baseline visuali multi-breakpoint in CI.
+
+### F. Layout / Design system
+
+[x] Ripristinare gerarchia visiva homepage  
+Descrizione: Hero, CTA, form e progressione guidata con priorità chiare.  
+Done quando: Layout coerente e leggibile sopra la fold.
+
+[x] Uniformare microcopy e feedback UI critici  
+Descrizione: Hint su target/scan type, rischio/invasività esplicitati prima del run.  
+Done quando: Riduzione ambiguità utente nel primo flusso.
+
+[ ] Migrare da Tailwind CDN a pipeline locale  
+Descrizione: Build CSS self-hosted per sicurezza, performance e controllo versioning.  
+Done quando: Nessuna dipendenza runtime da CDN CSS/JS per UI core.
+
+### G. Learning layer e contenuti didattici
+
+[x] Introdurre metadati didattici per scan type  
+Descrizione: Obiettivi, limiti, contesto uso/non-uso, interpretazione.  
+Done quando: Copertura 100% scan type supportati.
+
+[x] Aggiungere learning blocks nel dettaglio finding  
+Descrizione: Spiegazioni junior, rischio business, verifica manuale e next step.  
+Done quando: Sezione scan detail didatticamente completa.
+
+[x] Pubblicare learning paths e playbook  
+Descrizione: Percorsi beginner/analyst/pro + schede operative scanner.  
+Done quando: Documentazione navigabile e coerente con UI.
+
+### H. Reporting e remediation
+
+[x] Introdurre remediation roadmap prioritaria  
+Descrizione: Ordinamento interventi per impatto/effort/prerequisiti.  
+Done quando: Roadmap visibile in scan detail e testata.
+
+[x] Preservare pipeline reporting PDF  
+Descrizione: Garantire export stabile e audit su download report.  
+Done quando: Test regressione report passanti.
+
+[ ] Aggiungere confronto temporale report (trend)  
+Descrizione: Evolvere report da snapshot a visione progressiva per target.  
+Done quando: Disponibile timeline comparativa findings nel tempo.
+
+### I. Data & Persistenza
+
+[x] Persistenza scansioni/findings/audit su DB  
+Descrizione: Memorizzare storico e metadati di esecuzione.  
+Done quando: Flusso creazione-salvataggio-recupero verificato.
+
+[x] Persistenza learning feedback/progress  
+Descrizione: Salvare feedback educativo e stato apprendimento base.  
+Done quando: Endpoint e storage attivi con test.
+
+[ ] Introdurre migrazioni DB formalizzate  
+Descrizione: Passare da schema evolutivo implicito a workflow migration (es. Alembic).  
+Done quando: Versionamento schema DB documentato e automatizzato.
+
+### J. Sicurezza applicativa
+
+[x] Validazione input e fail-closed  
+Descrizione: Normalizzazione payload e rifiuto input pericolosi.  
+Done quando: Nessuna eccezione incontrollata su input malformati.
+
+[x] Hardening CSP/XSS frontend  
+Descrizione: Riduzione inline script/style e sanitizzazione rendering dinamico.  
+Done quando: Test hardening template/JS passanti.
+
+[x] Security checklist startup produzione  
+Descrizione: Warning/config guardrail per ambienti reali.  
+Done quando: Startup segnala configurazioni insicure.
+
+[ ] Piano aggiornamento dipendenze sicurezza  
+Descrizione: Definire ciclo trimestrale patch + test compatibilità.  
+Done quando: Documento policy + job automatico di verifica.
+
+### K. Testing e quality gates
+
+[x] Suite pytest completa con coverage gate >=80%  
+Descrizione: Test unit/integration/security/layout accessibilità con soglia minima coverage.  
+Done quando: Esecuzione locale/CI stabile.
+
+[x] Regressioni dedicate su journey guided  
+Descrizione: Test endpoint/UI sul flusso di creazione scansione guidata.  
+Done quando: Journey end-to-end protetto da test.
+
+[x] Lighthouse CI con soglie bloccanti  
+Descrizione: Gate performance/accessibilità/best-practice/SEO.  
+Done quando: Pipeline interrompe regressioni sotto soglia.
+
+[ ] Integrare DAST autenticato in pre-release  
+Descrizione: Eseguire scansioni dinamiche su ambiente staging autenticato.  
+Done quando: Report DAST incluso nei gate release.
+
+### L. Performance e osservabilità
+
+[x] Definire e monitorare budget qualità frontend in CI  
+Descrizione: Imporre soglie misurabili tramite Lighthouse assertions.  
+Done quando: Build bloccata su regressione.
+
+[x] Preservare reattività dashboard e journey base  
+Descrizione: Evitare frizioni durante creazione/monitor scansione.  
+Done quando: Nessun blocker UX nei test principali.
+
+[ ] Estendere telemetria runtime applicativa  
+Descrizione: Esportare metriche a backend monitoraggio centralizzato.  
+Done quando: Alert su error spike/latency attivi.
+
+### M. Milestone esecutive
+
+[x] Milestone 1 — Stabilizzazione baseline e hardening iniziale  
+Descrizione: Preservare funzionalità core e rimuovere regressioni critiche.
+
+[x] Milestone 2 — Guided UX + learning catalog  
+Descrizione: Portare la home da selezione piatta a percorso didattico guidato.
+
+[x] Milestone 3 — Scan detail didattico + remediation roadmap  
+Descrizione: Rendere il post-scan più formativo e operativo.
+
+[ ] Milestone 4 — Industrializzazione finale  
+Descrizione: Chiudere gap residui su plugin contract, CSS self-hosted, security scanning CI avanzato, osservabilità centralizzata.
 
 ---
 
-## Fase 4 — Sicurezza applicativa avanzata (hardening)
+## 5) Priorità operative raccomandate (prossimo ciclo)
 
-**Obiettivo:** mantenere ruolo professionale e ridurre rischio abuso.
+1. **Migrazione Tailwind da CDN a build locale** (impatto: sicurezza, performance, governance layout).
+2. **Plugin contract scanner + allineamento scan-type runtime** (impatto: stabilità architetturale).
+3. **Security CI avanzata (Bandit + Pip-audit + DAST staging)** (impatto: hardening continuo).
+4. **Osservabilità centralizzata e alerting** (impatto: affidabilità operativa in produzione).
 
-Interventi prioritari:
-1. [x] Autorizzazioni di ruolo (viewer/operator/admin) per scansioni e download report.
-2. [x] Policy di target allowlist opzionale in produzione.
-3. [x] Audit trail esteso per azioni didattiche e export sensibili.
-4. Hardening frontend:
-   - [x] riduzione inline scripts/styles (progressivo, 2026-04-04): introdotta regression suite `tests/test_template_inline_hardening.py` che blocca attributi `style`/event handler inline e script inline eseguibili nei template.
-   - [x] CSP più restrittiva (rimossa `unsafe-inline` da `script-src` di default),
-   - [x] CSP defense-in-depth completata (2026-04-04): aggiunte direttive `object-src 'none'`, `base-uri 'self'` e `form-action 'self'` nel default policy per ridurre gadget injection/clickjacking chain.
-   - [x] CSP defense-in-depth estesa (2026-04-06): aggiunte direttive `frame-src 'none'` e `manifest-src 'self'` al default policy per ridurre superfici embed non necessarie e vincolare il caricamento del web app manifest.
-   - [x] CSP anti mixed-content hardening (2026-04-06): aggiunte direttive `block-all-mixed-content` e `upgrade-insecure-requests` alla policy di default per forzare upgrade HTTPS delle risorse e bloccare caricamenti HTTP residui.
-   - [x] Permissions-Policy hardening estesa (2026-04-06): header ora centralizzato in `config.py` (`VAP_PERMISSIONS_POLICY`) con deny-by-default per capability browser ad alto rischio (camera, microfono, geolocalizzazione, clipboard, WebAuthn, USB) e copertura regressione in `tests/test_security_headers.py::test_permissions_policy_disables_high_risk_browser_capabilities_by_default`.
-   - [x] Origin isolation header baseline (2026-04-06): aggiunto header `Origin-Agent-Cluster: ?1` nella middleware `add_security_headers` per isolare il browsing context group e ridurre superfici di side-channel cross-origin; copertura con test `tests/test_security_headers.py::test_security_headers_include_origin_isolation_baseline`.
-   - [x] riduzione `unsafe-inline` anche su `style-src` (2026-04-04): estratti gli stili inline da `scan_detail.html` in `static/css/style.css` e barra progresso inizializzata via JS senza attributi `style`.
-   - [x] valutazione migrazione da Tailwind CDN a build locale (2026-04-04): analisi completata in `docs/tailwind-local-migration-assessment.md` con decisione architetturale e piano di adozione.
-   - [x] Step 1 completato: script inline di `scan_detail.html` estratto in `static/js/scan-detail.js` con rendering DOM sicuro.
-   - [x] Hardening anti-XSS Scan Type Explorer (2026-04-06): sanitizzati i campi dinamici renderizzati via `innerHTML` in `static/js/scan-catalog.js` con helper `escapeHtml` (display name, obiettivi, metadati OWASP/durata/invasività/rumore) e fallback fail-closed sul binding del pulsante confronto; aggiunti test `tests/test_scan_catalog_frontend_security.py`.
-5. [x] Hardening input didattici API (2026-04-04): endpoint `POST /api/v1/learning-feedback` ora normalizza `notes` e rifiuta tag HTML/caratteri di controllo per ridurre rischio XSS/log injection.
-6. [x] Secrets governance:
-   - checklist automatica startup con severity.
-   - [x] Estensione controlli startup production (2026-04-06): aggiunti warning bloccanti su `VAP_RBAC_ENABLED=false` e su `VAP_TARGET_ALLOWLIST` vuota per ridurre rischio abuso/IDOR operativo in ambienti reali.
-
-Deliverable:
-- [x] `docs/security-hardening-roadmap.md`
-- [x] test di sicurezza dedicati (CSRF/JWT/input tampering/IDOR)
-
----
-
-## Fase 5 — Testing continuo e quality gates enterprise
-
-**Obiettivo:** “create → testa → correggi → ottimizza” come processo standard.
-
-Interventi:
-1. [x] Test pyramid aggiornata:
-   - unit: catalogo/metadati/validatori,
-   - integration: endpoint catalogo + creazione scan,
-   - E2E: user journey selezione guidata.
-2. [x] A11y e UX checks automatici (axe + keyboard traversal).
-3. [x] Performance gate:
-   - [x] Lighthouse CI: Performance, Accessibility, Best Practices, SEO >= 90.
-   - [x] Console/runtime hardening gate (2026-04-04): aggiunte assertion Lighthouse `errors-in-console` e `csp-xss` per bloccare regressioni JS/CSP nei flussi principali.
-4. [x] Security testing:
-   - [x] regression OWASP Top 10 rilevante,
-   - [x] fuzzing input target/scan_type,
-   - [x] rate-limit abuse scenarios (2026-04-04): aggiunto test `test_auth_token_endpoint_enforces_rate_limit` in `tests/test_api_integration.py`.
-5. [x] Introduzione quality thresholds bloccanti in CI.
-
-Deliverable:
-- workflow CI aggiornato
-- report qualità per release
-
----
-
-## Fase 6 — Documentazione didattica ufficiale
-
-**Obiettivo:** apprendimento progressivo e supporto formativo.
-
-Interventi:
-1. [x] Nuova sezione docs: “Percorsi formativi”
-   - beginner path (fondamentali + safe practice),
-   - analyst path,
-   - professional path.
-2. [x] Schede scansione (una per tipo) con:
-   - teoria minima,
-   - esempi output,
-   - errori comuni,
-   - remediation checklist.
-3. [x] Collegamenti a documentazione ufficiale framework/librerie usate.
-4. [x] Glossario cyber e FAQ operative.
-
-Deliverable:
-- `docs/learning-paths/`
-- `docs/scan-playbooks/`
-
----
-
-## 5) Backlog tecnico dettagliato (priorità)
-
-## P0 (immediato)
-- [x] Catalogo metadati scansioni + API read-only (verifica regressione 2026-04-05): confermati modulo `scan_catalog.py`, endpoint `GET /api/v1/scan-catalog` e test dedicati (`tests/test_scan_catalog.py`, `tests/test_api_integration.py::test_get_scan_catalog_endpoint`).
-- [x] Refactor UI selezione scan in cards guidate (verifica regressione 2026-04-05): confermata homepage con Scan Type Explorer e cards POC top-3 tramite `tests/test_api_integration.py::test_homepage_guided_explorer_exposes_top3_poc_scan_cards`.
-- [x] Anti-regression test funzionalità attuali (2026-04-04): aggiunto test integrazione `test_download_report_endpoint_preserves_pdf_delivery_and_audit` per garantire continuità download PDF e audit trail `report_downloaded`.
-- [x] Copywriting didattico minimo per full/light/wordpress + top tool (2026-04-04): arricchiti metadati didattici con contenuti specifici per `nuclei`, `nmap`, `zap`, `sqlmap`, `wpscan` e aggiunta regressione `test_top_tools_have_dedicated_learning_copy`.
-
-## P1 (breve termine)
-- [x] Learning sidebar su scan detail (2026-04-04): sidebar didattica attiva in `templates/scan_detail.html` con test integrazione dedicati.
-- [x] Confidence model UI e remediation roadmap (2026-04-04): rubric `confirmed/probable/needs-validation` e roadmap remediation prioritaria renderizzate nel dettaglio scansione.
-- [x] A11y audit completo e fix (2026-04-04): introdotti skip-link tastiera su homepage/dettaglio scansione e alert region ARIA per errori bloccanti (`templates/index.html`, `templates/scan_detail.html`) con regressione automatica in `tests/test_accessibility_checks.py`.
-
-## P2 (medio termine)
-- [x] RBAC + allowlist target + hardening CSP (2026-04-04): controlli ruolo viewer/operator/admin, policy target allowlist opzionale e CSP hardenizzata senza `unsafe-inline` per script.
-- [x] Lighthouse CI + security pipeline avanzata (2026-04-04): quality gate CI con soglie Lighthouse >=90 + test OWASP/rate-limit/fuzzing input.
-- [x] Percorsi didattici multipli con progress tracking (2026-04-04): aggiunti endpoint `POST/GET /api/v1/learning-progress` con persistenza per-subject e audit event `learning_progress_updated`.
-
----
-
-## 6) Rischi e mitigazioni
-
-1. **Regressioni funzionali** durante redesign UI.
-   - Mitigazione: contract test tra card selection e `scan_type` backend.
-2. **Sovraccarico cognitivo** utente entry-level.
-   - Mitigazione: progressive disclosure (base → advanced).
-3. **Percezione falsa certezza** nei risultati automatici.
-   - Mitigazione: messaging esplicito su limiti, confidenza, validazione manuale.
-4. **Tech debt frontend** con Tailwind CDN + inline style.
-   - Mitigazione: piano migrazione graduale build-based.
-
----
-
-## 7) Definizione di Done (DoD) per l’upgrade
-
-Una release è “done” quando:
-1. nessuna feature di scansione/report esistente è persa;
-2. selezione scansione è didattica, comparativa e guidata;
-3. test automatici verdi (unit/integration/E2E/security);
-4. score Lighthouse >=90 (mobile e desktop) sui flussi principali;
-5. a11y WCAG AA verificata;
-6. zero errori console nei percorsi principali;
-7. documentazione utente + playbook tecnici aggiornata.
-
----
-
-## 8) Piano di esecuzione iterativo consigliato (sprint)
-
-## Sprint 1 (1-2 settimane)
-- [x] Fase 0 + Fase 1 complete.
-- [x] POC UI cards per 3 scan type principali (2026-04-04): aggiunto test `test_homepage_guided_explorer_exposes_top3_poc_scan_cards` per verificare la presenza in homepage guidata di `full`, `light`, `wordpress`.
-
-## Sprint 2
-- [x] Fase 2 completa con rollout feature-flag.
-- [x] Test E2E journey “nuova scansione” (2026-04-06): coperto il flusso guidato completo homepage → submit form → redirect al dettaglio scansione con `tests/test_api_integration.py::test_guided_scan_form_end_to_end_journey`.
-- [x] Hardening journey guidato su consenso obbligatorio (2026-04-06): aggiunto test negativo `tests/test_api_integration.py::test_guided_scan_form_blocks_submission_without_required_consents` per garantire blocco fail-closed (HTTP 403), messaggio UX esplicito e assenza di creazione scansione senza accettazione termini.
-
-## Sprint 3
-- [x] Fase 3 su scan detail + remediation roadmap.
-- [x] Beta interna con feedback strutturato (2026-04-04): introdotto endpoint `POST /api/v1/learning-feedback` con persistenza DB, validazioni robuste e audit trail.
-
-## Sprint 4
-- [x] Fase 4 + Fase 5 (hardening + quality gates) completate (2026-04-04): verificata suite `PYTHONPATH=. pytest -q` con `112 passed`, coverage totale `82.95%` e soglia minima `80%` rispettata.
-- [x] Preparazione release candidate (2026-04-06): aggiunta checklist operativa RC in `docs/release-candidate.md` con gate funzionali, UX/a11y, sicurezza e qualità, più integrazione in navigazione documentazione MkDocs.
-
-## Sprint 5
-- [x] Fase 6 docs complete + training materials (2026-04-04): presenti learning paths (`docs/learning-paths/`), playbook scanner (`docs/scan-playbooks/`), glossario/FAQ (`docs/glossary-faq.md`) e riferimenti ufficiali (`docs/official-references.md`).
-- [x] Go-live controllato (2026-04-06): aggiunto runbook operativo `docs/go-live-controlled.md` con prerequisiti go/no-go, rollout progressivo, smoke/security checks, criteri di rollback ed evidenze minime; integrato nella navigazione MkDocs.
-- [x] Verifica continua post-upgrade (2026-04-04): rieseguita suite completa `PYTHONPATH=. pytest -q` con esito `125 passed`, coverage totale `83.08%` (soglia minima `80%` rispettata) e nessuna regressione funzionale rilevata.
-- [x] Verifica continua post-upgrade (2026-04-05): rieseguita suite completa `PYTHONPATH=. pytest -q` con esito `144 passed`, coverage totale `83.08%` (soglia minima `80%` rispettata) e nessuna regressione funzionale rilevata.
-- [x] Verifica continua post-upgrade (2026-04-06): rieseguita suite completa `PYTHONPATH=. pytest -q` con esito `144 passed`, coverage totale `83.08%` (soglia minima `80%` rispettata) e nessuna regressione funzionale rilevata.
-- [x] Verifica continua post-upgrade (2026-04-06, ciclo iterativo successivo): confermata stabilità su nuova esecuzione completa `PYTHONPATH=. pytest -q` con esito `144 passed`, coverage totale `83.08%` (soglia minima `80%` rispettata) e nessuna regressione funzionale rilevata.
-- [x] Verifica continua post-upgrade (2026-04-06, ciclo iterativo sicurezza+qualità): eseguita nuovamente la suite completa `PYTHONPATH=. pytest -q` con esito `144 passed`, coverage totale `83.08%` (soglia minima `80%` rispettata), senza regressioni su flussi UX guidati, hardening e controlli API.
-- [x] Verifica continua post-upgrade (2026-04-06, ciclo iterativo stabilità): rieseguita la suite completa `PYTHONPATH=. pytest -q` con esito `144 passed`, coverage totale `83.08%` (soglia minima `80%` rispettata), confermando stabilità end-to-end su scanner orchestration, UX guidata e hardening sicurezza.
-- [x] Verifica continua post-upgrade (2026-04-06, ciclo iterativo QA finale): rieseguita la suite completa `PYTHONPATH=. pytest -q` con esito `147 passed`, coverage totale `83.08%` (soglia minima `80%` rispettata), confermando ulteriore stabilità dopo i cicli precedenti e assenza di regressioni funzionali/sicurezza.
-- [x] Verifica continua post-upgrade (2026-04-06, ciclo iterativo follow-up): rieseguita la suite completa `PYTHONPATH=. pytest -q` con esito `147 passed`, coverage totale `83.08%` (soglia minima `80%` rispettata), confermata stabilità regressiva su UX guidata, hardening frontend/API e qualità complessiva.
-- [x] Verifica continua post-upgrade (2026-04-06, ciclo iterativo stabilizzazione): rieseguita la suite completa `PYTHONPATH=. pytest -q` con esito `156 passed`, coverage totale `83.08%` (soglia minima `80%` rispettata), confermando robustezza su percorso guidato, controlli di sicurezza e tenuta complessiva dopo i fix cumulativi.
-- [x] Verifica continua post-upgrade (2026-04-06, ciclo iterativo regressione completa): rieseguita la suite completa `PYTHONPATH=. pytest -q` con esito `157 passed`, coverage totale `83.08%` (soglia minima `80%` rispettata), confermando stabilità end-to-end dopo l'ultimo ciclo di controllo qualità.
-
----
-
-## 9) Risultato atteso
-
-Al termine dell’upgrade, VAP resta un motore di scansione solido ma diventa anche un **ambiente di apprendimento professionale**: l’utente non “clicca e basta”, ma capisce **cosa sta facendo, perché, con quali limiti e con quali azioni correttive**.
-
----
-
-## 10) Errori pre-esistenti rilevati durante l'upgrade
-
-- [x] **Test regressione WordPress profile falliva (risolto il 2026-04-04):** `tests/test_wpscan_scanner.py::test_get_scanner_classes_supports_wordpress_scan_type` aggiornato per riflettere il comportamento reale del profilo `scan_type="wordpress"` che usa `WordpressNucleiScanner` (template profile dedicato) al posto di `NucleiScanner`.
-- [x] **Conferma 2026-04-04 (post-fix):** eseguito `PYTHONPATH=. pytest -q` con esito `109 passed` (nessun failure residuo sul profilo WordPress).
-- [x] **Warning tecnici applicativi ridotti (2026-04-04):** risolti warning interni non dipendenti da librerie terze parti aggiornando tutte le `TemplateResponse` FastAPI/Starlette al nuovo ordine parametri (`request` come primo argomento) e impedendo la raccolta accidentale di `TestsslScanner` come classe di test (`__test__ = False`). Verifica: `PYTHONPATH=. pytest -q` con `112 passed` e warning Starlette/PytestCollection azzerati.
-- [x] **Warning tecnici residui da dipendenze terze parti (rilevati il 2026-04-04, mitigati il 2026-04-04):** aggiunti filtri warning mirati in `pytest.ini` per dipendenze esterne (`dateutil`, `reportlab`, `passlib`, `python-jose`) in modo da mantenere la suite CI pulita da rumore non applicativo, preservando il rilevamento di warning provenienti dal codice progetto.
-- [x] **Hardening fail-closed su verifica API key hash (2026-04-04):** `security.verify_api_key` ora gestisce hash non validi/malformati senza eccezioni runtime (catch `UnknownHashError`/`ValueError`) e rifiuta l'autenticazione in modo sicuro. Coperto da test `test_verify_api_key_with_invalid_hash_fails_closed`.
-- [x] **Installer macOS resiliente su errore `psych`/Bundler di WhatWeb (2026-04-06):** aggiunto preflight automatico in `installer.sh` che tenta `gem install psych -v '5.3.1' --source 'https://rubygems.org/'` (con env `libyaml` se disponibile via Homebrew) prima di `make install`; documentata la procedura manuale in `README.md` (EN/IT) con fallback esplicito al wrapper locale.
