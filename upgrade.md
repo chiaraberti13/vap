@@ -202,6 +202,7 @@ Interventi prioritari:
    - [x] riduzione inline scripts/styles (progressivo, 2026-04-04): introdotta regression suite `tests/test_template_inline_hardening.py` che blocca attributi `style`/event handler inline e script inline eseguibili nei template.
    - [x] CSP più restrittiva (rimossa `unsafe-inline` da `script-src` di default),
    - [x] CSP defense-in-depth completata (2026-04-04): aggiunte direttive `object-src 'none'`, `base-uri 'self'` e `form-action 'self'` nel default policy per ridurre gadget injection/clickjacking chain.
+   - [x] CSP defense-in-depth estesa (2026-04-06): aggiunte direttive `frame-src 'none'` e `manifest-src 'self'` al default policy per ridurre superfici embed non necessarie e vincolare il caricamento del web app manifest.
    - [x] riduzione `unsafe-inline` anche su `style-src` (2026-04-04): estratti gli stili inline da `scan_detail.html` in `static/css/style.css` e barra progresso inizializzata via JS senza attributi `style`.
    - [x] valutazione migrazione da Tailwind CDN a build locale (2026-04-04): analisi completata in `docs/tailwind-local-migration-assessment.md` con decisione architetturale e piano di adozione.
    - [x] Step 1 completato: script inline di `scan_detail.html` estratto in `static/js/scan-detail.js` con rendering DOM sicuro.

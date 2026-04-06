@@ -90,8 +90,9 @@ class Settings:
     csp_policy: str = os.getenv(
         "VAP_CSP_POLICY",
         "default-src 'self'; img-src 'self' data:; style-src 'self' https://cdn.tailwindcss.com; "
-        "script-src 'self' https://cdn.tailwindcss.com; connect-src 'self'; frame-ancestors 'none'; "
-        "object-src 'none'; base-uri 'self'; form-action 'self'",
+        "script-src 'self' https://cdn.tailwindcss.com; connect-src 'self'; frame-src 'none'; "
+        "frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; "
+        "manifest-src 'self'",
     )
     security_headers_enabled: bool = os.getenv("VAP_SECURITY_HEADERS", "true").lower() == "true"
     audit_logging_enabled: bool = os.getenv("VAP_AUDIT_LOGGING", "true").lower() == "true"
