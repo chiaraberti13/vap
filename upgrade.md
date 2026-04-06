@@ -314,7 +314,7 @@ Una release è “done” quando:
 
 ## Sprint 5
 - [x] Fase 6 docs complete + training materials (2026-04-04): presenti learning paths (`docs/learning-paths/`), playbook scanner (`docs/scan-playbooks/`), glossario/FAQ (`docs/glossary-faq.md`) e riferimenti ufficiali (`docs/official-references.md`).
-- Go-live controllato.
+- [x] Go-live controllato (2026-04-06): aggiunto runbook operativo `docs/go-live-controlled.md` con prerequisiti go/no-go, rollout progressivo, smoke/security checks, criteri di rollback ed evidenze minime; integrato nella navigazione MkDocs.
 - [x] Verifica continua post-upgrade (2026-04-04): rieseguita suite completa `PYTHONPATH=. pytest -q` con esito `125 passed`, coverage totale `83.08%` (soglia minima `80%` rispettata) e nessuna regressione funzionale rilevata.
 - [x] Verifica continua post-upgrade (2026-04-05): rieseguita suite completa `PYTHONPATH=. pytest -q` con esito `144 passed`, coverage totale `83.08%` (soglia minima `80%` rispettata) e nessuna regressione funzionale rilevata.
 - [x] Verifica continua post-upgrade (2026-04-06): rieseguita suite completa `PYTHONPATH=. pytest -q` con esito `144 passed`, coverage totale `83.08%` (soglia minima `80%` rispettata) e nessuna regressione funzionale rilevata.

@@ -43,6 +43,7 @@ nav:
   - Glossario & FAQ Operative: glossary-faq.md
   - Riferimenti Ufficiali: official-references.md
   - Release Candidate Checklist: release-candidate.md
+  - Go-live Controllato: go-live-controlled.md
 
 markdown_extensions:
   - admonition
