@@ -969,6 +969,84 @@ def _count_findings(records: List[Optional[str]]) -> int:
     return total
 
 
+def _build_scan_trend_summary(scan: Scan, findings: List[Dict[str, Any]], db: Session) -> Dict[str, Any]:
+    severity_order = ("critical", "high", "medium", "low", "info")
+    current_counts = {severity: 0 for severity in severity_order}
+    for finding in findings:
+        current_counts[_normalize_severity(finding.get("severity"))] += 1
+    current_total = len(findings)
+    current_high_risk = current_counts["critical"] + current_counts["high"]
+
+    previous_scan = (
+        _active_scan_query(db)
+        .filter(
+            Scan.target == scan.target,
+            Scan.id != scan.id,
+            Scan.status.in_(["completed", "report_failed"]),
+        )
+        .order_by(Scan.created_at.desc())
+        .first()
+    )
+
+    previous_total = 0
+    previous_high_risk = 0
+    previous_label = "Nessuna baseline precedente disponibile"
+    if previous_scan:
+        previous_findings = _prepare_findings_for_ui(_load_json_list(previous_scan.findings_json))
+        previous_total = len(previous_findings)
+        previous_high_risk = sum(
+            1
+            for finding in previous_findings
+            if _normalize_severity(finding.get("severity")) in {"critical", "high"}
+        )
+        if previous_scan.created_at:
+            previous_label = previous_scan.created_at.strftime("%d/%m/%Y %H:%M")
+        else:
+            previous_label = f"Scan #{previous_scan.id}"
+
+    timeline_rows = (
+        _active_scan_query(db)
+        .filter(
+            Scan.target == scan.target,
+            Scan.status.in_(["completed", "report_failed"]),
+            Scan.findings_json.isnot(None),
+        )
+        .order_by(Scan.created_at.desc())
+        .limit(5)
+        .all()
+    )
+    timeline: List[Dict[str, Any]] = []
+    for timeline_scan in timeline_rows:
+        timeline_findings = _prepare_findings_for_ui(_load_json_list(timeline_scan.findings_json))
+        critical_high = sum(
+            1
+            for finding in timeline_findings
+            if _normalize_severity(finding.get("severity")) in {"critical", "high"}
+        )
+        timeline.append(
+            {
+                "scan_id": timeline_scan.id,
+                "created_at": timeline_scan.created_at.strftime("%d/%m/%Y") if timeline_scan.created_at else "--",
+                "status": timeline_scan.status,
+                "total_findings": len(timeline_findings),
+                "critical_high_findings": critical_high,
+                "is_current": timeline_scan.id == scan.id,
+            }
+        )
+
+    return {
+        "current_total_findings": current_total,
+        "current_high_risk_findings": current_high_risk,
+        "current_severity_counts": current_counts,
+        "previous_total_findings": previous_total,
+        "previous_high_risk_findings": previous_high_risk,
+        "previous_label": previous_label,
+        "delta_total_findings": current_total - previous_total,
+        "delta_high_risk_findings": current_high_risk - previous_high_risk,
+        "timeline": timeline,
+    }
+
+
 def _build_kpi_metrics(db: Session) -> Dict[str, Any]:
     base_query = _active_scan_query(db)
     total_scans = base_query.count()
@@ -1384,6 +1462,7 @@ def scan_detail(request: Request, scan_id: int, db: Session = Depends(get_db)) -
         "interpretation_guide": scan_catalog_entry.get("interpretation_guide"),
     }
     remediation_roadmap = _build_remediation_roadmap(findings)
+    trend_summary = _build_scan_trend_summary(scan, findings, db)
     api_key = request.query_params.get("api_key")
     download_url = None
     if scan.report_path:
@@ -1400,6 +1479,7 @@ def scan_detail(request: Request, scan_id: int, db: Session = Depends(get_db)) -
             "logs": logs,
             "learning_sidebar": learning_sidebar,
             "remediation_roadmap": remediation_roadmap,
+            "trend_summary": trend_summary,
             "download_url": download_url,
             "api_key": api_key,
         },
