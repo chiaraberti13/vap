@@ -41,14 +41,13 @@ Questa repository contiene una web app **FastAPI + Jinja + Tailwind CSS** per vu
 
 - Tailwind in CDN ancora presente: hardening/controllo supply-chain migliorabile con build locale.
 - Plugin architecture per scanner dinamici non ancora formalizzata (rischio drift tra mappa scanner e scelte esposte).
-- Dependency hygiene da consolidare (warning/deprecazioni pacchetti transitive nel tempo).
+- Dependency hygiene con policy trimestrale formalizzata; mantenere monitoraggio warning/deprecazioni transitive.
 - Osservabilità runtime centralizzata (metriche/alerting esterno) non completamente product-grade.
 
 ### ❌ Mancante (o non chiuso in modo definitivo)
 
 - Migrazione completa a design system frontend self-hosted (CSS pipeline locale e policy CSP ancora più stringente).
-- Piano strutturato di aggiornamento dipendenze sicurezza/compatibilità con test di regressione dedicati.
-- Gate CI security aggiuntivi (`pip-audit`, `bandit`) come blocco standard su PR.
+- Gate CI security avanzato DAST autenticato in pre-release ancora da integrare stabilmente.
 - Strategia formalizzata di estensione scanner via plugin con contratto versionato.
 
 ### 🐞 Debito tecnico pre-esistente monitorato
@@ -245,9 +244,9 @@ Done quando: Test hardening template/JS passanti.
 Descrizione: Warning/config guardrail per ambienti reali.  
 Done quando: Startup segnala configurazioni insicure.
 
-[ ] Piano aggiornamento dipendenze sicurezza  
+[x] Piano aggiornamento dipendenze sicurezza  
 Descrizione: Definire ciclo trimestrale patch + test compatibilità.  
-Done quando: Documento policy + job automatico di verifica.
+Done quando: Documento policy + job automatico di verifica. ✅ Completato con workflow schedulato trimestrale e policy dedicata in docs.
 
 ### K. Testing e quality gates
 
