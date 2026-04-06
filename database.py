@@ -7,6 +7,8 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Generator
 
+from pathlib import Path
+
 from sqlalchemy import Column, DateTime, Float, Index, Integer, String, Text, create_engine, event, inspect, text
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
 
@@ -176,8 +178,30 @@ def _migrate_scans_table(conn) -> None:
             conn.execute(text(f"ALTER TABLE scans ADD COLUMN {col_name} {col_type}"))
 
 
+def _run_alembic_upgrade() -> bool:
+    alembic_ini = Path(__file__).resolve().parent / "alembic.ini"
+    if not alembic_ini.exists():
+        return False
+
+    try:
+        from alembic import command
+        from alembic.config import Config
+    except ImportError:
+        return False
+
+    alembic_cfg = Config(str(alembic_ini))
+    alembic_cfg.set_main_option("sqlalchemy.url", settings.database_url)
+    alembic_cfg.set_main_option("script_location", str((Path(__file__).resolve().parent / "db_migrations").resolve()))
+    command.upgrade(alembic_cfg, "head")
+    return True
+
+
 def init_db() -> None:
-    Base.metadata.create_all(bind=engine)
+    migrated = _run_alembic_upgrade()
+
+    if not migrated:
+        Base.metadata.create_all(bind=engine)
+
     with engine.begin() as conn:
         _migrate_scans_table(conn)
 
