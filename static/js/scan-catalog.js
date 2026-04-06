@@ -81,6 +81,15 @@
       "Un false positive è un alert non confermato: richiede sempre validazione manuale prima della remediation.",
   };
 
+  function escapeHtml(value) {
+    return String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
   function normalizeLevel(level) {
     return (level || "intermediate").toLowerCase();
   }
@@ -115,12 +124,18 @@
   function compareCard(entry) {
     const node = document.createElement("article");
     node.className = "rounded-lg border border-slate-700 bg-slate-900/90 p-3";
+
+    const displayName = escapeHtml(entry.display_name);
+    const expectedDuration = escapeHtml(entry.expected_duration);
+    const invasiveness = escapeHtml(entry.invasiveness);
+    const owaspCoverage = escapeHtml(((entry.owasp_tags || []).join(", ")) || "N/A");
+
     node.innerHTML = `
-      <h4 class="font-semibold text-sm">${entry.display_name}</h4>
+      <h4 class="font-semibold text-sm">${displayName}</h4>
       <ul class="mt-2 space-y-1 text-xs text-slate-300">
-        <li><span class="text-slate-400">Durata:</span> ${entry.expected_duration}</li>
-        <li><span class="text-slate-400">Invasività:</span> ${entry.invasiveness}</li>
-        <li><span class="text-slate-400">Copertura:</span> ${(entry.owasp_tags || []).join(", ") || "N/A"}</li>
+        <li><span class="text-slate-400">Durata:</span> ${expectedDuration}</li>
+        <li><span class="text-slate-400">Invasività:</span> ${invasiveness}</li>
+        <li><span class="text-slate-400">Copertura:</span> ${owaspCoverage}</li>
       </ul>
     `;
     return node;
@@ -186,22 +201,33 @@
       card.setAttribute("role", "button");
       card.setAttribute("tabindex", "0");
       card.dataset.scanType = entry.id;
+      const displayName = escapeHtml(entry.display_name);
+      const level = escapeHtml(entry.level);
+      const learningObjective = escapeHtml(entry.learning_objective);
+      const expectedDuration = escapeHtml(entry.expected_duration);
+      const invasiveness = escapeHtml(entry.invasiveness);
+      const noiseLevel = escapeHtml(entry.noise_level);
+      const owaspTags = escapeHtml(((entry.owasp_tags || []).slice(0, 2)).join(", "));
+      const compareActionLabel = selectedForCompare.has(entry.id)
+        ? "Rimuovi dal confronto"
+        : "Aggiungi al confronto";
+
       card.innerHTML = `
         <div class="flex items-center justify-between gap-2">
-          <h4 class="font-semibold text-sm">${entry.display_name}</h4>
+          <h4 class="font-semibold text-sm">${displayName}</h4>
           <span class="text-[11px] rounded-full border px-2 py-0.5 ${levelStyles[normalizeLevel(entry.level)] || levelStyles.intermediate}">
-            ${entry.level}
+            ${level}
           </span>
         </div>
-        <p class="text-xs text-slate-300 mt-2">${entry.learning_objective}</p>
+        <p class="text-xs text-slate-300 mt-2">${learningObjective}</p>
         <div class="mt-3 flex flex-wrap gap-2 text-[11px] text-slate-200">
-          <span class="rounded-full border border-slate-600 px-2 py-0.5">⏱ ${entry.expected_duration}</span>
-          <span class="rounded-full border border-slate-600 px-2 py-0.5">🛡 ${entry.invasiveness}</span>
-          <span class="rounded-full border border-slate-600 px-2 py-0.5">📶 ${entry.noise_level}</span>
-          <span class="rounded-full border border-slate-600 px-2 py-0.5">OWASP ${((entry.owasp_tags || []).slice(0, 2)).join(", ")}</span>
+          <span class="rounded-full border border-slate-600 px-2 py-0.5">⏱ ${expectedDuration}</span>
+          <span class="rounded-full border border-slate-600 px-2 py-0.5">🛡 ${invasiveness}</span>
+          <span class="rounded-full border border-slate-600 px-2 py-0.5">📶 ${noiseLevel}</span>
+          <span class="rounded-full border border-slate-600 px-2 py-0.5">OWASP ${owaspTags}</span>
         </div>
         <button type="button" class="mt-3 text-xs text-cyan-300 underline" data-compare-toggle="${entry.id}">
-          ${selectedForCompare.has(entry.id) ? "Rimuovi dal confronto" : "Aggiungi al confronto"}
+          ${compareActionLabel}
         </button>
       `;
 
@@ -219,6 +245,11 @@
       });
 
       const compareButton = card.querySelector("[data-compare-toggle]");
+      if (!compareButton) {
+        cardsNode.appendChild(card);
+        return;
+      }
+
       compareButton.addEventListener("click", (event) => {
         event.stopPropagation();
         if (selectedForCompare.has(entry.id)) {
