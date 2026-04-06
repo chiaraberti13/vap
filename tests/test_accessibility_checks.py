@@ -92,6 +92,17 @@ def test_homepage_has_core_accessibility_landmarks_and_keyboard_controls():
     assert any(link.get("href") == "#new-scan-title" for link in parser.skip_links)
 
 
+def test_homepage_uses_consistent_mobile_first_layout_containers():
+    with TestClient(app.app) as client:
+        response = client.get("/")
+
+    assert response.status_code == 200
+    html = response.text
+
+    assert html.count('class="home-container') >= 4
+    assert "home-main-grid" in html
+
+
 def test_scan_detail_has_live_regions_and_single_main_landmark():
     _clear_scans()
     with SessionLocal() as session:

@@ -13,6 +13,25 @@ body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
+/* Home layout stability helpers (mobile-first) */
+.home-container {
+    margin-inline: auto;
+    width: 100%;
+    max-width: 72rem;
+}
+
+.home-main-grid {
+    display: grid;
+    gap: 2rem;
+}
+
+@media (min-width: 1024px) {
+    .home-main-grid {
+        grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+        align-items: start;
+    }
+}
+
 .gradient-bg {
     background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
 }
