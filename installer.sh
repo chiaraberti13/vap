@@ -59,6 +59,40 @@ log_error() {
     log_error_to_file "$1"
 }
 
+# On macOS, proactively fix Ruby psych build issues often triggered by WhatWeb bundler deps.
+ensure_psych_gem_for_whatweb() {
+    if [ "$PLATFORM" != "macos" ]; then
+        return 0
+    fi
+
+    if ! command -v gem &> /dev/null; then
+        log_warning "RubyGems not found. Skipping psych preflight for WhatWeb."
+        return 0
+    fi
+
+    if gem list -i psych -v 5.3.1 &> /dev/null; then
+        log_success "psych 5.3.1 already available for Ruby."
+        return 0
+    fi
+
+    log_info "Preflighting Ruby psych 5.3.1 for WhatWeb..."
+    local libyaml_prefix=""
+    if command -v brew &> /dev/null; then
+        libyaml_prefix="$(brew --prefix libyaml 2>/dev/null || true)"
+        if [ -n "$libyaml_prefix" ]; then
+            export CPPFLAGS="-I${libyaml_prefix}/include ${CPPFLAGS:-}"
+            export LDFLAGS="-L${libyaml_prefix}/lib ${LDFLAGS:-}"
+            export PKG_CONFIG_PATH="${libyaml_prefix}/lib/pkgconfig:${PKG_CONFIG_PATH:-}"
+        fi
+    fi
+
+    if gem install psych -v '5.3.1' --source 'https://rubygems.org/'; then
+        log_success "psych 5.3.1 installed successfully."
+    else
+        log_warning "psych 5.3.1 install failed. WhatWeb install may fallback to local wrapper."
+    fi
+}
+
 # Path for installer logs to support error analysis.
 # Use absolute paths so logs land in the repo root even when the CWD changes
 # (e.g. after pushd inside install_security_tools).
@@ -673,6 +707,7 @@ install_security_tools() {
         if [ -d "$whatweb_dir" ]; then
             pushd "$whatweb_dir" >/dev/null
             ensure_local_bin_path
+            ensure_psych_gem_for_whatweb
             if make install PREFIX="$HOME/.local"; then
                 log_success "WhatWeb installed to ~/.local"
             else
