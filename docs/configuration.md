@@ -39,6 +39,22 @@ Usa `.env.example` come base e compila solo le variabili che ti servono.
 | `VAP_DATABASE_URL` | `sqlite:///./vap.db` | Stringa di connessione. |
 | `VAP_SQLCIPHER_KEY` | `""` | Chiave per SQLCipher (se usato). |
 
+## Migrazioni database (Alembic)
+
+Lo schema DB è versionato con **Alembic**. In ambienti reali applica sempre le migrazioni prima di avviare worker/API:
+
+```bash
+python -m alembic upgrade head
+```
+
+Per creare una nuova revisione:
+
+```bash
+python -m alembic revision -m "descrizione_migrazione"
+```
+
+> `init_db()` applica automaticamente `upgrade head` quando trova `alembic.ini`; il fallback `create_all` resta disponibile solo come rete di sicurezza per ambienti legacy senza asset Alembic.
+
 ## Reports & retention
 
 | Variabile | Default | Descrizione |

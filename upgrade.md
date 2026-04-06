@@ -223,9 +223,9 @@ Done quando: Flusso creazione-salvataggio-recupero verificato.
 Descrizione: Salvare feedback educativo e stato apprendimento base.  
 Done quando: Endpoint e storage attivi con test.
 
-[ ] Introdurre migrazioni DB formalizzate  
+[x] Introdurre migrazioni DB formalizzate  
 Descrizione: Passare da schema evolutivo implicito a workflow migration (es. Alembic).  
-Done quando: Versionamento schema DB documentato e automatizzato.
+Done quando: Versionamento schema DB documentato e automatizzato. ✅ Completato con bootstrap Alembic (`alembic.ini`, `db_migrations/env.py`, revisione iniziale `20260406_0001`) integrato in `init_db()` + test dedicato su tabella `alembic_version`.
 
 ### J. Sicurezza applicativa
 
