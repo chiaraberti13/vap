@@ -155,7 +155,7 @@ Problema segnalato (2026-04-06): la pagina `http://localhost:8000/` risulta priv
 
 Interventi immediati (priorità massima):
 1. [x] Ripristinare gerarchia visiva della hero e del form principale (titolo, sottotitolo, CTA primaria) con spaziatura consistente e contrasto WCAG AA (2026-04-06): hero sopra la fold ridisegnata in `templates/index.html` con titolo ad alta priorità visiva, microcopy orientata al flusso guidato, CTA primaria verso il form e card laterale “Flusso consigliato”.
-2. [ ] Definire una griglia responsive stabile per la home (mobile-first) evitando blocchi “full width” disallineati e sezioni senza contenitore.
+2. [x] Definire una griglia responsive stabile per la home (mobile-first) evitando blocchi “full width” disallineati e sezioni senza contenitore (2026-04-06): introdotti container condivisi `home-container` e griglia `home-main-grid` tra hero/KPI/form/footer in `templates/index.html` + `static/css/style.css`, con regression test layout smoke `tests/test_accessibility_checks.py::test_homepage_uses_consistent_mobile_first_layout_containers`.
 3. [ ] Introdurre navigation pattern chiaro “Step 1→4” above-the-fold con stato corrente sempre visibile.
 4. [ ] Uniformare tipografia e scale token (font-size/line-height/spacing) per eliminare effetto “pagina rotta”.
 5. [ ] Aggiungere microcopy guidata vicino ai campi critici (`target`, `scan_type`) con esempi validi e hint sugli errori più frequenti.

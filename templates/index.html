@@ -12,8 +12,8 @@
     Salta al form di nuova scansione
   </a>
   <main class="min-h-screen flex flex-col">
-    <header class="border-b border-slate-800 bg-slate-950/80 px-6 py-10 md:py-14" aria-labelledby="hero-title">
-      <div class="mx-auto grid max-w-6xl gap-8 lg:grid-cols-[1.25fr_0.75fr] lg:items-end">
+    <header class="border-b border-slate-800 bg-slate-950/80 px-4 py-10 sm:px-6 md:py-14" aria-labelledby="hero-title">
+      <div class="home-container grid gap-8 lg:grid-cols-[1.25fr_0.75fr] lg:items-end">
         <div class="space-y-4">
           <p class="text-xs font-semibold uppercase tracking-[0.28em] text-cyan-300">Security Operations</p>
           <h1 id="hero-title" class="text-balance text-3xl font-semibold leading-tight text-slate-50 sm:text-4xl md:text-5xl">
@@ -49,8 +49,8 @@
       </div>
     </header>
 
-    <section class="px-6 py-8 border-b border-slate-800/60" aria-labelledby="dashboard-kpi-title">
-      <div class="max-w-6xl mx-auto">
+    <section class="border-b border-slate-800/60 px-4 py-8 sm:px-6" aria-labelledby="dashboard-kpi-title">
+      <div class="home-container">
         <div class="flex items-center justify-between gap-4 flex-wrap">
           <div>
             <p class="text-sm uppercase tracking-[0.25em] text-slate-500">Dashboard KPI</p>
@@ -95,8 +95,8 @@
       </div>
     </section>
 
-    <section class="flex-1 px-6 py-10" aria-labelledby="new-scan-title">
-      <div class="max-w-6xl mx-auto grid lg:grid-cols-[1.2fr_0.8fr] gap-8">
+    <section class="flex-1 px-4 py-10 sm:px-6" aria-labelledby="new-scan-title">
+      <div class="home-container home-main-grid">
         <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 md:p-8 shadow-xl">
           <h2 id="new-scan-title" class="text-xl font-semibold">Avvia una nuova scansione</h2>
           <p class="text-slate-400 mt-2">Inserisci un URL o un IP autorizzato. Le scansioni live sono disabilitate di default per sicurezza.</p>
@@ -378,8 +378,8 @@
       </div>
     </section>
 
-    <footer class="px-6 py-6 border-t border-slate-800 text-sm text-slate-500">
-      <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between gap-2">
+    <footer class="border-t border-slate-800 px-4 py-6 text-sm text-slate-500 sm:px-6">
+      <div class="home-container flex flex-col justify-between gap-2 md:flex-row">
         <span>© 2024 Vulnerability Assessment Platform</span>
         <span class="flex flex-wrap gap-3">
           <span>Ambiente: {{ request.app.title }}</span>
