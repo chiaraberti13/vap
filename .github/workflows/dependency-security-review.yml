@@ -1,0 +1,60 @@
+name: Dependency Security Review
+
+on:
+  schedule:
+    # Quarterly review: 1st day of Jan/Apr/Jul/Oct at 07:00 UTC
+    - cron: "0 7 1 1,4,7,10 *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dependency-review:
+    name: Dependency audit and compatibility checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies and tooling
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pip-audit
+
+      - name: Dependency vulnerability audit (blocking)
+        run: |
+          pip-audit --requirement requirements.txt
+
+      - name: Export outdated dependency inventory
+        run: |
+          pip list --outdated --format=columns > dependency-outdated-report.txt || true
+
+      - name: Compatibility regression tests (security + API)
+        run: |
+          pytest \
+            tests/test_security.py \
+            tests/test_security_headers.py \
+            tests/test_api_integration.py
+
+      - name: Validate Python dependency graph
+        run: |
+          pip check
+
+      - name: Upload dependency review artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-security-review
+          path: |
+            dependency-outdated-report.txt

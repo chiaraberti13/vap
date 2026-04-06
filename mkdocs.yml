@@ -25,6 +25,7 @@ nav:
   - Configurazione: configuration.md
   - Deployment: deployment.md
   - Security: security.md
+  - Dependency Update Policy: dependency-update-policy.md
   - Privacy & GDPR: privacy.md
   - Termini di Servizio: terms.md
   - SOC 2 Controls: soc2-controls.md
