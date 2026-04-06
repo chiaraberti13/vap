@@ -139,12 +139,17 @@
               <label class="grid gap-2">
                 <span class="text-sm text-slate-300">Target</span>
                 <input
+                  id="scan-target-input"
                   name="target"
                   type="text"
                   placeholder="https://example.com"
+                  aria-describedby="target-guidance"
                   class="w-full rounded-lg border border-slate-700 bg-slate-950/70 px-4 py-3 text-slate-100 focus:border-cyan-400 focus:outline-none"
                   required
                 />
+                <span id="target-guidance" class="text-xs leading-relaxed text-slate-400">
+                  Esempi validi: <code class="font-mono text-slate-200">https://example.com</code>, <code class="font-mono text-slate-200">https://staging.example.com</code>, <code class="font-mono text-slate-200">10.10.10.20</code>. Evita URL con path/query (errore frequente: target troppo specifico come <code class="font-mono text-slate-200">/login?next=</code>).
+                </span>
               </label>
               {% if api_key_required %}
               <label class="grid gap-2">
@@ -171,6 +176,9 @@
                 <h3 id="scan-explorer-title" class="text-sm text-slate-200 font-semibold tracking-wide">Scan Type Explorer</h3>
                 <p class="text-xs text-slate-400">Seleziona fino a 3 card per confronto rapido.</p>
               </div>
+              <p id="scan-type-guidance" class="text-xs leading-relaxed text-slate-400">
+                Suggerimento: inizia da <span class="text-slate-200 font-medium">light</span> per ricognizione veloce, usa <span class="text-slate-200 font-medium">full</span> quando vuoi una copertura estesa, scegli <span class="text-slate-200 font-medium">wordpress</span> solo se il target usa davvero WordPress.
+              </p>
               <div class="rounded-lg border border-slate-800 bg-slate-950/70 p-3" aria-label="Glossario termini tecnici">
                 <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Termini tecnici</p>
                 <div class="mt-2 flex flex-wrap gap-2">
@@ -298,12 +306,17 @@
             <label class="grid gap-2">
               <span class="text-sm text-slate-300">Target</span>
               <input
+                id="fallback-scan-target-input"
                 name="target"
                 type="text"
                 placeholder="https://example.com"
+                aria-describedby="fallback-target-guidance"
                 class="w-full rounded-lg border border-slate-700 bg-slate-950/70 px-4 py-3 text-slate-100 focus:border-cyan-400 focus:outline-none"
                 required
               />
+              <span id="fallback-target-guidance" class="text-xs leading-relaxed text-slate-400">
+                Esempi validi: <code class="font-mono text-slate-200">https://example.com</code> o <code class="font-mono text-slate-200">10.10.10.20</code>. Evita URL con path/query: invia dominio o host principale.
+              </span>
             </label>
             {% if api_key_required %}
             <label class="grid gap-2">
@@ -321,12 +334,16 @@
               <span class="text-sm text-slate-300">Tipo scansione</span>
               <select
                 name="scan_type"
+                aria-describedby="fallback-scan-type-guidance"
                 class="w-full rounded-lg border border-slate-700 bg-slate-950/70 px-4 py-3 text-slate-100 focus:border-cyan-400 focus:outline-none"
               >
                 {% for scan_type in scan_types %}
                 <option value="{{ scan_type }}">{{ scan_type | upper }}</option>
                 {% endfor %}
               </select>
+              <span id="fallback-scan-type-guidance" class="text-xs leading-relaxed text-slate-400">
+                Se non sei sicuro, parti da LIGHT. Usa WORDPRESS solo su siti WordPress per ridurre falsi positivi.
+              </span>
             </label>
             <label class="grid gap-2">
               <span class="text-sm text-slate-300">Priorità scansione</span>

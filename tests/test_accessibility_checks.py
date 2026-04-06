@@ -106,6 +106,20 @@ def test_homepage_uses_consistent_mobile_first_layout_containers():
     assert "home-main-grid" in html
 
 
+def test_homepage_exposes_microcopy_guidance_for_target_and_scan_type():
+    with TestClient(app.app) as client:
+        response = client.get("/")
+
+    assert response.status_code == 200
+    html = response.text
+
+    assert 'id="target-guidance"' in html
+    assert 'id="scan-type-guidance"' in html
+    assert 'aria-describedby="target-guidance"' in html
+    assert "errore frequente" in html
+    assert "light" in html and "wordpress" in html
+
+
 def test_scan_detail_has_live_regions_and_single_main_landmark():
     _clear_scans()
     with SessionLocal() as session:
