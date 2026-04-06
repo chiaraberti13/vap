@@ -318,6 +318,7 @@ Una release è “done” quando:
 - [x] Verifica continua post-upgrade (2026-04-05): rieseguita suite completa `PYTHONPATH=. pytest -q` con esito `144 passed`, coverage totale `83.08%` (soglia minima `80%` rispettata) e nessuna regressione funzionale rilevata.
 - [x] Verifica continua post-upgrade (2026-04-06): rieseguita suite completa `PYTHONPATH=. pytest -q` con esito `144 passed`, coverage totale `83.08%` (soglia minima `80%` rispettata) e nessuna regressione funzionale rilevata.
 - [x] Verifica continua post-upgrade (2026-04-06, ciclo iterativo successivo): confermata stabilità su nuova esecuzione completa `PYTHONPATH=. pytest -q` con esito `144 passed`, coverage totale `83.08%` (soglia minima `80%` rispettata) e nessuna regressione funzionale rilevata.
+- [x] Verifica continua post-upgrade (2026-04-06, ciclo iterativo sicurezza+qualità): eseguita nuovamente la suite completa `PYTHONPATH=. pytest -q` con esito `144 passed`, coverage totale `83.08%` (soglia minima `80%` rispettata), senza regressioni su flussi UX guidati, hardening e controlli API.
 
 ---
 
