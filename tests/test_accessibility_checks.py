@@ -120,6 +120,20 @@ def test_homepage_exposes_microcopy_guidance_for_target_and_scan_type():
     assert "light" in html and "wordpress" in html
 
 
+def test_homepage_uses_typography_tokens_for_consistent_readability():
+    with TestClient(app.app) as client:
+        response = client.get("/")
+
+    assert response.status_code == 200
+    html = response.text
+
+    assert "home-eyebrow" in html
+    assert "home-hero-title" in html
+    assert "home-section-title" in html
+    assert "home-lead" in html
+    assert html.count("home-microcopy") >= 3
+
+
 def test_scan_detail_has_live_regions_and_single_main_landmark():
     _clear_scans()
     with SessionLocal() as session:

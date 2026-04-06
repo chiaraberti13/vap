@@ -15,11 +15,11 @@
     <header class="border-b border-slate-800 bg-slate-950/80 px-4 py-10 sm:px-6 md:py-14" aria-labelledby="hero-title">
       <div class="home-container grid gap-8 lg:grid-cols-[1.25fr_0.75fr] lg:items-end">
         <div class="space-y-4">
-          <p class="text-xs font-semibold uppercase tracking-[0.28em] text-cyan-300">Security Operations</p>
-          <h1 id="hero-title" class="text-balance text-3xl font-semibold leading-tight text-slate-50 sm:text-4xl md:text-5xl">
+          <p class="home-eyebrow font-semibold uppercase text-cyan-300">Security Operations</p>
+          <h1 id="hero-title" class="home-hero-title text-balance font-semibold text-slate-50">
             Guided Security Analysis per team tecnici e compliance.
           </h1>
-          <p class="max-w-2xl text-base leading-relaxed text-slate-300 sm:text-lg">
+          <p class="home-lead max-w-2xl text-slate-300">
             Pianifica la scansione in 4 step, riduci errori operativi e genera report professionali con evidenze utili a remediation e audit.
           </p>
           <div class="flex flex-wrap items-center gap-3 pt-2">
@@ -71,9 +71,9 @@
         <div class="flex items-center justify-between gap-4 flex-wrap">
           <div>
             <p class="text-sm uppercase tracking-[0.25em] text-slate-500">Dashboard KPI</p>
-            <h2 id="dashboard-kpi-title" class="text-2xl font-semibold mt-1">Stato operativo in tempo reale</h2>
+            <h2 id="dashboard-kpi-title" class="home-section-title mt-1 font-semibold">Stato operativo in tempo reale</h2>
           </div>
-          <div class="text-sm text-slate-400">
+          <div class="home-microcopy text-slate-400">
             Ultimo aggiornamento: {{ dashboard_timestamp.strftime("%d/%m/%Y %H:%M") }}
           </div>
         </div>
@@ -115,8 +115,8 @@
     <section class="flex-1 px-4 py-10 sm:px-6" aria-labelledby="new-scan-title">
       <div class="home-container home-main-grid">
         <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 md:p-8 shadow-xl">
-          <h2 id="new-scan-title" class="text-xl font-semibold">Avvia una nuova scansione</h2>
-          <p class="text-slate-400 mt-2">Inserisci un URL o un IP autorizzato. Le scansioni live sono disabilitate di default per sicurezza.</p>
+          <h2 id="new-scan-title" class="home-section-title font-semibold">Avvia una nuova scansione</h2>
+          <p class="home-body-text text-slate-400 mt-2">Inserisci un URL o un IP autorizzato. Le scansioni live sono disabilitate di default per sicurezza.</p>
 
           {% if error %}
           <div class="mt-4 p-3 bg-red-500/20 border border-red-400/40 rounded-lg text-red-100" role="alert" aria-live="assertive">
@@ -147,7 +147,7 @@
                   class="w-full rounded-lg border border-slate-700 bg-slate-950/70 px-4 py-3 text-slate-100 focus:border-cyan-400 focus:outline-none"
                   required
                 />
-                <span id="target-guidance" class="text-xs leading-relaxed text-slate-400">
+                <span id="target-guidance" class="home-microcopy text-slate-400">
                   Esempi validi: <code class="font-mono text-slate-200">https://example.com</code>, <code class="font-mono text-slate-200">https://staging.example.com</code>, <code class="font-mono text-slate-200">10.10.10.20</code>. Evita URL con path/query (errore frequente: target troppo specifico come <code class="font-mono text-slate-200">/login?next=</code>).
                 </span>
               </label>
@@ -176,7 +176,7 @@
                 <h3 id="scan-explorer-title" class="text-sm text-slate-200 font-semibold tracking-wide">Scan Type Explorer</h3>
                 <p class="text-xs text-slate-400">Seleziona fino a 3 card per confronto rapido.</p>
               </div>
-              <p id="scan-type-guidance" class="text-xs leading-relaxed text-slate-400">
+              <p id="scan-type-guidance" class="home-microcopy text-slate-400">
                 Suggerimento: inizia da <span class="text-slate-200 font-medium">light</span> per ricognizione veloce, usa <span class="text-slate-200 font-medium">full</span> quando vuoi una copertura estesa, scegli <span class="text-slate-200 font-medium">wordpress</span> solo se il target usa davvero WordPress.
               </p>
               <div class="rounded-lg border border-slate-800 bg-slate-950/70 p-3" aria-label="Glossario termini tecnici">
@@ -314,7 +314,7 @@
                 class="w-full rounded-lg border border-slate-700 bg-slate-950/70 px-4 py-3 text-slate-100 focus:border-cyan-400 focus:outline-none"
                 required
               />
-              <span id="fallback-target-guidance" class="text-xs leading-relaxed text-slate-400">
+              <span id="fallback-target-guidance" class="home-microcopy text-slate-400">
                 Esempi validi: <code class="font-mono text-slate-200">https://example.com</code> o <code class="font-mono text-slate-200">10.10.10.20</code>. Evita URL con path/query: invia dominio o host principale.
               </span>
             </label>
@@ -341,7 +341,7 @@
                 <option value="{{ scan_type }}">{{ scan_type | upper }}</option>
                 {% endfor %}
               </select>
-              <span id="fallback-scan-type-guidance" class="text-xs leading-relaxed text-slate-400">
+              <span id="fallback-scan-type-guidance" class="home-microcopy text-slate-400">
                 Se non sei sicuro, parti da LIGHT. Usa WORDPRESS solo su siti WordPress per ridurre falsi positivi.
               </span>
             </label>
