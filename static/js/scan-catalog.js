@@ -22,6 +22,10 @@
   const stepNext = document.getElementById("scan-step-next");
   const stepPrev = document.getElementById("scan-step-prev");
   const currentStepLabel = document.getElementById("scan-current-step-label");
+  const riskBadge = document.getElementById("scan-risk-badge");
+  const invasivenessBadge = document.getElementById("scan-invasiveness-badge");
+  const noiseBadge = document.getElementById("scan-noise-badge");
+  const riskSummary = document.getElementById("scan-risk-summary");
 
   if (
     !payloadNode ||
@@ -45,6 +49,10 @@
     stepIndicators.length === 0 ||
     !stepNext ||
     !stepPrev ||
+    !riskBadge ||
+    !invasivenessBadge ||
+    !noiseBadge ||
+    !riskSummary ||
     glossaryButtons.length === 0
   ) {
     return;
@@ -99,6 +107,77 @@
 
   function normalizeLevel(level) {
     return (level || "intermediate").toLowerCase();
+  }
+
+  function riskScoreFromLabel(label) {
+    const normalized = String(label || "").toLowerCase();
+    if (
+      normalized.includes("alta") ||
+      normalized.includes("alto") ||
+      normalized.includes("high") ||
+      normalized.includes("aggressiva")
+    ) {
+      return 3;
+    }
+    if (
+      normalized.includes("media") ||
+      normalized.includes("medio") ||
+      normalized.includes("moder")
+    ) {
+      return 2;
+    }
+    return 1;
+  }
+
+  function riskUiFromEntry(entry) {
+    const invasivenessScore = riskScoreFromLabel(entry.invasiveness);
+    const noiseScore = riskScoreFromLabel(entry.noise_level);
+    const combinedScore = Math.max(invasivenessScore, noiseScore);
+
+    if (combinedScore >= 3) {
+      return {
+        badgeClass: "border-rose-400/60 text-rose-100 bg-rose-500/20",
+        panelClass: "border-rose-400/40 bg-rose-500/10",
+        label: "Rischio alto",
+        summary:
+          "Questa scansione è invasiva o rumorosa: pianifica una finestra autorizzata e avvisa i team operativi prima del run.",
+      };
+    }
+
+    if (combinedScore === 2) {
+      return {
+        badgeClass: "border-amber-300/60 text-amber-100 bg-amber-500/20",
+        panelClass: "border-amber-400/40 bg-amber-500/10",
+        label: "Rischio medio",
+        summary:
+          "Questa scansione può generare traffico operativo visibile: verifica il perimetro autorizzato prima della submission.",
+      };
+    }
+
+    return {
+      badgeClass: "border-emerald-300/60 text-emerald-100 bg-emerald-500/20",
+      panelClass: "border-emerald-400/40 bg-emerald-500/10",
+      label: "Rischio basso",
+      summary:
+        "Questa scansione è a bassa invasività: resta comunque obbligatorio il consenso e la validazione del target.",
+    };
+  }
+
+  function updateRiskPanel(entry) {
+    const ui = riskUiFromEntry(entry);
+    const normalizedInvasiveness = String(entry.invasiveness || "non specificata");
+    const normalizedNoise = String(entry.noise_level || "non specificato");
+
+    riskBadge.className = `inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold uppercase tracking-wide ${ui.badgeClass}`;
+    riskBadge.textContent = ui.label;
+    invasivenessBadge.textContent = `Invasività: ${normalizedInvasiveness}`;
+    noiseBadge.textContent = `Rumore: ${normalizedNoise}`;
+    riskSummary.textContent = ui.summary;
+
+    const panel = riskBadge.closest("#scan-risk-panel");
+    if (panel) {
+      panel.className = `rounded-lg border p-4 ${ui.panelClass}`;
+    }
   }
 
   function visibleEntries() {
@@ -175,6 +254,7 @@
       return;
     }
 
+    updateRiskPanel(selectedEntry);
     whyObjective.textContent = selectedEntry.learning_objective || "Nessun obiettivo didattico disponibile.";
     whyWhenToUse.textContent = selectedEntry.when_to_use || "Indicazioni non disponibili.";
     whyWhenNotToUse.textContent = selectedEntry.when_not_to_use || "Limitazioni non disponibili.";

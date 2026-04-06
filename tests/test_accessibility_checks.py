@@ -134,6 +134,23 @@ def test_homepage_uses_typography_tokens_for_consistent_readability():
     assert html.count("home-microcopy") >= 3
 
 
+def test_homepage_shows_scan_risk_badges_before_submit():
+    with TestClient(app.app) as client:
+        response = client.get("/")
+
+    assert response.status_code == 200
+    html = response.text
+
+    assert 'id="scan-risk-panel"' in html
+    assert 'id="scan-risk-badge"' in html
+    assert 'id="scan-invasiveness-badge"' in html
+    assert 'id="scan-noise-badge"' in html
+    assert 'id="scan-risk-summary"' in html
+    assert "Rischio medio" in html
+    assert "Invasività: media" in html
+    assert "Rumore: medio" in html
+
+
 def test_scan_detail_has_live_regions_and_single_main_landmark():
     _clear_scans()
     with SessionLocal() as session:
