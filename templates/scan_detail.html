@@ -625,7 +625,7 @@
   </main>
 
   <script id="scan-detail-config" type="application/json">
-    {{ {"scanId": scan.id, "apiKey": api_key or ""} | tojson }}
+    {{ {"scanId": scan.id, "apiKey": api_key or "", "scanStatus": scan.status} | tojson }}
   </script>
   <script src="/static/js/scan-detail.js"></script>
 </body>

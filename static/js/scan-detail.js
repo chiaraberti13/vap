@@ -7,8 +7,16 @@
   const config = JSON.parse(configElement.textContent || "{}");
   const scanId = Number(config.scanId);
   const apiKey = config.apiKey || "";
+  const terminalStatuses = ["completed", "report_failed", "canceled"];
+  const initialStatus = config.scanStatus || "";
 
   if (!Number.isFinite(scanId)) {
+    return;
+  }
+
+  // If the scan is already in a terminal state when the page loads,
+  // skip the WebSocket connection entirely to avoid an infinite reload loop.
+  if (terminalStatuses.includes(initialStatus)) {
     return;
   }
 
