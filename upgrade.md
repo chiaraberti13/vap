@@ -149,9 +149,9 @@ Done quando: Test header sicurezza passanti.
 Descrizione: Tracciare azioni sensibili e limitare accesso per ruolo.  
 Done quando: Controlli accesso e audit coperti da test.
 
-[ ] Migliorare osservabilità API production-grade  
+[x] Migliorare osservabilità API production-grade  
 Descrizione: Aggiungere metriche strutturate e alerting centralizzato (non solo log locali).  
-Done quando: Dashboard/alert esterni documentati e attivi.
+Done quando: Dashboard/alert esterni documentati e attivi. ✅ Completato con `telemetry.py`: metriche aggiuntive (`vap_scans_active_total`, `vap_scans_failed_total`, `vap_findings_total`, `vap_http_errors_5xx_total`), export a Prometheus Pushgateway e DataDog, rilevamento spike errori/latenza con alerting via Alertmanager e webhook generico. Configurabile via `VAP_METRICS_PUSHGATEWAY_URL`, `VAP_DATADOG_API_KEY`, `VAP_ALERTMANAGER_URL`, `VAP_ALERT_WEBHOOK_URL`.
 
 ### E. Frontend guided UX
 
@@ -167,9 +167,9 @@ Done quando: Journey completo testato end-to-end.
 Descrizione: Focus states, skip-link, navigazione tastiera e messaggi di errore accessibili.  
 Done quando: Suite a11y automatica senza blocker.
 
-[ ] Completare visual regression cross-breakpoint  
+[x] Completare visual regression cross-breakpoint  
 Descrizione: Rafforzare controllo regressioni layout su viewport chiave mobile/tablet/desktop.  
-Done quando: Baseline visuali multi-breakpoint in CI.
+Done quando: Baseline visuali multi-breakpoint in CI. ✅ Completato con `tests/visual/visual-regression.spec.js` (Playwright), `playwright.config.js` e job CI `visual-regression` in `ci-quality-gates.yml`. Copre viewport: mobile (375px), tablet (768px), desktop (1280px), wide (1920px). Controllo horizontal overflow + screenshot snapshot con tolleranza 2%.
 
 ### F. Layout / Design system
 
@@ -181,9 +181,9 @@ Done quando: Layout coerente e leggibile sopra la fold.
 Descrizione: Hint su target/scan type, rischio/invasività esplicitati prima del run.  
 Done quando: Riduzione ambiguità utente nel primo flusso.
 
-[ ] Migrare da Tailwind CDN a pipeline locale  
+[x] Migrare da Tailwind CDN a pipeline locale  
 Descrizione: Build CSS self-hosted per sicurezza, performance e controllo versioning.  
-Done quando: Nessuna dipendenza runtime da CDN CSS/JS per UI core.
+Done quando: Nessuna dipendenza runtime da CDN CSS/JS per UI core. ✅ Completato con `package.json` (tailwindcss 3.4), `tailwind.config.js`, `assets/css/tailwind.input.css`, build `static/css/tailwind.min.css`. Tutti i 5 template aggiornati. CSP rafforzata (rimosso `cdn.tailwindcss.com`). CI gate anti-CDN + build step in `css-build` job.
 
 ### G. Learning layer e contenuti didattici
 
@@ -259,9 +259,9 @@ Done quando: Journey end-to-end protetto da test.
 Descrizione: Gate performance/accessibilità/best-practice/SEO.  
 Done quando: Pipeline interrompe regressioni sotto soglia.
 
-[ ] Integrare DAST autenticato in pre-release  
+[x] Integrare DAST autenticato in pre-release  
 Descrizione: Eseguire scansioni dinamiche su ambiente staging autenticato.  
-Done quando: Report DAST incluso nei gate release.
+Done quando: Report DAST incluso nei gate release. ✅ Completato con `.github/workflows/dast-pre-release.yml`: OWASP ZAP full scan + API scan su staging autenticato, SARIF upload, gate di release `dast-gate`. Attivabile via tag `v*` o workflow_dispatch. Configurabile via secret `VAP_STAGING_URL`, `VAP_DAST_USERNAME`, `VAP_DAST_PASSWORD`.
 
 ### L. Performance e osservabilità
 
@@ -273,9 +273,9 @@ Done quando: Build bloccata su regressione.
 Descrizione: Evitare frizioni durante creazione/monitor scansione.  
 Done quando: Nessun blocker UX nei test principali.
 
-[ ] Estendere telemetria runtime applicativa  
+[x] Estendere telemetria runtime applicativa  
 Descrizione: Esportare metriche a backend monitoraggio centralizzato.  
-Done quando: Alert su error spike/latency attivi.
+Done quando: Alert su error spike/latency attivi. ✅ Completato con `telemetry.py`: push periodico a Pushgateway/DataDog, rilevamento spike errori e alert via Alertmanager/webhook, thread daemon avviato nel lifespan FastAPI.
 
 ### M. Milestone esecutive
 
@@ -288,8 +288,8 @@ Descrizione: Portare la home da selezione piatta a percorso didattico guidato.
 [x] Milestone 3 — Scan detail didattico + remediation roadmap  
 Descrizione: Rendere il post-scan più formativo e operativo.
 
-[ ] Milestone 4 — Industrializzazione finale  
-Descrizione: Chiudere gap residui su plugin contract, CSS self-hosted, security scanning CI avanzato, osservabilità centralizzata.
+[x] Milestone 4 — Industrializzazione finale  
+Descrizione: Chiudere gap residui su plugin contract, CSS self-hosted, security scanning CI avanzato, osservabilità centralizzata. ✅ Completato: Tailwind CDN → build locale, DAST autenticato in CI, visual regression cross-breakpoint, telemetria centralizzata con alerting.
 
 ---
 

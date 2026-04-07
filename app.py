@@ -60,6 +60,7 @@ from security import (
     verify_jwt_token,
 )
 from tasks import orchestrate_scan, run_scan_in_process
+from telemetry import start_telemetry_push, stop_telemetry_push
 
 
 @asynccontextmanager
@@ -68,6 +69,7 @@ async def lifespan(_: FastAPI):
     configure_structlog()
     require_jwt_configuration()
     scheduler = start_background_jobs()
+    start_telemetry_push()
     if not check_broker_connection():
         import logging
         logging.getLogger("vap.startup").warning(
@@ -77,6 +79,7 @@ async def lifespan(_: FastAPI):
             settings.celery_broker_url,
         )
     yield
+    stop_telemetry_push()
     scheduler.shutdown(wait=False)
 
 
@@ -334,9 +337,12 @@ async def metrics_and_logging(request: Request, call_next):
     try:
         response = await call_next(request)
     except Exception:
+        from telemetry import HTTP_ERRORS_5XX
         duration = perf_counter() - start_time
         REQUEST_COUNT.labels(request.method, request.url.path, "500").inc()
         REQUEST_LATENCY.labels(request.method, request.url.path).observe(duration)
+        if HTTP_ERRORS_5XX:
+            HTTP_ERRORS_5XX.inc()
         http_logger.exception(
             "http_request_failed",
             method=request.method,
@@ -350,6 +356,10 @@ async def metrics_and_logging(request: Request, call_next):
     status_code = response.status_code
     REQUEST_COUNT.labels(request.method, request.url.path, str(status_code)).inc()
     REQUEST_LATENCY.labels(request.method, request.url.path).observe(duration)
+    if status_code >= 500:
+        from telemetry import HTTP_ERRORS_5XX
+        if HTTP_ERRORS_5XX:
+            HTTP_ERRORS_5XX.inc()
     response.headers["X-Request-ID"] = request_id
     http_logger.info(
         "http_request",
