@@ -89,8 +89,8 @@ class Settings:
     hsts_max_age: int = int(os.getenv("VAP_HSTS_MAX_AGE", "31536000"))
     csp_policy: str = os.getenv(
         "VAP_CSP_POLICY",
-        "default-src 'self'; img-src 'self' data:; style-src 'self' https://cdn.tailwindcss.com; "
-        "script-src 'self' https://cdn.tailwindcss.com; connect-src 'self'; frame-src 'none'; "
+        "default-src 'self'; img-src 'self' data:; style-src 'self'; "
+        "script-src 'self'; connect-src 'self'; frame-src 'none'; "
         "frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; "
         "manifest-src 'self'; block-all-mixed-content; upgrade-insecure-requests",
     )
@@ -196,6 +196,25 @@ class Settings:
     scheduled_scans: str = os.getenv("VAP_SCHEDULED_SCANS", "[]")
     websocket_poll_seconds: float = float(os.getenv("VAP_WEBSOCKET_POLL_SECONDS", "2.0"))
     ui_guided_scan_explorer_enabled: bool = os.getenv("VAP_UI_GUIDED_SCAN_EXPLORER_ENABLED", "true").lower() == "true"
+    # ── Telemetria centralizzata ──────────────────────────────────────────────
+    # Prometheus remote-write: esporta metriche a Prometheus/Thanos/Mimir.
+    # Lasciare vuoto per disabilitare l'export (il /metrics locale è sempre attivo).
+    metrics_remote_write_url: str = os.getenv("VAP_METRICS_REMOTE_WRITE_URL", "")
+    metrics_remote_write_bearer: str = os.getenv("VAP_METRICS_REMOTE_WRITE_BEARER", "")
+    metrics_push_interval_seconds: int = int(os.getenv("VAP_METRICS_PUSH_INTERVAL", "60"))
+    # Pushgateway Prometheus (alternativa a remote-write per ambienti senza scraping)
+    metrics_pushgateway_url: str = os.getenv("VAP_METRICS_PUSHGATEWAY_URL", "")
+    metrics_pushgateway_job: str = os.getenv("VAP_METRICS_PUSHGATEWAY_JOB", "vap")
+    # DataDog: esporta metriche via DogStatsD o HTTP API
+    datadog_api_key: str = os.getenv("VAP_DATADOG_API_KEY", "")
+    datadog_site: str = os.getenv("VAP_DATADOG_SITE", "datadoghq.eu")
+    datadog_service: str = os.getenv("VAP_DATADOG_SERVICE", "vap")
+    datadog_env: str = os.getenv("VAP_DATADOG_ENV", os.getenv("VAP_ENV", "development"))
+    # Alerting: soglie per notifiche su spike di errori e latenza elevata
+    alert_error_rate_threshold: float = float(os.getenv("VAP_ALERT_ERROR_RATE_THRESHOLD", "0.05"))
+    alert_latency_p99_threshold_seconds: float = float(os.getenv("VAP_ALERT_LATENCY_P99_THRESHOLD", "2.0"))
+    alertmanager_url: str = os.getenv("VAP_ALERTMANAGER_URL", "")
+    alert_webhook_url: str = os.getenv("VAP_ALERT_WEBHOOK_URL", "")
 
 
 settings = Settings()

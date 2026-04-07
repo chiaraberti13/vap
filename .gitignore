@@ -48,3 +48,4 @@ htmlcov/
 
 # Security tools
 security-tools/
+node_modules/
