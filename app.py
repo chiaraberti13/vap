@@ -42,6 +42,7 @@ from compliance import (
 from config import settings
 from database import AuditEvent, ConsentRecord, LearningFeedback, LearningPathProgress, Scan, SessionLocal, get_db, init_db
 from scan_catalog import get_scan_catalog
+from scan_configuration import ScanConfigurationV1, get_scan_config_schema_v1
 from scanner_engine import (
     ScanValidationError,
     get_scan_type_choices,
@@ -515,6 +516,7 @@ class ScanCreate(BaseModel):
     scan_type: str = Field("full")
     priority: int = Field(5, ge=0, le=9)
     data_classification: str = Field("internal", max_length=40)
+    scan_configuration: ScanConfigurationV1 = Field(default_factory=ScanConfigurationV1)
     accept_privacy: bool = Field(False)
     accept_terms: bool = Field(False)
 
@@ -1981,6 +1983,22 @@ def get_scan_catalog_endpoint(
     if cached_payload:
         return cached_payload
     response_payload = _scan_catalog_for_ui()
+    _set_cached_json(cache_key, response_payload)
+    return response_payload
+
+
+@app.get("/api/v1/scan-config/schema", response_model=Dict[str, Any])
+@limiter.limit(settings.rate_limit_read)
+def get_scan_config_schema_endpoint(
+    request: Request,
+    _: None = Depends(enforce_api_key),
+    __: str = Depends(enforce_viewer_role),
+) -> Dict[str, Any]:
+    cache_key = _cache_key("scan-config", "schema-v1")
+    cached_payload = _get_cached_json(cache_key)
+    if cached_payload:
+        return cached_payload
+    response_payload = get_scan_config_schema_v1()
     _set_cached_json(cache_key, response_payload)
     return response_payload
 
