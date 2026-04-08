@@ -59,7 +59,7 @@ Creare un piano operativo **didattico e incrementale** per trasformare VAP in un
   - Campi minimi: target scope, rate/timeout, depth, auth context, exclusions, severity threshold, evidenza minima.
   - Vincoli fail-closed e default sicuri.
 
-- [ ] **A2. Validation & Policy Engine**
+- [x] **A2. Validation & Policy Engine**
   - Validazione server-side rigorosa di ogni opzione.
   - Regole di compatibilità tra tool (es. mutually exclusive settings).
   - Policy di sicurezza: blocco opzioni ad alto rischio in assenza autorizzazione/ruolo.
