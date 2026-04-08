@@ -54,7 +54,7 @@ Creare un piano operativo **didattico e incrementale** per trasformare VAP in un
 ## 3) Piano di miglioramento (checklist prioritaria)
 
 ## Fase A — Fondazioni per scansioni configurabili (P0)
-- [ ] **A1. Modello dati Scan Configuration v1**
+- [x] **A1. Modello dati Scan Configuration v1**
   - JSON schema versionato per opzioni per-tool e globali.
   - Campi minimi: target scope, rate/timeout, depth, auth context, exclusions, severity threshold, evidenza minima.
   - Vincoli fail-closed e default sicuri.
@@ -151,6 +151,6 @@ Un task è completato solo se:
 ---
 
 ## 6) Primo task consigliato (prossimo ciclo)
-**A1 — Modello dati Scan Configuration v1**.
+**A2 — Validation & Policy Engine**.
 
-Motivo: senza uno schema configurazione robusto non è possibile offrire personalizzazione per-singola-voce in modo sicuro, didattico e scalabile.
+Motivo: ora che lo schema configurazione v1 è disponibile e validato fail-closed, serve applicare regole server-side di compatibilità e policy di autorizzazione per impedire combinazioni rischiose.
