@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from typing import Dict, List, Literal, Optional
+from typing import Dict, List, Literal, Optional, Set
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -95,6 +95,64 @@ class ScanConfigurationV1(BaseModel):
         if any(len(value) > 200 for value in normalized):
             raise ValueError("Ogni esclusione deve avere massimo 200 caratteri.")
         return normalized
+
+
+class ScanConfigurationPolicyError(ValueError):
+    """Errore di policy durante la validazione della configurazione scansione."""
+
+
+HIGH_RISK_TOOLS: Set[str] = {"sqlmap", "commix", "nosqlmap"}
+RESTRICTED_ROLES_FOR_HIGH_RISK: Set[str] = {"admin"}
+MUTUALLY_EXCLUSIVE_TOOLS: Set[frozenset[str]] = {
+    frozenset({"zap", "burp"}),
+}
+SCAN_TYPE_ALLOWED_TOOLS: Dict[str, Set[str]] = {
+    "light": {"whatweb", "nikto", "nmap", "httpx", "nikto_headers", "nmap_top_ports"},
+    "wordpress": {"wpscan", "whatweb", "nikto", "nuclei", "nmap", "wafw00f", "nuclei_wordpress"},
+}
+
+
+def validate_scan_configuration_policy_v1(
+    config: ScanConfigurationV1,
+    *,
+    scan_type: str,
+    actor_role: str,
+) -> None:
+    """Applica regole server-side di compatibilità e autorizzazione."""
+
+    normalized_scan_type = scan_type.strip().lower()
+    normalized_role = actor_role.strip().lower()
+    enabled_tools = {
+        tool_name.strip().lower()
+        for tool_name, override in config.tool_overrides.items()
+        if override.enabled
+    }
+
+    if not config.crawler.enabled and config.crawler.max_depth > 0:
+        raise ScanConfigurationPolicyError(
+            "Crawler disabilitato: impostare max_depth=0 oppure abilitare crawler.enabled."
+        )
+
+    disallowed_for_scan_type = enabled_tools - SCAN_TYPE_ALLOWED_TOOLS.get(normalized_scan_type, enabled_tools)
+    if disallowed_for_scan_type:
+        blocked = ", ".join(sorted(disallowed_for_scan_type))
+        raise ScanConfigurationPolicyError(
+            f"I tool [{blocked}] non sono compatibili con scan_type='{normalized_scan_type}'."
+        )
+
+    for tool_pair in MUTUALLY_EXCLUSIVE_TOOLS:
+        if tool_pair.issubset(enabled_tools):
+            left, right = sorted(tool_pair)
+            raise ScanConfigurationPolicyError(
+                f"I tool '{left}' e '{right}' non possono essere abilitati insieme."
+            )
+
+    restricted_tools = enabled_tools & HIGH_RISK_TOOLS
+    if restricted_tools and normalized_role not in RESTRICTED_ROLES_FOR_HIGH_RISK:
+        blocked = ", ".join(sorted(restricted_tools))
+        raise ScanConfigurationPolicyError(
+            f"I tool ad alto rischio [{blocked}] richiedono ruolo admin."
+        )
 
 
 def get_scan_config_schema_v1() -> Dict[str, object]:

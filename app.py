@@ -42,7 +42,12 @@ from compliance import (
 from config import settings
 from database import AuditEvent, ConsentRecord, LearningFeedback, LearningPathProgress, Scan, SessionLocal, get_db, init_db
 from scan_catalog import get_scan_catalog
-from scan_configuration import ScanConfigurationV1, get_scan_config_schema_v1
+from scan_configuration import (
+    ScanConfigurationPolicyError,
+    ScanConfigurationV1,
+    get_scan_config_schema_v1,
+    validate_scan_configuration_policy_v1,
+)
 from scanner_engine import (
     ScanValidationError,
     get_scan_type_choices,
@@ -1505,7 +1510,7 @@ def create_scan(
     payload: ScanCreate,
     db: Session = Depends(get_db),
     _: None = Depends(enforce_api_key),
-    __: str = Depends(enforce_operator_role),
+    user_role: str = Depends(enforce_operator_role),
 ) -> ScanStatus:
     try:
         scan_type = payload.scan_type.lower().strip()
@@ -1518,7 +1523,14 @@ def create_scan(
             validate_nmap_target(payload.target)
         else:
             validate_target(payload.target)
+        validate_scan_configuration_policy_v1(
+            payload.scan_configuration,
+            scan_type=scan_type,
+            actor_role=user_role,
+        )
     except ScanValidationError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except ScanConfigurationPolicyError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     subject_id = get_subject_id(request)
