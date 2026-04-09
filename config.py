@@ -195,6 +195,14 @@ class Settings:
     scan_archive_after_days: int = int(os.getenv("VAP_SCAN_ARCHIVE_AFTER_DAYS", "7"))
     scheduled_scans: str = os.getenv("VAP_SCHEDULED_SCANS", "[]")
     websocket_poll_seconds: float = float(os.getenv("VAP_WEBSOCKET_POLL_SECONDS", "2.0"))
+    scan_kill_switch_enabled: bool = os.getenv("VAP_SCAN_KILL_SWITCH", "false").lower() == "true"
+    scan_guardrails_max_duration_seconds: int = int(os.getenv("VAP_SCAN_GUARDRAILS_MAX_DURATION", "900"))
+    scan_guardrails_max_requests_per_minute: int = int(os.getenv("VAP_SCAN_GUARDRAILS_MAX_RPM", "300"))
+    scan_guardrails_max_concurrency: int = int(os.getenv("VAP_SCAN_GUARDRAILS_MAX_CONCURRENCY", "8"))
+    scan_guardrails_max_tool_timeout_seconds: int = int(os.getenv("VAP_SCAN_GUARDRAILS_MAX_TOOL_TIMEOUT", "120"))
+    scan_guardrails_safe_mode_max_depth: int = int(os.getenv("VAP_SCAN_GUARDRAILS_SAFE_MAX_DEPTH", "2"))
+    scan_guardrails_safe_mode_max_payloads: int = int(os.getenv("VAP_SCAN_GUARDRAILS_SAFE_MAX_PAYLOADS", "80"))
+    scan_guardrails_auto_abort_error_threshold: int = int(os.getenv("VAP_SCAN_GUARDRAILS_AUTO_ABORT_ERRORS", "3"))
     ui_guided_scan_explorer_enabled: bool = os.getenv("VAP_UI_GUIDED_SCAN_EXPLORER_ENABLED", "true").lower() == "true"
     # ── Telemetria centralizzata ──────────────────────────────────────────────
     # Prometheus remote-write: esporta metriche a Prometheus/Thanos/Mimir.

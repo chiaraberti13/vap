@@ -829,3 +829,83 @@ def test_auth_token_endpoint_enforces_rate_limit(monkeypatch):
 
     assert all(code in {401, 429} for code in status_codes)
     assert 429 in status_codes
+
+
+def test_create_scan_rejects_when_kill_switch_enabled(monkeypatch):
+    _clear_scans()
+    app.app.dependency_overrides[app.enforce_api_key] = lambda: None
+    app.app.dependency_overrides[app.enforce_operator_role] = lambda: "admin"
+
+    class DummyResult:
+        id = "dummy-task"
+
+    def fake_apply_async(*_args, **_kwargs):
+        return DummyResult()
+
+    monkeypatch.setattr(app.orchestrate_scan, "apply_async", fake_apply_async)
+    monkeypatch.setattr(
+        app,
+        "settings",
+        type("S", (), {**app.settings.__dict__, "scan_kill_switch_enabled": True})(),
+    )
+
+    with TestClient(app.app) as client:
+        response = client.post(
+            "/api/v1/scans",
+            json={
+                "target": "example.com",
+                "scan_type": "full",
+                "priority": 3,
+                "accept_privacy": True,
+                "accept_terms": True,
+            },
+        )
+
+    assert response.status_code == 400
+    assert "Kill switch attivo" in response.json()["detail"]
+    app.app.dependency_overrides.clear()
+
+
+def test_create_scan_enforces_safe_mode_for_non_admin(monkeypatch):
+    _clear_scans()
+    app.app.dependency_overrides[app.enforce_api_key] = lambda: None
+    app.app.dependency_overrides[app.enforce_operator_role] = lambda: "operator"
+
+    class DummyResult:
+        id = "dummy-task"
+
+    def fake_apply_async(*_args, **_kwargs):
+        return DummyResult()
+
+    monkeypatch.setattr(app.orchestrate_scan, "apply_async", fake_apply_async)
+    monkeypatch.setattr(
+        app,
+        "settings",
+        type(
+            "S",
+            (),
+            {
+                **app.settings.__dict__,
+                "scan_guardrails_safe_mode_max_depth": 2,
+            },
+        )(),
+    )
+
+    with TestClient(app.app) as client:
+        response = client.post(
+            "/api/v1/scans",
+            json={
+                "target": "example.com",
+                "scan_type": "full",
+                "priority": 3,
+                "accept_privacy": True,
+                "accept_terms": True,
+                "scan_configuration": {
+                    "crawler": {"enabled": True, "max_depth": 4}
+                },
+            },
+        )
+
+    assert response.status_code == 400
+    assert "Safe mode obbligatorio" in response.json()["detail"]
+    app.app.dependency_overrides.clear()

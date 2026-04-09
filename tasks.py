@@ -12,6 +12,8 @@ from uuid import uuid4
 from celery import chord
 
 from celery_app import celery_app
+from config import settings
+from execution_guardrails import should_auto_abort_scan
 from database import SessionLocal, Scan
 from enrichment_engine import enrich_findings
 from report_generator import generate_report
@@ -41,6 +43,11 @@ def _append_notifications(scan: Scan, notifications: List[Dict[str, Any]]) -> No
     payload = json.loads(scan.notifications_json or "[]")
     payload.extend(notifications)
     scan.notifications_json = json.dumps(payload, ensure_ascii=False)
+
+
+def _scan_error_count(scan: Scan) -> int:
+    logs = json.loads(scan.logs_json or "[]")
+    return sum(1 for log in logs if "stato error" in str(log.get("message", "")).lower())
 
 
 @celery_app.task(bind=True, autoretry_for=(Exception,), retry_backoff=True, retry_kwargs={"max_retries": 3})
@@ -80,6 +87,21 @@ def run_scanner_task(self, scan_id: int, scanner_name: str, target: str) -> Dict
         if critical_notifications:
             _append_notifications(scan, critical_notifications)
             _append_log(scan, f"Notifiche critiche: {len(critical_notifications)}", "warning")
+
+        error_count = _scan_error_count(scan)
+        if should_auto_abort_scan(
+            error_count,
+            scan.completed_scanners or 0,
+            total_scanners,
+            settings.scan_guardrails_auto_abort_error_threshold,
+        ):
+            scan.status = "canceled"
+            _append_log(
+                scan,
+                "Auto-abort attivato: pattern anomalo rilevato (tasso errori scanner elevato).",
+                "warning",
+            )
+
         db.commit()
 
     return result
@@ -94,6 +116,11 @@ def orchestrate_scan(self, scan_id: int, scan_type: str, target: str) -> str:
         scan = db.query(Scan).filter(Scan.id == scan_id).first()
         if not scan:
             return "scan_not_found"
+        if settings.scan_kill_switch_enabled:
+            scan.status = "canceled"
+            _append_log(scan, "Scansione annullata: kill switch globale attivo.", "warning")
+            db.commit()
+            return "killed"
         scan.status = "running"
         scan.total_scanners = len(scanner_names)
         scan.completed_scanners = 0

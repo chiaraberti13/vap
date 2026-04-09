@@ -42,6 +42,7 @@ from compliance import (
 from config import settings
 from database import AuditEvent, ConsentRecord, LearningFeedback, LearningPathProgress, Scan, SessionLocal, get_db, init_db
 from scan_catalog import get_scan_catalog
+from execution_guardrails import ExecutionGuardrailError, enforce_execution_guardrails
 from scan_configuration import (
     ScanConfigurationPolicyError,
     ScanConfigurationV1,
@@ -1528,9 +1529,23 @@ def create_scan(
             scan_type=scan_type,
             actor_role=user_role,
         )
+        enforce_execution_guardrails(
+            payload.scan_configuration,
+            scan_type=scan_type,
+            actor_role=user_role,
+            kill_switch_enabled=settings.scan_kill_switch_enabled,
+            max_duration_seconds=settings.scan_guardrails_max_duration_seconds,
+            max_requests_per_minute=settings.scan_guardrails_max_requests_per_minute,
+            max_concurrency=settings.scan_guardrails_max_concurrency,
+            max_tool_timeout_seconds=settings.scan_guardrails_max_tool_timeout_seconds,
+            safe_mode_max_depth=settings.scan_guardrails_safe_mode_max_depth,
+            safe_mode_max_payloads=settings.scan_guardrails_safe_mode_max_payloads,
+        )
     except ScanValidationError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except ScanConfigurationPolicyError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except ExecutionGuardrailError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     subject_id = get_subject_id(request)
