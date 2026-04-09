@@ -8,26 +8,27 @@
   <link rel="stylesheet" href="/static/css/style.css" />
 </head>
 <body class="bg-slate-950 text-slate-100">
-  <main class="min-h-screen px-6 py-10">
-    <div class="max-w-6xl mx-auto">
+  <main class="min-h-screen px-4 py-8 sm:px-6 sm:py-10">
+    <div class="content-shell content-stack-lg">
       <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <p class="text-sm uppercase tracking-[0.3em] text-slate-400">Dashboard</p>
           <h1 class="text-3xl font-semibold">Storico scansioni</h1>
+          <p class="mt-2 text-sm text-slate-400 max-w-2xl">Vista semplificata: mostra priorità operative e lascia i dettagli completi nella pagina di singola scansione.</p>
         </div>
         <a href="/{% if api_key %}?api_key={{ api_key }}{% endif %}" class="inline-flex items-center rounded-lg border border-slate-700 px-4 py-2 text-sm hover:border-cyan-400">Nuova scansione</a>
       </div>
 
-      <div class="mt-8 overflow-x-auto border border-slate-800 rounded-2xl">
+      <div class="overflow-x-auto border border-slate-800 rounded-2xl">
         <table class="min-w-full text-left text-sm">
           <thead class="bg-slate-900/80 text-slate-300">
             <tr>
               <th class="px-4 py-3">ID</th>
               <th class="px-4 py-3">Target</th>
               <th class="px-4 py-3">Tipo</th>
-              <th class="px-4 py-3">Classificazione</th>
+              <th class="hidden lg:table-cell px-4 py-3">Classificazione</th>
               <th class="px-4 py-3">Stato</th>
-              <th class="px-4 py-3">Avvio</th>
+              <th class="hidden md:table-cell px-4 py-3">Avvio</th>
               <th class="px-4 py-3">Azioni</th>
             </tr>
           </thead>
@@ -35,13 +36,13 @@
             {% for scan in scans %}
             <tr class="border-t border-slate-800 hover:bg-slate-900/40">
               <td class="px-4 py-3">{{ scan.id }}</td>
-              <td class="px-4 py-3">{{ scan.target }}</td>
+              <td class="px-4 py-3 max-w-xs truncate" title="{{ scan.target }}">{{ scan.target }}</td>
               <td class="px-4 py-3 uppercase">{{ scan.scan_type }}</td>
-              <td class="px-4 py-3 uppercase text-slate-400">{{ scan.data_classification }}</td>
+              <td class="hidden lg:table-cell px-4 py-3 uppercase text-slate-400">{{ scan.data_classification }}</td>
               <td class="px-4 py-3">
                 <span class="rounded-full bg-emerald-500/20 text-emerald-200 px-2 py-1 text-xs">{{ scan.status }}</span>
               </td>
-              <td class="px-4 py-3">{{ scan.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+              <td class="hidden md:table-cell px-4 py-3">{{ scan.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
               <td class="px-4 py-3">
                 <a class="text-cyan-300 hover:underline" href="/scans/{{ scan.id }}{% if api_key %}?api_key={{ api_key }}{% endif %}">Dettagli</a>
               </td>

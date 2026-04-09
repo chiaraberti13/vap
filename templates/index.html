@@ -71,44 +71,45 @@
     {% endif %}
 
     <section class="border-b border-slate-800/60 px-4 py-8 sm:px-6" aria-labelledby="dashboard-kpi-title">
-      <div class="home-container">
+      <div class="home-container content-stack-lg">
         <div class="flex items-center justify-between gap-4 flex-wrap">
           <div>
             <p class="text-sm uppercase tracking-[0.25em] text-slate-500">Dashboard KPI</p>
             <h2 id="dashboard-kpi-title" class="home-section-title mt-1 font-semibold">Stato operativo in tempo reale</h2>
+            <p class="home-microcopy mt-2 max-w-2xl text-slate-400">Panoramica sintetica per capire subito capacità operativa e stato delle scansioni, senza rumore eccessivo.</p>
           </div>
           <div class="home-microcopy text-slate-400">
             Ultimo aggiornamento: {{ dashboard_timestamp.strftime("%d/%m/%Y %H:%M") }}
           </div>
         </div>
-        <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div class="rounded-2xl border border-slate-800 bg-slate-900/80 p-5 shadow-lg">
+        <div class="content-kpi-grid sm:grid-cols-2 lg:grid-cols-4">
+          <div class="content-card shadow-lg">
             <p class="text-sm text-slate-400">Totale scansioni</p>
             <p class="text-3xl font-semibold mt-2">{{ kpi_metrics.total_scans }}</p>
             <p class="text-xs text-slate-500 mt-2">Inclusi report falliti e cancellati.</p>
           </div>
-          <div class="rounded-2xl border border-slate-800 bg-slate-900/80 p-5 shadow-lg">
+          <div class="content-card shadow-lg">
             <p class="text-sm text-slate-400">Scansioni attive</p>
             <p class="text-3xl font-semibold mt-2">{{ kpi_metrics.active_scans }}</p>
             <p class="text-xs text-slate-500 mt-2">Queue + running in corso.</p>
           </div>
-          <div class="rounded-2xl border border-slate-800 bg-slate-900/80 p-5 shadow-lg">
+          <div class="content-card shadow-lg">
             <p class="text-sm text-slate-400">Scansioni completate</p>
             <p class="text-3xl font-semibold mt-2">{{ kpi_metrics.completed_scans }}</p>
             <p class="text-xs text-slate-500 mt-2">Report pronti per export.</p>
           </div>
-          <div class="rounded-2xl border border-slate-800 bg-slate-900/80 p-5 shadow-lg">
+          <div class="content-card shadow-lg">
             <p class="text-sm text-slate-400">Findings totali</p>
             <p class="text-3xl font-semibold mt-2">{{ kpi_metrics.total_findings }}</p>
             <p class="text-xs text-slate-500 mt-2">Aggregati da scansioni concluse.</p>
           </div>
         </div>
-        <div class="mt-4 grid gap-4 sm:grid-cols-2">
-          <div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-4">
+        <div class="grid gap-3 sm:grid-cols-2">
+          <div class="content-card">
             <p class="text-sm text-slate-400">Tempo medio di completamento</p>
             <p class="text-2xl font-semibold mt-1">{{ kpi_metrics.avg_duration_minutes }} min</p>
           </div>
-          <div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-4">
+          <div class="content-card">
             <p class="text-sm text-slate-400">Report falliti</p>
             <p class="text-2xl font-semibold mt-1">{{ kpi_metrics.failed_scans }}</p>
           </div>

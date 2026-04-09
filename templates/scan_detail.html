@@ -11,8 +11,8 @@
   <a href="#scan-status" class="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-50 focus:rounded-md focus:bg-cyan-500 focus:px-4 focus:py-2 focus:text-slate-900 focus:font-semibold">
     Salta allo stato scansione
   </a>
-  <main class="min-h-screen px-6 py-10">
-    <div class="max-w-6xl mx-auto space-y-8">
+  <main class="min-h-screen px-4 py-8 sm:px-6 sm:py-10">
+    <div class="content-shell content-stack-lg">
 
       <!-- Header -->
       <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -35,27 +35,27 @@
       {% endif %}
 
       <!-- KPI Cards -->
-      <section class="grid gap-4 md:grid-cols-4">
-        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5">
+      <section class="content-kpi-grid md:grid-cols-4" aria-label="Riepilogo scansione">
+        <div class="content-card">
           <p class="text-xs uppercase text-slate-400">Target</p>
           <p class="text-lg font-semibold mt-1 truncate" title="{{ scan.target }}">{{ scan.target }}</p>
         </div>
-        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5">
+        <div class="content-card">
           <p class="text-xs uppercase text-slate-400">Tipo scansione</p>
           <p class="text-lg font-semibold mt-1">{{ scan.scan_type | upper }}</p>
         </div>
-        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5">
+        <div class="content-card">
           <p class="text-xs uppercase text-slate-400">Classificazione</p>
           <p class="text-lg font-semibold mt-1">{{ scan.data_classification | upper }}</p>
         </div>
-        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5">
+        <div class="content-card">
           <p class="text-xs uppercase text-slate-400">Stato</p>
           <p class="text-lg font-semibold mt-1" id="scan-status">{{ scan.status }}</p>
         </div>
       </section>
 
       <!-- Progress -->
-      <section class="bg-slate-900/80 border border-slate-800 rounded-2xl p-6">
+      <section class="content-card">
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <div>
             <h2 class="text-xl font-semibold">Progressione scansione</h2>
@@ -75,7 +75,7 @@
 
       <!-- Logs, Notifications & Learning Sidebar -->
       <section class="grid gap-4 lg:grid-cols-3" aria-label="Telemetria scansione e supporto didattico">
-        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-6">
+        <div class="content-card">
           <h2 class="text-xl font-semibold mb-4">Log streaming</h2>
           <div id="scan-logs" class="space-y-1 text-xs font-mono text-slate-300 max-h-60 overflow-y-auto" role="log" aria-live="polite" aria-relevant="additions text">
             {% for entry in logs %}
@@ -85,13 +85,13 @@
             {% endfor %}
           </div>
         </div>
-        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-6">
+        <div class="content-card">
           <h2 class="text-xl font-semibold mb-4">Notifiche critiche</h2>
           <div id="scan-notifications" class="space-y-3 text-sm" role="status" aria-live="assertive">
             <p class="text-slate-500">In attesa di eventi critici.</p>
           </div>
         </div>
-        <aside class="bg-slate-900/80 border border-cyan-900/50 rounded-2xl p-6 space-y-4" aria-label="Learning sidebar">
+        <aside class="content-card border-cyan-900/50 space-y-4" aria-label="Learning sidebar">
           <h2 class="text-xl font-semibold text-cyan-200">Learning sidebar</h2>
           <div class="rounded-lg border border-slate-700 bg-slate-950/60 p-4">
             <p class="text-xs uppercase tracking-wider text-slate-400 mb-2">Cosa sta succedendo ora</p>
