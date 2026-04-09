@@ -39,6 +39,8 @@
   const moduleSelectionError = document.getElementById("module-selection-error");
   const selectedModulesInput = document.getElementById("selected-modules-json");
   const modulesSummary = document.getElementById("scan-modules-summary");
+  const advancedModulesList = document.getElementById("advanced-module-config-list");
+  const advancedModulesInput = document.getElementById("advanced-modules-json");
 
   if (
     !payloadNode ||
@@ -78,6 +80,8 @@
     !moduleSelectionError ||
     !selectedModulesInput ||
     !modulesSummary ||
+    !advancedModulesList ||
+    !advancedModulesInput ||
     glossaryButtons.length === 0
   ) {
     return;
@@ -103,6 +107,7 @@
   let currentStep = 1;
   let mobileCompareExpanded = false;
   let selectedModules = new Set();
+  let advancedModuleConfig = {};
   const totalSteps = stepPanels.length;
 
   const levelStyles = {
@@ -305,6 +310,14 @@
 
   function updateSelectedModulesInput() {
     selectedModulesInput.value = JSON.stringify(Array.from(selectedModules));
+    const normalizedConfig = {};
+    Array.from(selectedModules).forEach((moduleId) => {
+      if (advancedModuleConfig[moduleId]) {
+        normalizedConfig[moduleId] = advancedModuleConfig[moduleId];
+      }
+    });
+    advancedModuleConfig = normalizedConfig;
+    advancedModulesInput.value = JSON.stringify(advancedModuleConfig);
     if (selectedModules.size > 0) {
       moduleSelectionError.classList.add("hidden");
     }
@@ -344,9 +357,11 @@
           selectedModules.add(module.id);
         } else {
           selectedModules.delete(module.id);
+          delete advancedModuleConfig[module.id];
         }
         updateSelectedModulesInput();
         updateModulesSummary(entry);
+        renderAdvancedModuleConfig(entry);
       });
 
       const text = document.createElement("span");
@@ -358,6 +373,73 @@
 
     updateSelectedModulesInput();
     updateModulesSummary(entry);
+    renderAdvancedModuleConfig(entry);
+  }
+
+  function renderAdvancedModuleConfig(entry) {
+    const modules = Array.isArray(entry?.modules) ? entry.modules : [];
+    advancedModulesList.innerHTML = "";
+
+    Array.from(selectedModules).forEach((moduleId) => {
+      const moduleEntry = modules.find((module) => module.id === moduleId);
+      const moduleLabel = moduleEntry?.label || moduleId;
+      const current = advancedModuleConfig[moduleId] || { timeout_seconds: 20, max_payloads: 30 };
+
+      const wrapper = document.createElement("fieldset");
+      wrapper.className = "rounded-md border border-slate-700 bg-slate-950/60 p-3";
+      wrapper.innerHTML = `
+        <legend class="px-1 text-xs font-semibold uppercase tracking-wide text-slate-300">${escapeHtml(moduleLabel)}</legend>
+        <div class="mt-2 grid gap-2 sm:grid-cols-2">
+          <label class="grid gap-1 text-xs text-slate-300">
+            <span>Timeout (secondi)</span>
+            <input type="number" min="1" max="300" step="1" class="rounded border border-slate-700 bg-slate-950 px-2 py-1 text-slate-100" data-advanced-timeout="${moduleId}" value="${current.timeout_seconds}" />
+          </label>
+          <label class="grid gap-1 text-xs text-slate-300">
+            <span>Budget payload</span>
+            <input type="number" min="1" max="500" step="1" class="rounded border border-slate-700 bg-slate-950 px-2 py-1 text-slate-100" data-advanced-payloads="${moduleId}" value="${current.max_payloads}" />
+          </label>
+        </div>
+      `;
+      advancedModulesList.appendChild(wrapper);
+    });
+
+    if (selectedModules.size === 0) {
+      const emptyNote = document.createElement("p");
+      emptyNote.className = "home-microcopy text-slate-500";
+      emptyNote.textContent = "Seleziona almeno un modulo nello Step 2 per configurare parametri avanzati.";
+      advancedModulesList.appendChild(emptyNote);
+    }
+
+    advancedModulesList.querySelectorAll("[data-advanced-timeout]").forEach((input) => {
+      input.addEventListener("change", () => {
+        const moduleId = input.getAttribute("data-advanced-timeout");
+        if (!moduleId) {
+          return;
+        }
+        const parsed = Number.parseInt(input.value, 10);
+        const timeout = Number.isFinite(parsed) ? parsed : 20;
+        advancedModuleConfig[moduleId] = {
+          ...(advancedModuleConfig[moduleId] || { max_payloads: 30 }),
+          timeout_seconds: timeout,
+        };
+        updateSelectedModulesInput();
+      });
+    });
+    advancedModulesList.querySelectorAll("[data-advanced-payloads]").forEach((input) => {
+      input.addEventListener("change", () => {
+        const moduleId = input.getAttribute("data-advanced-payloads");
+        if (!moduleId) {
+          return;
+        }
+        const parsed = Number.parseInt(input.value, 10);
+        const maxPayloads = Number.isFinite(parsed) ? parsed : 30;
+        advancedModuleConfig[moduleId] = {
+          ...(advancedModuleConfig[moduleId] || { timeout_seconds: 20 }),
+          max_payloads: maxPayloads,
+        };
+        updateSelectedModulesInput();
+      });
+    });
   }
 
   function renderCards() {
