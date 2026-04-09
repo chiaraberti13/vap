@@ -91,8 +91,9 @@ Creare un piano operativo **didattico e incrementale** per trasformare VAP in un
   - Esempi pratici e anti-pattern.
 
 - [ ] **B4. UX minimal e accessibile**
-  - Riduzione densità visiva, migliori spaziature, stato focus/errore più chiari.
-  - Verifica WCAG AA (contrasto, tastiera, screen reader labels).
+  - [x] Stato errore più chiaro nel wizard: evidenziazione visuale coerente (`form-control-invalid`) per input/checkbox/fieldset invalidi + associazione ARIA esplicita tra campi e messaggi di errore inline.
+  - [ ] Riduzione densità visiva e migliori spaziature nelle viste principali (dashboard + dettagli scansione).
+  - [ ] Verifica WCAG AA completa (contrasto, tastiera, screen reader labels) con report dedicato.
 
 ## Fase C — Sicurezza avanzata applicativa e operativa (P0/P1)
 - [ ] **C1. RBAC fine-grained sulle capability di scansione**
