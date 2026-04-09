@@ -197,6 +197,24 @@
                 <label class="flex items-start gap-2 text-sm text-slate-300"><input type="radio" name="learning_goal" value="deep_dive" class="mt-1 accent-cyan-400" />Approfondimento tecnico su stack specifico.</label>
                 <span id="learning-goal-error" class="home-microcopy hidden text-red-200">Seleziona un obiettivo per ricevere una scansione consigliata coerente.</span>
               </fieldset>
+              <fieldset class="grid gap-2 rounded-lg border border-slate-800 bg-slate-950/50 p-4">
+                <legend class="text-sm text-slate-300 px-1">Scope legale autorizzato</legend>
+                <label class="flex items-start gap-2 text-sm text-slate-300">
+                  <input type="checkbox" id="scope-acknowledged" name="scope_acknowledged" class="mt-1 accent-cyan-400" aria-invalid="false" />
+                  <span>Confermo di avere autorizzazione esplicita a testare questo target e di operare entro il perimetro concordato.</span>
+                </label>
+                <label class="grid gap-2">
+                  <span class="text-xs uppercase tracking-wide text-slate-400">Riferimento autorizzazione (opzionale)</span>
+                  <input
+                    name="scope_reference"
+                    type="text"
+                    maxlength="120"
+                    placeholder="Esempio: CAB-2026-041 / ticket change"
+                    class="w-full rounded-lg border border-slate-700 bg-slate-950/70 px-4 py-2 text-slate-100 focus:border-cyan-400 focus:outline-none"
+                  />
+                </label>
+                <span id="scope-authorization-error" class="home-microcopy hidden text-red-200">Devi confermare il perimetro legale autorizzato prima di procedere.</span>
+              </fieldset>
             </section>
 
             <section class="grid gap-3" data-step-panel="2" aria-labelledby="scan-explorer-title">
