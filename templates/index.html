@@ -340,6 +340,31 @@
             <section class="grid gap-4" data-step-panel="4">
               <h3 class="text-sm text-slate-200 font-semibold tracking-wide">Step 4 · Run scansione</h3>
               <p class="text-sm text-slate-400">Ricontrolla la priorità e la classificazione dati prima dell'esecuzione.</p>
+              <article id="scan-impact-panel" class="rounded-lg border border-slate-800 bg-slate-950/50 p-4" aria-live="polite">
+                <div class="flex items-center justify-between gap-3 flex-wrap">
+                  <p class="text-xs uppercase tracking-wide text-slate-400">Simulazione impatto stimato</p>
+                  <span id="scan-impact-confidence" class="inline-flex items-center rounded-full border border-cyan-400/40 bg-cyan-500/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-cyan-100">
+                    Stima preliminare
+                  </span>
+                </div>
+                <dl class="mt-3 grid gap-2 sm:grid-cols-3 text-xs text-slate-200">
+                  <div class="rounded-md border border-slate-700 bg-slate-950/70 p-3">
+                    <dt class="font-semibold uppercase tracking-wide text-slate-400">Durata stimata</dt>
+                    <dd id="scan-impact-duration" class="mt-1 text-sm text-slate-100">~ 0 min</dd>
+                  </div>
+                  <div class="rounded-md border border-slate-700 bg-slate-950/70 p-3">
+                    <dt class="font-semibold uppercase tracking-wide text-slate-400">Rumore operativo</dt>
+                    <dd id="scan-impact-noise" class="mt-1 text-sm text-slate-100">Basso</dd>
+                  </div>
+                  <div class="rounded-md border border-slate-700 bg-slate-950/70 p-3">
+                    <dt class="font-semibold uppercase tracking-wide text-slate-400">Rischio complessivo</dt>
+                    <dd id="scan-impact-risk" class="mt-1 text-sm text-slate-100">Basso</dd>
+                  </div>
+                </dl>
+                <p id="scan-impact-note" class="home-microcopy mt-3 text-slate-400">
+                  La simulazione usa scan type, moduli selezionati e parametri avanzati per stimare impatto e durata prima del run.
+                </p>
+              </article>
               <div class="rounded-lg border border-slate-800 bg-slate-950/50 p-4">
                 <p class="text-xs uppercase tracking-wide text-slate-400">Moduli selezionati</p>
                 <p id="scan-modules-summary" class="mt-2 text-sm text-slate-200">Nessun modulo selezionato.</p>
