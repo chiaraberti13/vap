@@ -76,7 +76,7 @@ Creare un piano operativo **didattico e incrementale** per trasformare VAP in un
 ## Fase B — UX didattica e configurazione guidata (P0/P1)
 - [ ] **B1. Nuovo “Scan Builder” multi-step**
   - [x] Step 1 Scope legale/target.
-  - Step 2 Selezione moduli scanner.
+  - [x] Step 2 Selezione moduli scanner.
   - Step 3 Parametri avanzati per modulo.
   - Step 4 Simulazione impatto (durata/rumore/rischio stimato).
   - Step 5 Conferma con checklist compliance.

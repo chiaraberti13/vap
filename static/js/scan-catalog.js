@@ -35,6 +35,10 @@
   const scopeAcknowledged = document.getElementById("scope-acknowledged");
   const scopeAuthorizationError = document.getElementById("scope-authorization-error");
   const consentError = document.getElementById("consent-error");
+  const moduleSelector = document.getElementById("scan-module-selector");
+  const moduleSelectionError = document.getElementById("module-selection-error");
+  const selectedModulesInput = document.getElementById("selected-modules-json");
+  const modulesSummary = document.getElementById("scan-modules-summary");
 
   if (
     !payloadNode ||
@@ -70,6 +74,10 @@
     !scopeAcknowledged ||
     !scopeAuthorizationError ||
     !consentError ||
+    !moduleSelector ||
+    !moduleSelectionError ||
+    !selectedModulesInput ||
+    !modulesSummary ||
     glossaryButtons.length === 0
   ) {
     return;
@@ -94,6 +102,7 @@
   let activeCategory = "Tutte";
   let currentStep = 1;
   let mobileCompareExpanded = false;
+  let selectedModules = new Set();
   const totalSteps = stepPanels.length;
 
   const levelStyles = {
@@ -287,6 +296,68 @@
       falsePositives.length > 0
         ? falsePositives.join(" · ")
         : "Possibili falsi positivi non documentati per questa tipologia di analisi.";
+    renderModuleSelector(selectedEntry);
+  }
+
+  function getSelectedEntry() {
+    return catalog.find((entry) => entry.id === scanTypeField.value);
+  }
+
+  function updateSelectedModulesInput() {
+    selectedModulesInput.value = JSON.stringify(Array.from(selectedModules));
+    if (selectedModules.size > 0) {
+      moduleSelectionError.classList.add("hidden");
+    }
+  }
+
+  function updateModulesSummary(entry) {
+    const modules = Array.isArray(entry?.modules) ? entry.modules : [];
+    const labelMap = new Map(modules.map((module) => [module.id, module.label || module.id]));
+    if (selectedModules.size === 0) {
+      modulesSummary.textContent = "Nessun modulo selezionato.";
+      return;
+    }
+    const labels = Array.from(selectedModules)
+      .map((moduleId) => labelMap.get(moduleId) || moduleId)
+      .join(", ");
+    modulesSummary.textContent = labels;
+  }
+
+  function renderModuleSelector(entry) {
+    const modules = Array.isArray(entry?.modules) ? entry.modules : [];
+    const modulesSet = new Set(modules.map((module) => module.id));
+    const filteredSelection = Array.from(selectedModules).filter((moduleId) => modulesSet.has(moduleId));
+    selectedModules = new Set(filteredSelection.length > 0 ? filteredSelection : modules.map((module) => module.id));
+
+    moduleSelector.innerHTML = "";
+    modules.forEach((module) => {
+      const wrapper = document.createElement("label");
+      wrapper.className = "flex items-start gap-2 rounded-md border border-slate-700 bg-slate-950/50 px-3 py-2 text-sm text-slate-200";
+
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.value = module.id;
+      checkbox.className = "mt-1 accent-cyan-400";
+      checkbox.checked = selectedModules.has(module.id);
+      checkbox.addEventListener("change", () => {
+        if (checkbox.checked) {
+          selectedModules.add(module.id);
+        } else {
+          selectedModules.delete(module.id);
+        }
+        updateSelectedModulesInput();
+        updateModulesSummary(entry);
+      });
+
+      const text = document.createElement("span");
+      text.textContent = module.label || module.id;
+      wrapper.appendChild(checkbox);
+      wrapper.appendChild(text);
+      moduleSelector.appendChild(wrapper);
+    });
+
+    updateSelectedModulesInput();
+    updateModulesSummary(entry);
   }
 
   function renderCards() {
@@ -458,6 +529,15 @@
       }
     }
 
+    if (shouldValidate(2)) {
+      if (selectedModules.size === 0) {
+        messages.push("Step 2: seleziona almeno un modulo scanner da includere nella run.");
+        moduleSelectionError.classList.remove("hidden");
+      } else {
+        moduleSelectionError.classList.add("hidden");
+      }
+    }
+
     if (shouldValidate(3)) {
       const requiredChecks = guidedForm.querySelectorAll(
         "input[name='accept_privacy'], input[name='accept_terms']"
@@ -549,6 +629,8 @@
   renderFilters();
   renderCards();
   renderCompare();
+  updateSelectedModulesInput();
+  updateModulesSummary(getSelectedEntry());
   registerGlossaryInteractions();
   updateStepperUi();
   updateCompareToggleUi();

@@ -256,6 +256,15 @@
               </div>
               <div id="scan-category-filters" class="flex flex-wrap gap-2" aria-label="Filtri categorie scansione"></div>
               <div id="scan-cards-grid" class="grid gap-3 sm:grid-cols-2"></div>
+              <fieldset class="rounded-lg border border-slate-800 bg-slate-950/50 p-4" aria-describedby="module-selection-guidance module-selection-error">
+                <legend class="text-sm text-slate-200 font-semibold">Moduli scanner inclusi</legend>
+                <p id="module-selection-guidance" class="home-microcopy mt-2 text-slate-400">
+                  Seleziona i moduli da eseguire per lo scan type scelto. Ogni scelta aggiorna la configurazione salvata per audit/reproducibility.
+                </p>
+                <div id="scan-module-selector" class="mt-3 grid gap-2 sm:grid-cols-2"></div>
+                <span id="module-selection-error" class="home-microcopy hidden text-red-200 mt-2">Seleziona almeno un modulo scanner.</span>
+                <input type="hidden" name="selected_modules_json" id="selected-modules-json" value="" />
+              </fieldset>
               <article id="scan-why-panel" class="rounded-lg border border-cyan-500/40 bg-cyan-500/5 p-4 text-sm text-slate-100" aria-live="polite">
                 <h4 class="font-semibold text-cyan-200">Perché scegliere questa analisi</h4>
                 <p id="scan-why-objective" class="mt-2 text-slate-200"></p>
@@ -323,6 +332,10 @@
             <section class="grid gap-4" data-step-panel="4">
               <h3 class="text-sm text-slate-200 font-semibold tracking-wide">Step 4 · Run scansione</h3>
               <p class="text-sm text-slate-400">Ricontrolla la priorità e la classificazione dati prima dell'esecuzione.</p>
+              <div class="rounded-lg border border-slate-800 bg-slate-950/50 p-4">
+                <p class="text-xs uppercase tracking-wide text-slate-400">Moduli selezionati</p>
+                <p id="scan-modules-summary" class="mt-2 text-sm text-slate-200">Nessun modulo selezionato.</p>
+              </div>
               <article id="scan-risk-panel" class="rounded-lg border border-amber-400/40 bg-amber-500/10 p-4" aria-live="polite">
                 <div class="flex flex-wrap items-center gap-2">
                   <span id="scan-risk-badge" class="inline-flex items-center rounded-full border border-amber-300/60 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-amber-100">
