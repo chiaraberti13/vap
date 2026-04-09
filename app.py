@@ -52,7 +52,11 @@ from scan_configuration import (
     validate_scan_configuration_policy_v1,
 )
 from scanner_engine import (
+    PROFILE_SCANNERS_MAP,
+    SCANNERS_MAP,
+    SCAN_TYPE_PROFILES,
     ScanValidationError,
+    TOOL_DISPLAY_NAMES,
     get_scan_type_choices,
     validate_nmap_target,
     validate_target,
@@ -161,7 +165,76 @@ api_cache = _init_api_cache()
 
 def _scan_catalog_for_ui() -> List[Dict[str, Any]]:
     catalog = {entry["id"]: entry for entry in get_scan_catalog()}
-    return [catalog[scan_type] for scan_type in SCAN_TYPES if scan_type in catalog]
+    entries: List[Dict[str, Any]] = []
+    for scan_type in SCAN_TYPES:
+        entry = catalog.get(scan_type)
+        if not entry:
+            continue
+        enriched_entry = dict(entry)
+        enriched_entry["modules"] = _scan_modules_for_scan_type(scan_type)
+        entries.append(enriched_entry)
+    return entries
+
+
+def _scan_modules_for_scan_type(scan_type: str) -> List[Dict[str, str]]:
+    normalized_scan_type = scan_type.lower().strip()
+    if normalized_scan_type == "full":
+        module_ids = sorted(SCANNERS_MAP.keys())
+    elif normalized_scan_type in SCAN_TYPE_PROFILES:
+        module_ids = list(SCAN_TYPE_PROFILES[normalized_scan_type])
+    elif normalized_scan_type in SCANNERS_MAP or normalized_scan_type in PROFILE_SCANNERS_MAP:
+        module_ids = [normalized_scan_type]
+    else:
+        module_ids = []
+
+    modules: List[Dict[str, str]] = []
+    for module_id in module_ids:
+        modules.append(
+            {
+                "id": module_id,
+                "label": TOOL_DISPLAY_NAMES.get(module_id, module_id.upper()),
+            }
+        )
+    return modules
+
+
+def _safe_selected_modules(scan_type: str, selected_modules_json: str) -> List[str]:
+    allowed_modules = {module["id"] for module in _scan_modules_for_scan_type(scan_type)}
+    if not allowed_modules:
+        return []
+
+    if not selected_modules_json.strip():
+        return sorted(allowed_modules)
+
+    try:
+        raw_modules = json.loads(selected_modules_json)
+    except json.JSONDecodeError as exc:
+        raise ScanValidationError("Formato moduli selezionati non valido.") from exc
+
+    if not isinstance(raw_modules, list):
+        raise ScanValidationError("I moduli selezionati devono essere una lista.")
+    if len(raw_modules) > len(allowed_modules):
+        raise ScanValidationError("Numero moduli selezionati non valido.")
+
+    normalized_modules: List[str] = []
+    seen: Set[str] = set()
+    for raw_module in raw_modules:
+        if not isinstance(raw_module, str):
+            raise ScanValidationError("Ogni modulo selezionato deve essere una stringa valida.")
+        module_id = raw_module.lower().strip()
+        if not module_id:
+            continue
+        if module_id not in allowed_modules:
+            raise ScanValidationError("Modulo selezionato non compatibile con il tipo scansione scelto.")
+        if module_id in seen:
+            continue
+        seen.add(module_id)
+        normalized_modules.append(module_id)
+
+    if not normalized_modules:
+        raise ScanValidationError("Seleziona almeno un modulo scanner prima di proseguire.")
+
+    return normalized_modules
 
 
 def _scan_catalog_by_id() -> Dict[str, Dict[str, Any]]:
@@ -1227,6 +1300,7 @@ def create_scan_form(
     scan_type: str = Form("full"),
     priority: int = Form(5),
     data_classification: str = Form("internal"),
+    selected_modules_json: str = Form(""),
     scope_acknowledged: Optional[str] = Form(None),
     scope_reference: str = Form(""),
     accept_privacy: Optional[str] = Form(None),
@@ -1256,6 +1330,7 @@ def create_scan_form(
             raise ScanValidationError(
                 "Il riferimento autorizzazione supera il limite massimo di 120 caratteri."
             )
+        selected_modules = _safe_selected_modules(scan_type, selected_modules_json)
     except ValueError:
         csrf_token = generate_csrf_token()
         kpi_metrics = _build_kpi_metrics(db)
@@ -1380,6 +1455,62 @@ def create_scan_form(
                     version=version,
                 )
 
+    form_scan_configuration = ScanConfigurationV1(
+        tool_overrides={
+            module["id"]: {"enabled": module["id"] in selected_modules}
+            for module in _scan_modules_for_scan_type(scan_type)
+        }
+    )
+    try:
+        validate_scan_configuration_policy_v1(
+            form_scan_configuration,
+            scan_type=scan_type,
+            actor_role="operator",
+        )
+        enforce_execution_guardrails(
+            form_scan_configuration,
+            scan_type=scan_type,
+            actor_role="operator",
+            kill_switch_enabled=settings.scan_kill_switch_enabled,
+            max_duration_seconds=settings.scan_guardrails_max_duration_seconds,
+            max_requests_per_minute=settings.scan_guardrails_max_requests_per_minute,
+            max_concurrency=settings.scan_guardrails_max_concurrency,
+            max_tool_timeout_seconds=settings.scan_guardrails_max_tool_timeout_seconds,
+            safe_mode_max_depth=settings.scan_guardrails_safe_mode_max_depth,
+            safe_mode_max_payloads=settings.scan_guardrails_safe_mode_max_payloads,
+        )
+    except (ScanConfigurationPolicyError, ExecutionGuardrailError) as exc:
+        csrf_token = generate_csrf_token()
+        kpi_metrics = _build_kpi_metrics(db)
+        dashboard_timestamp = datetime.now(timezone.utc)
+        response = templates.TemplateResponse(
+            request,
+            "index.html",
+            {
+                "request": request,
+                "scan_types": SCAN_TYPES,
+                "scan_catalog_entries": _scan_catalog_for_ui(),
+                "scan_explorer_enabled": settings.ui_guided_scan_explorer_enabled,
+                "api_key_required": bool(settings.api_key or settings.api_key_hash),
+                "error": str(exc),
+                "csrf_token": csrf_token,
+                "data_classifications": DATA_CLASSIFICATIONS,
+                "privacy_policy_version": settings.privacy_policy_version,
+                "terms_version": settings.terms_of_service_version,
+                "kpi_metrics": kpi_metrics,
+                "dashboard_timestamp": dashboard_timestamp,
+            },
+            status_code=400,
+        )
+        response.set_cookie(
+            settings.csrf_cookie_name,
+            csrf_token,
+            httponly=True,
+            secure=settings.require_https,
+            samesite="lax",
+        )
+        return response
+
     scan = Scan(
         target=target,
         scan_type=scan_type,
@@ -1387,6 +1518,9 @@ def create_scan_form(
         created_at=datetime.now(timezone.utc),
         progress=0,
         priority=priority,
+        scan_configuration_json=form_scan_configuration.model_dump_json(),
+        scan_configuration_version=form_scan_configuration.schema_version,
+        scan_configuration_checksum=checksum_scan_config_v1(form_scan_configuration),
         data_subject_id=subject_id,
         data_classification=data_classification,
     )
