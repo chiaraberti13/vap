@@ -64,10 +64,10 @@ Creare un piano operativo **didattico e incrementale** per trasformare VAP in un
   - Regole di compatibilità tra tool (es. mutually exclusive settings).
   - Policy di sicurezza: blocco opzioni ad alto rischio in assenza autorizzazione/ruolo.
 
-- [ ] **A3. Execution Guardrails**
-  - Limiti runtime centralizzati: max duration, max requests, max concurrency, retry cap.
-  - Safe mode obbligatorio per tenant/studenti.
-  - Kill switch e auto-abort su pattern anomali.
+- [x] **A3. Execution Guardrails**
+  - [x] Limiti runtime centralizzati lato API: max duration stimata, max requests/min, max concurrency e timeout tool.
+  - [x] Safe mode obbligatorio per ruoli non admin (depth/payload cap).
+  - [x] Kill switch globale su nuove scansioni + auto-abort su pattern anomali (alto tasso errori scanner).
 
 - [ ] **A4. Persistenza configurazioni e profili utente**
   - Salvare preset personalizzati (“Baseline didattica”, “OWASP top focus”, “WordPress deep”).
@@ -137,6 +137,7 @@ Creare un piano operativo **didattico e incrementale** per trasformare VAP in un
 - [ ] Possibile overload cognitivo nelle viste principali con molte informazioni contemporanee.
 - [ ] Necessità di uniformare ulteriormente copywriting tecnico tra UI, catalogo e PDF.
 - [ ] Mancanza di una governance esplicita “scan config lifecycle” (draft/review/approved/deprecated).
+- [ ] Test regressione CSP disallineato (`tests/test_security_headers.py::test_csp_disallows_inline_scripts_by_default`): il test si aspetta `https://cdn.tailwindcss.com`, ma la policy corrente usa solo script locali.
 
 ---
 
@@ -151,6 +152,6 @@ Un task è completato solo se:
 ---
 
 ## 6) Primo task consigliato (prossimo ciclo)
-**A2 — Validation & Policy Engine**.
+**A4 — Persistenza configurazioni e profili utente**.
 
-Motivo: ora che lo schema configurazione v1 è disponibile e validato fail-closed, serve applicare regole server-side di compatibilità e policy di autorizzazione per impedire combinazioni rischiose.
+Motivo: con A1/A2/A3 completati, il prossimo passo ad alto valore è salvare preset/versioni delle configurazioni per garantire reproducibility, auditabilità e UX operativa più fluida.
