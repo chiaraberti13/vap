@@ -45,6 +45,7 @@ from database import ScanConfigurationPreset
 from scan_catalog import get_scan_catalog
 from execution_guardrails import ExecutionGuardrailError, enforce_execution_guardrails
 from scan_configuration import (
+    HIGH_RISK_TOOLS,
     ScanConfigurationPolicyError,
     ScanConfigurationV1,
     checksum_scan_config_v1,
@@ -147,6 +148,11 @@ if settings.cors_allowed_origins:
 templates = Jinja2Templates(directory="templates")
 
 SCAN_TYPES = get_scan_type_choices()
+DIDACTIC_MODES = {"beginner", "analyst", "expert"}
+DIDACTIC_MODE_MAX_LIMITS: Dict[str, Dict[str, int]] = {
+    "beginner": {"timeout_seconds": 30, "max_payloads": 40},
+    "analyst": {"timeout_seconds": 90, "max_payloads": 80},
+}
 
 
 def _init_api_cache() -> Optional[Redis]:
@@ -301,6 +307,42 @@ def _safe_module_overrides(
             "max_payloads": max_payloads,
         }
     return overrides
+
+
+def _apply_didactic_mode_guardrails(
+    didactic_mode: str,
+    module_overrides: Dict[str, Dict[str, int | bool]],
+) -> Dict[str, Dict[str, int | bool]]:
+    normalized_mode = didactic_mode.strip().lower()
+    if normalized_mode not in DIDACTIC_MODES:
+        raise ScanValidationError("Didactic mode non valido.")
+
+    if normalized_mode == "beginner":
+        high_risk_enabled = [
+            module_id
+            for module_id, override in module_overrides.items()
+            if bool(override.get("enabled")) and module_id in HIGH_RISK_TOOLS
+        ]
+        if high_risk_enabled:
+            blocked = ", ".join(sorted(high_risk_enabled))
+            raise ScanValidationError(
+                f"Didactic mode Beginner: i moduli ad alto rischio [{blocked}] non sono disponibili."
+            )
+
+    limits = DIDACTIC_MODE_MAX_LIMITS.get(normalized_mode)
+    if not limits:
+        return module_overrides
+
+    normalized_overrides: Dict[str, Dict[str, int | bool]] = {}
+    for module_id, override in module_overrides.items():
+        timeout_seconds = int(override.get("timeout_seconds", 20))
+        max_payloads = int(override.get("max_payloads", 30))
+        normalized_overrides[module_id] = {
+            **override,
+            "timeout_seconds": min(timeout_seconds, limits["timeout_seconds"]),
+            "max_payloads": min(max_payloads, limits["max_payloads"]),
+        }
+    return normalized_overrides
 
 
 def _scan_catalog_by_id() -> Dict[str, Dict[str, Any]]:
@@ -1368,6 +1410,7 @@ def create_scan_form(
     data_classification: str = Form("internal"),
     selected_modules_json: str = Form(""),
     advanced_modules_json: str = Form(""),
+    didactic_mode: str = Form("analyst"),
     scope_acknowledged: Optional[str] = Form(None),
     scope_reference: str = Form(""),
     run_compliance_acknowledged: Optional[str] = Form(None),
@@ -1386,6 +1429,9 @@ def create_scan_form(
             raise ScanValidationError("Tipologia di scansione non valida.")
         if data_classification not in DATA_CLASSIFICATIONS:
             raise ScanValidationError("Classificazione dati non valida.")
+        didactic_mode = didactic_mode.lower().strip()
+        if didactic_mode not in DIDACTIC_MODES:
+            raise ScanValidationError("Didactic mode non valido.")
         if scan_type == "nmap":
             validate_nmap_target(target)
         else:
@@ -1408,6 +1454,10 @@ def create_scan_form(
             scan_type,
             selected_modules,
             advanced_modules_json,
+        )
+        module_overrides = _apply_didactic_mode_guardrails(
+            didactic_mode,
+            module_overrides,
         )
     except ScanValidationError as exc:
         csrf_token = generate_csrf_token()

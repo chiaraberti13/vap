@@ -81,10 +81,10 @@ Creare un piano operativo **didattico e incrementale** per trasformare VAP in un
   - [x] Step 4 Simulazione impatto (durata/rumore/rischio stimato).
   - [x] Step 5 Conferma con checklist compliance.
 
-- [ ] **B2. Didactic Mode (Beginner / Analyst / Expert)**
-  - Beginner: linguaggio semplificato + preset bloccati.
-  - Analyst: parametri intermedi con suggerimenti.
-  - Expert: pieno controllo con warning forti.
+- [x] **B2. Didactic Mode (Beginner / Analyst / Expert)**
+  - [x] Beginner: linguaggio semplificato + preset bloccati.
+  - [x] Analyst: parametri intermedi con suggerimenti.
+  - [x] Expert: pieno controllo con warning forti.
 
 - [ ] **B3. Explainability inline per ogni parametro**
   - Tooltip “cosa cambia”, “trade-off”, “false positive impact”.
@@ -152,6 +152,6 @@ Un task è completato solo se:
 ---
 
 ## 6) Primo task consigliato (prossimo ciclo)
-**B2 — Didactic Mode (Beginner / Analyst / Expert)**.
+**B3 — Explainability inline per ogni parametro**.
 
-Motivo: con B1 completato end-to-end, il prossimo incremento ad alto impatto UX/didattico è la personalizzazione dell’interfaccia e dei guardrail in base al livello utente.
+Motivo: dopo l’introduzione del didactic mode, il passo successivo è aumentare comprensione e qualità decisionale con tooltip contestuali su trade-off, impatto su falsi positivi e anti-pattern operativi.

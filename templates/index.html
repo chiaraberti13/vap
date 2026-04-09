@@ -200,6 +200,24 @@
                 <label class="flex items-start gap-2 text-sm text-slate-300"><input type="radio" name="learning_goal" value="deep_dive" class="mt-1 accent-cyan-400" />Approfondimento tecnico su stack specifico.</label>
                 <span id="learning-goal-error" class="home-microcopy hidden text-red-200">Seleziona un obiettivo per ricevere una scansione consigliata coerente.</span>
               </fieldset>
+              <fieldset class="grid gap-2 rounded-lg border border-slate-800 bg-slate-950/50 p-4" aria-describedby="didactic-mode-guidance">
+                <legend class="text-sm text-slate-300 px-1">Didactic mode</legend>
+                <label class="flex items-start gap-2 text-sm text-slate-300">
+                  <input type="radio" name="didactic_mode" value="beginner" class="mt-1 accent-cyan-400" />
+                  <span><span class="font-semibold text-emerald-200">Beginner</span> · parametri bloccati e limiti stretti per ridurre rischio operativo.</span>
+                </label>
+                <label class="flex items-start gap-2 text-sm text-slate-300">
+                  <input type="radio" name="didactic_mode" value="analyst" class="mt-1 accent-cyan-400" checked />
+                  <span><span class="font-semibold text-amber-200">Analyst</span> · controllo intermedio con limiti estesi e suggerimenti.</span>
+                </label>
+                <label class="flex items-start gap-2 text-sm text-slate-300">
+                  <input type="radio" name="didactic_mode" value="expert" class="mt-1 accent-cyan-400" />
+                  <span><span class="font-semibold text-rose-200">Expert</span> · pieno controllo dei parametri (sempre entro guardrail server-side).</span>
+                </label>
+                <p id="didactic-mode-guidance" class="home-microcopy text-slate-400">
+                  Il livello scelto aggiorna limiti e disponibilità dei moduli nello Step 2/3.
+                </p>
+              </fieldset>
               <fieldset class="grid gap-2 rounded-lg border border-slate-800 bg-slate-950/50 p-4">
                 <legend class="text-sm text-slate-300 px-1">Scope legale autorizzato</legend>
                 <label class="flex items-start gap-2 text-sm text-slate-300">

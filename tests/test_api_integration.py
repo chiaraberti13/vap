@@ -981,6 +981,102 @@ def test_guided_scan_form_blocks_advanced_params_for_unselected_modules(monkeypa
     app.app.dependency_overrides.clear()
 
 
+def test_guided_scan_form_beginner_mode_blocks_high_risk_modules(monkeypatch):
+    _clear_scans()
+    app.app.dependency_overrides[app.enforce_api_key_form_dependency] = lambda: None
+
+    class DummyResult:
+        id = "dummy-task-should-not-run"
+
+    def fake_apply_async(*_args, **_kwargs):
+        return DummyResult()
+
+    monkeypatch.setattr(app.orchestrate_scan, "apply_async", fake_apply_async)
+
+    with TestClient(app.app) as client:
+        homepage = client.get("/")
+        assert homepage.status_code == 200
+        csrf_cookie = client.cookies.get(app.settings.csrf_cookie_name)
+        assert csrf_cookie
+
+        create_response = client.post(
+            "/scans",
+            data={
+                "target": "https://beginner-guardrail.example",
+                "learning_goal": "verification",
+                "scope_acknowledged": "on",
+                "run_compliance_acknowledged": "on",
+                "scan_type": "full",
+                "didactic_mode": "beginner",
+                "selected_modules_json": json.dumps(["sqlmap", "httpx"]),
+                "priority": "5",
+                "data_classification": "internal",
+                "accept_privacy": "on",
+                "accept_terms": "on",
+                "csrf_token": csrf_cookie,
+            },
+        )
+
+    assert create_response.status_code == 400
+    assert "moduli ad alto rischio" in create_response.text
+    with SessionLocal() as session:
+        blocked_scan = session.query(Scan).filter(Scan.target == "https://beginner-guardrail.example").one_or_none()
+        assert blocked_scan is None
+
+    app.app.dependency_overrides.clear()
+
+
+def test_guided_scan_form_analyst_mode_caps_advanced_parameters(monkeypatch):
+    _clear_scans()
+    app.app.dependency_overrides[app.enforce_api_key_form_dependency] = lambda: None
+
+    class DummyResult:
+        id = "dummy-task-analyst-caps"
+
+    def fake_apply_async(*_args, **_kwargs):
+        return DummyResult()
+
+    monkeypatch.setattr(app.orchestrate_scan, "apply_async", fake_apply_async)
+
+    with TestClient(app.app) as client:
+        homepage = client.get("/")
+        assert homepage.status_code == 200
+        csrf_cookie = client.cookies.get(app.settings.csrf_cookie_name)
+        assert csrf_cookie
+
+        create_response = client.post(
+            "/scans",
+            data={
+                "target": "https://analyst-caps.example",
+                "learning_goal": "verification",
+                "scope_acknowledged": "on",
+                "run_compliance_acknowledged": "on",
+                "scan_type": "light",
+                "didactic_mode": "analyst",
+                "selected_modules_json": json.dumps(["httpx"]),
+                "advanced_modules_json": json.dumps(
+                    {"httpx": {"timeout_seconds": 220, "max_payloads": 390}}
+                ),
+                "priority": "5",
+                "data_classification": "internal",
+                "accept_privacy": "on",
+                "accept_terms": "on",
+                "csrf_token": csrf_cookie,
+            },
+            follow_redirects=False,
+        )
+
+    assert create_response.status_code == 303
+    with SessionLocal() as session:
+        saved_scan = session.query(Scan).filter(Scan.target == "https://analyst-caps.example").one_or_none()
+        assert saved_scan is not None
+        saved_config = json.loads(saved_scan.scan_configuration_json)
+        assert saved_config["tool_overrides"]["httpx"]["timeout_seconds"] == 90
+        assert saved_config["tool_overrides"]["httpx"]["max_payloads"] == 80
+
+    app.app.dependency_overrides.clear()
+
+
 def test_submit_learning_feedback_persists_and_normalizes_notes():
     _clear_scans()
     app.app.dependency_overrides[app.enforce_api_key] = lambda: None

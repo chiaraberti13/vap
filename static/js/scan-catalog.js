@@ -32,6 +32,8 @@
   const targetInput = guidedForm?.querySelector("input[name='target']");
   const targetError = document.getElementById("target-error");
   const learningGoalError = document.getElementById("learning-goal-error");
+  const didacticModeRadios = guidedForm?.querySelectorAll("input[name='didactic_mode']");
+  const didacticModeGuidance = document.getElementById("didactic-mode-guidance");
   const scopeAcknowledged = document.getElementById("scope-acknowledged");
   const scopeAuthorizationError = document.getElementById("scope-authorization-error");
   const consentError = document.getElementById("consent-error");
@@ -80,6 +82,9 @@
     !targetInput ||
     !targetError ||
     !learningGoalError ||
+    !didacticModeRadios ||
+    didacticModeRadios.length === 0 ||
+    !didacticModeGuidance ||
     !scopeAcknowledged ||
     !scopeAuthorizationError ||
     !consentError ||
@@ -143,6 +148,11 @@
     3: "Consenso legale",
     4: "Impatto operativo",
     5: "Checklist compliance",
+  };
+  const didacticModeLimits = {
+    beginner: { timeoutSeconds: 30, maxPayloads: 40 },
+    analyst: { timeoutSeconds: 90, maxPayloads: 80 },
+    expert: { timeoutSeconds: 300, maxPayloads: 500 },
   };
 
   function escapeHtml(value) {
@@ -323,6 +333,31 @@
     return catalog.find((entry) => entry.id === scanTypeField.value);
   }
 
+  function selectedDidacticMode() {
+    const selected = guidedForm.querySelector("input[name='didactic_mode']:checked");
+    return selected?.value || "analyst";
+  }
+
+  function getModeLimits() {
+    return didacticModeLimits[selectedDidacticMode()] || didacticModeLimits.analyst;
+  }
+
+  function applyDidacticModeGuidance() {
+    const mode = selectedDidacticMode();
+    if (mode === "beginner") {
+      didacticModeGuidance.textContent =
+        "Beginner attivo: moduli ad alto rischio disabilitati e limiti timeout/payload più conservativi.";
+      return;
+    }
+    if (mode === "expert") {
+      didacticModeGuidance.textContent =
+        "Expert attivo: pieno controllo client-side. Restano attivi i guardrail centralizzati del server.";
+      return;
+    }
+    didacticModeGuidance.textContent =
+      "Analyst attivo: limiti intermedi con bilanciamento tra copertura tecnica e sicurezza operativa.";
+  }
+
   function updateSelectedModulesInput() {
     selectedModulesInput.value = JSON.stringify(Array.from(selectedModules));
     const normalizedConfig = {};
@@ -413,6 +448,15 @@
       checkbox.value = module.id;
       checkbox.className = "mt-1 accent-cyan-400";
       checkbox.checked = selectedModules.has(module.id);
+      const mode = selectedDidacticMode();
+      const highRiskModules = new Set(["sqlmap", "commix", "nosqlmap"]);
+      const isBeginnerBlocked = mode === "beginner" && highRiskModules.has(module.id);
+      if (isBeginnerBlocked) {
+        checkbox.checked = false;
+        selectedModules.delete(module.id);
+        delete advancedModuleConfig[module.id];
+      }
+      checkbox.disabled = isBeginnerBlocked;
       checkbox.addEventListener("change", () => {
         if (checkbox.checked) {
           selectedModules.add(module.id);
@@ -427,7 +471,9 @@
       });
 
       const text = document.createElement("span");
-      text.textContent = module.label || module.id;
+      text.textContent = isBeginnerBlocked
+        ? `${module.label || module.id} (bloccato in Beginner)`
+        : module.label || module.id;
       wrapper.appendChild(checkbox);
       wrapper.appendChild(text);
       moduleSelector.appendChild(wrapper);
@@ -447,6 +493,13 @@
       const moduleEntry = modules.find((module) => module.id === moduleId);
       const moduleLabel = moduleEntry?.label || moduleId;
       const current = advancedModuleConfig[moduleId] || { timeout_seconds: 20, max_payloads: 30 };
+      const modeLimits = getModeLimits();
+      const boundedTimeout = Math.min(current.timeout_seconds, modeLimits.timeoutSeconds);
+      const boundedPayloads = Math.min(current.max_payloads, modeLimits.maxPayloads);
+      advancedModuleConfig[moduleId] = {
+        timeout_seconds: boundedTimeout,
+        max_payloads: boundedPayloads,
+      };
 
       const wrapper = document.createElement("fieldset");
       wrapper.className = "rounded-md border border-slate-700 bg-slate-950/60 p-3";
@@ -455,11 +508,11 @@
         <div class="mt-2 grid gap-2 sm:grid-cols-2">
           <label class="grid gap-1 text-xs text-slate-300">
             <span>Timeout (secondi)</span>
-            <input type="number" min="1" max="300" step="1" class="rounded border border-slate-700 bg-slate-950 px-2 py-1 text-slate-100" data-advanced-timeout="${moduleId}" value="${current.timeout_seconds}" />
+            <input type="number" min="1" max="${modeLimits.timeoutSeconds}" step="1" class="rounded border border-slate-700 bg-slate-950 px-2 py-1 text-slate-100" data-advanced-timeout="${moduleId}" value="${boundedTimeout}" />
           </label>
           <label class="grid gap-1 text-xs text-slate-300">
             <span>Budget payload</span>
-            <input type="number" min="1" max="500" step="1" class="rounded border border-slate-700 bg-slate-950 px-2 py-1 text-slate-100" data-advanced-payloads="${moduleId}" value="${current.max_payloads}" />
+            <input type="number" min="1" max="${modeLimits.maxPayloads}" step="1" class="rounded border border-slate-700 bg-slate-950 px-2 py-1 text-slate-100" data-advanced-payloads="${moduleId}" value="${boundedPayloads}" />
           </label>
         </div>
       `;
@@ -481,10 +534,12 @@
         }
         const parsed = Number.parseInt(input.value, 10);
         const timeout = Number.isFinite(parsed) ? parsed : 20;
+        const boundedTimeout = Math.min(timeout, getModeLimits().timeoutSeconds);
         advancedModuleConfig[moduleId] = {
           ...(advancedModuleConfig[moduleId] || { max_payloads: 30 }),
-          timeout_seconds: timeout,
+          timeout_seconds: boundedTimeout,
         };
+        input.value = String(boundedTimeout);
         updateSelectedModulesInput();
         updateImpactSimulation(entry);
       });
@@ -497,10 +552,12 @@
         }
         const parsed = Number.parseInt(input.value, 10);
         const maxPayloads = Number.isFinite(parsed) ? parsed : 30;
+        const boundedPayloads = Math.min(maxPayloads, getModeLimits().maxPayloads);
         advancedModuleConfig[moduleId] = {
           ...(advancedModuleConfig[moduleId] || { timeout_seconds: 20 }),
-          max_payloads: maxPayloads,
+          max_payloads: boundedPayloads,
         };
+        input.value = String(boundedPayloads);
         updateSelectedModulesInput();
         updateImpactSimulation(entry);
       });
@@ -776,6 +833,13 @@
     runComplianceError.classList.add("hidden");
   });
 
+  didacticModeRadios.forEach((radio) => {
+    radio.addEventListener("change", () => {
+      applyDidacticModeGuidance();
+      renderModuleSelector(getSelectedEntry());
+    });
+  });
+
   compareToggle.addEventListener("click", () => {
     if (window.matchMedia("(min-width: 768px)").matches) {
       return;
@@ -799,6 +863,7 @@
   updateModulesSummary(getSelectedEntry());
   updateImpactSimulation(getSelectedEntry());
   registerGlossaryInteractions();
+  applyDidacticModeGuidance();
   updateStepperUi();
   updateCompareToggleUi();
 })();
