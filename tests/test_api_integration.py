@@ -671,6 +671,7 @@ def test_guided_scan_form_end_to_end_journey(monkeypatch):
                 "learning_goal": "baseline",
                 "scope_acknowledged": "on",
                 "scope_reference": "CAB-2026-041",
+                "run_compliance_acknowledged": "on",
                 "scan_type": "wordpress",
                 "priority": "7",
                 "data_classification": "internal",
@@ -724,6 +725,7 @@ def test_guided_scan_form_blocks_submission_without_required_consents(monkeypatc
                 "target": "https://consent-missing.example",
                 "learning_goal": "baseline",
                 "scope_acknowledged": "on",
+                "run_compliance_acknowledged": "on",
                 "scan_type": "full",
                 "priority": "5",
                 "data_classification": "internal",
@@ -811,6 +813,7 @@ def test_guided_scan_form_blocks_incompatible_module_selection(monkeypatch):
                 "target": "https://module-invalid.example",
                 "learning_goal": "verification",
                 "scope_acknowledged": "on",
+                "run_compliance_acknowledged": "on",
                 "scan_type": "light",
                 "selected_modules_json": json.dumps(["sqlmap"]),
                 "priority": "5",
@@ -824,6 +827,49 @@ def test_guided_scan_form_blocks_incompatible_module_selection(monkeypatch):
     assert create_response.status_code == 400
     with SessionLocal() as session:
         blocked_scan = session.query(Scan).filter(Scan.target == "https://module-invalid.example").first()
+        assert blocked_scan is None
+
+    app.app.dependency_overrides.clear()
+
+
+def test_guided_scan_form_blocks_submission_without_compliance_confirmation(monkeypatch):
+    """Step 5 negativo: senza conferma checklist compliance il server deve bloccare la run."""
+    _clear_scans()
+    app.app.dependency_overrides[app.enforce_api_key_form_dependency] = lambda: None
+
+    class DummyResult:
+        id = "dummy-task-should-not-run"
+
+    def fake_apply_async(*_args, **_kwargs):
+        return DummyResult()
+
+    monkeypatch.setattr(app.orchestrate_scan, "apply_async", fake_apply_async)
+
+    with TestClient(app.app) as client:
+        homepage = client.get("/")
+        assert homepage.status_code == 200
+        csrf_cookie = client.cookies.get(app.settings.csrf_cookie_name)
+        assert csrf_cookie
+
+        create_response = client.post(
+            "/scans",
+            data={
+                "target": "https://compliance-missing.example",
+                "learning_goal": "verification",
+                "scope_acknowledged": "on",
+                "scan_type": "light",
+                "priority": "5",
+                "data_classification": "internal",
+                "accept_privacy": "on",
+                "accept_terms": "on",
+                "csrf_token": csrf_cookie,
+            },
+        )
+
+    assert create_response.status_code == 400
+    assert "checklist compliance pre-run" in create_response.text
+    with SessionLocal() as session:
+        blocked_scan = session.query(Scan).filter(Scan.target == "https://compliance-missing.example").first()
         assert blocked_scan is None
 
     app.app.dependency_overrides.clear()
@@ -853,6 +899,7 @@ def test_guided_scan_form_persists_advanced_module_configuration(monkeypatch):
                 "target": "https://advanced-config.example",
                 "learning_goal": "verification",
                 "scope_acknowledged": "on",
+                "run_compliance_acknowledged": "on",
                 "scan_type": "light",
                 "selected_modules_json": json.dumps(["httpx", "whatweb"]),
                 "advanced_modules_json": json.dumps(
@@ -907,6 +954,7 @@ def test_guided_scan_form_blocks_advanced_params_for_unselected_modules(monkeypa
                 "target": "https://invalid-advanced-config.example",
                 "learning_goal": "verification",
                 "scope_acknowledged": "on",
+                "run_compliance_acknowledged": "on",
                 "scan_type": "light",
                 "selected_modules_json": json.dumps(["httpx"]),
                 "advanced_modules_json": json.dumps(

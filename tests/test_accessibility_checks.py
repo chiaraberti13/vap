@@ -90,6 +90,7 @@ def test_homepage_has_core_accessibility_landmarks_and_keyboard_controls():
     assert next_button is not None and next_button.get("type") == "button"
     assert prev_button is not None and prev_button.get("type") == "button"
     assert 'data-step-indicator="1" data-step-variant="compact" aria-current="step"' in response.text
+    assert "Step corrente: 1/5 · Obiettivo utente" in response.text
 
     compare_toggle = parser.buttons.get("scan-compare-toggle")
     assert compare_toggle is not None
@@ -136,6 +137,7 @@ def test_homepage_has_accessible_error_summary_for_guided_form_validation():
     assert 'id="target-error"' in html
     assert 'id="learning-goal-error"' in html
     assert 'id="consent-error"' in html
+    assert 'id="run-compliance-error"' in html
     assert 'id="guided-scan-form" novalidate' in html
 
 
@@ -215,6 +217,7 @@ def test_homepage_remains_usable_without_javascript_fallback_controls():
     assert "JavaScript disabilitato" in html
     assert 'data-step-panel="2"' in html and 'data-step-panel="2"' in html
     assert 'data-step-panel="3"' in html and 'data-step-panel="4"' in html
+    assert 'data-step-panel="5"' in html
     assert 'id="scan-step-next" data-action-priority="primary" class="hidden' in html
     assert 'id="scan-step-prev" data-action-priority="secondary" class="hidden' in html
 

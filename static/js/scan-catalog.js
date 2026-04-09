@@ -35,6 +35,8 @@
   const scopeAcknowledged = document.getElementById("scope-acknowledged");
   const scopeAuthorizationError = document.getElementById("scope-authorization-error");
   const consentError = document.getElementById("consent-error");
+  const runComplianceAcknowledged = document.getElementById("run-compliance-acknowledged");
+  const runComplianceError = document.getElementById("run-compliance-error");
   const moduleSelector = document.getElementById("scan-module-selector");
   const moduleSelectionError = document.getElementById("module-selection-error");
   const selectedModulesInput = document.getElementById("selected-modules-json");
@@ -81,6 +83,8 @@
     !scopeAcknowledged ||
     !scopeAuthorizationError ||
     !consentError ||
+    !runComplianceAcknowledged ||
+    !runComplianceError ||
     !moduleSelector ||
     !moduleSelectionError ||
     !selectedModulesInput ||
@@ -137,7 +141,8 @@
     1: "Obiettivo utente",
     2: "Scansione consigliata",
     3: "Consenso legale",
-    4: "Conferma ed esecuzione",
+    4: "Impatto operativo",
+    5: "Checklist compliance",
   };
 
   function escapeHtml(value) {
@@ -697,6 +702,17 @@
       }
     }
 
+    if (shouldValidate(5)) {
+      if (!runComplianceAcknowledged.checked) {
+        messages.push("Conferma la checklist compliance pre-run prima di avviare la scansione.");
+        runComplianceAcknowledged.setAttribute("aria-invalid", "true");
+        runComplianceError.classList.remove("hidden");
+      } else {
+        runComplianceAcknowledged.setAttribute("aria-invalid", "false");
+        runComplianceError.classList.add("hidden");
+      }
+    }
+
     if (messages.length === 0) {
       errorSummary.classList.add("hidden");
       errorSummaryList.innerHTML = "";
@@ -728,10 +744,10 @@
   });
 
   guidedForm.addEventListener("submit", () => {
-    if (!validateSteps([1, 3])) {
+    if (!validateSteps([1, 2, 3, 5])) {
       return;
     }
-    currentStep = 4;
+    currentStep = 5;
     updateStepperUi();
   });
 
@@ -750,6 +766,14 @@
     }
     scopeAcknowledged.setAttribute("aria-invalid", "false");
     scopeAuthorizationError.classList.add("hidden");
+  });
+
+  runComplianceAcknowledged.addEventListener("change", () => {
+    if (!runComplianceAcknowledged.checked) {
+      return;
+    }
+    runComplianceAcknowledged.setAttribute("aria-invalid", "false");
+    runComplianceError.classList.add("hidden");
   });
 
   compareToggle.addEventListener("click", () => {
