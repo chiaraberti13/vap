@@ -72,6 +72,11 @@ body {
     line-height: var(--line-height-relaxed);
 }
 
+.form-control-invalid {
+    border-color: rgba(248, 113, 113, 0.9) !important;
+    box-shadow: 0 0 0 2px rgba(248, 113, 113, 0.28);
+}
+
 @media (min-width: 1024px) {
     .home-main-grid {
         grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);

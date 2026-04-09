@@ -119,7 +119,10 @@ def test_homepage_exposes_microcopy_guidance_for_target_and_scan_type():
 
     assert 'id="target-guidance"' in html
     assert 'id="scan-type-guidance"' in html
-    assert 'aria-describedby="target-guidance"' in html
+    assert 'aria-describedby="target-guidance target-error"' in html
+    assert 'aria-describedby="scope-authorization-error"' in html
+    assert 'aria-describedby="consent-error"' in html
+    assert 'aria-describedby="run-compliance-error"' in html
     assert "errore frequente" in html
     assert "light" in html and "wordpress" in html
 
@@ -247,6 +250,8 @@ def test_scan_catalog_js_supports_keyboard_navigation_and_focus_management():
     assert 'if (event.key === "Enter" || event.key === " ") {' in content
     assert "event.preventDefault();" in content
     assert "errorSummary.focus();" in content
+    assert "setFieldValidationState(field, hasError)" in content
+    assert 'field.classList.toggle("form-control-invalid", hasError);' in content
     assert 'button.addEventListener("focus", () => showGlossaryTerm(term));' in content
 
 

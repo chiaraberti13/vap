@@ -41,6 +41,7 @@
   const runComplianceError = document.getElementById("run-compliance-error");
   const moduleSelector = document.getElementById("scan-module-selector");
   const moduleSelectionError = document.getElementById("module-selection-error");
+  const moduleSelectionFieldset = moduleSelectionError?.closest("fieldset");
   const selectedModulesInput = document.getElementById("selected-modules-json");
   const modulesSummary = document.getElementById("scan-modules-summary");
   const advancedModulesList = document.getElementById("advanced-module-config-list");
@@ -128,6 +129,14 @@
   let selectedModules = new Set();
   let advancedModuleConfig = {};
   const totalSteps = stepPanels.length;
+
+  function setFieldValidationState(field, hasError) {
+    if (!field) {
+      return;
+    }
+    field.setAttribute("aria-invalid", hasError ? "true" : "false");
+    field.classList.toggle("form-control-invalid", hasError);
+  }
 
   const levelStyles = {
     beginner: "bg-emerald-500/20 text-emerald-200 border-emerald-400/40",
@@ -760,12 +769,12 @@
       const goalInput = guidedForm.querySelector("input[name='learning_goal']:checked");
       if (!targetInput.value.trim()) {
         messages.push("Inserisci un target valido (dominio, URL base o IP autorizzato).");
-        targetInput.setAttribute("aria-invalid", "true");
+        setFieldValidationState(targetInput, true);
         targetError.classList.remove("hidden");
         targetError.textContent =
           "Target mancante: inserisci dominio/IP senza path o query (esempio: https://example.com).";
       } else {
-        targetInput.setAttribute("aria-invalid", "false");
+        setFieldValidationState(targetInput, false);
         targetError.classList.add("hidden");
         targetError.textContent = "";
       }
@@ -778,10 +787,10 @@
 
       if (!scopeAcknowledged.checked) {
         messages.push("Conferma il perimetro legale autorizzato prima di procedere con la scansione.");
-        scopeAcknowledged.setAttribute("aria-invalid", "true");
+        setFieldValidationState(scopeAcknowledged, true);
         scopeAuthorizationError.classList.remove("hidden");
       } else {
-        scopeAcknowledged.setAttribute("aria-invalid", "false");
+        setFieldValidationState(scopeAcknowledged, false);
         scopeAuthorizationError.classList.add("hidden");
       }
     }
@@ -789,8 +798,10 @@
     if (shouldValidate(2)) {
       if (selectedModules.size === 0) {
         messages.push("Step 2: seleziona almeno un modulo scanner da includere nella run.");
+        moduleSelectionFieldset?.classList.add("form-control-invalid");
         moduleSelectionError.classList.remove("hidden");
       } else {
+        moduleSelectionFieldset?.classList.remove("form-control-invalid");
         moduleSelectionError.classList.add("hidden");
       }
     }
@@ -801,7 +812,7 @@
       );
       const hasMissingConsent = Array.from(requiredChecks).some((check) => !check.checked);
       requiredChecks.forEach((check) => {
-        check.setAttribute("aria-invalid", hasMissingConsent && !check.checked ? "true" : "false");
+        setFieldValidationState(check, hasMissingConsent && !check.checked);
       });
 
       if (hasMissingConsent) {
@@ -815,10 +826,10 @@
     if (shouldValidate(5)) {
       if (!runComplianceAcknowledged.checked) {
         messages.push("Conferma la checklist compliance pre-run prima di avviare la scansione.");
-        runComplianceAcknowledged.setAttribute("aria-invalid", "true");
+        setFieldValidationState(runComplianceAcknowledged, true);
         runComplianceError.classList.remove("hidden");
       } else {
-        runComplianceAcknowledged.setAttribute("aria-invalid", "false");
+        setFieldValidationState(runComplianceAcknowledged, false);
         runComplianceError.classList.add("hidden");
       }
     }
@@ -865,7 +876,7 @@
     if (!targetInput.value.trim()) {
       return;
     }
-    targetInput.setAttribute("aria-invalid", "false");
+    setFieldValidationState(targetInput, false);
     targetError.classList.add("hidden");
     targetError.textContent = "";
   });
@@ -874,7 +885,7 @@
     if (!scopeAcknowledged.checked) {
       return;
     }
-    scopeAcknowledged.setAttribute("aria-invalid", "false");
+    setFieldValidationState(scopeAcknowledged, false);
     scopeAuthorizationError.classList.add("hidden");
   });
 
@@ -882,7 +893,7 @@
     if (!runComplianceAcknowledged.checked) {
       return;
     }
-    runComplianceAcknowledged.setAttribute("aria-invalid", "false");
+    setFieldValidationState(runComplianceAcknowledged, false);
     runComplianceError.classList.add("hidden");
   });
 
