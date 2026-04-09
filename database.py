@@ -162,6 +162,26 @@ class LearningPathProgress(Base):
     is_completed = Column(Integer, nullable=False, default=0)
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
+
+class ScanConfigurationPreset(Base):
+    __tablename__ = "scan_configuration_presets"
+    __table_args__ = (
+        Index("ix_scan_config_presets_subject", "subject_id"),
+        Index("ix_scan_config_presets_scan_type", "scan_type"),
+        Index("ix_scan_config_presets_created_at", "created_at"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    subject_id = Column(String(64), nullable=False)
+    name = Column(String(80), nullable=False)
+    description = Column(String(255), nullable=True)
+    scan_type = Column(String(50), nullable=False)
+    config_json = Column(Text, nullable=False)
+    config_version = Column(String(32), nullable=False)
+    config_checksum = Column(String(64), nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+
 _B9_MIGRATIONS = [
     ("tests_performed", "INTEGER"),
     ("urls_spidered", "INTEGER"),
@@ -185,6 +205,35 @@ def _migrate_scans_table(conn) -> None:
     for col_name, col_type in [*_B9_MIGRATIONS, *_A4_MIGRATIONS]:
         if col_name not in existing:
             conn.execute(text(f"ALTER TABLE scans ADD COLUMN {col_name} {col_type}"))
+
+
+def _migrate_scan_configuration_presets_table(conn) -> None:
+    """Create scan_configuration_presets table on legacy environments (idempotent)."""
+    inspector = inspect(conn)
+    table_names = set(inspector.get_table_names())
+    if "scan_configuration_presets" in table_names:
+        return
+    conn.execute(
+        text(
+            """
+            CREATE TABLE scan_configuration_presets (
+                id INTEGER PRIMARY KEY,
+                subject_id VARCHAR(64) NOT NULL,
+                name VARCHAR(80) NOT NULL,
+                description VARCHAR(255),
+                scan_type VARCHAR(50) NOT NULL,
+                config_json TEXT NOT NULL,
+                config_version VARCHAR(32) NOT NULL,
+                config_checksum VARCHAR(64) NOT NULL,
+                created_at DATETIME NOT NULL,
+                updated_at DATETIME NOT NULL
+            )
+            """
+        )
+    )
+    conn.execute(text("CREATE INDEX ix_scan_config_presets_subject ON scan_configuration_presets (subject_id)"))
+    conn.execute(text("CREATE INDEX ix_scan_config_presets_scan_type ON scan_configuration_presets (scan_type)"))
+    conn.execute(text("CREATE INDEX ix_scan_config_presets_created_at ON scan_configuration_presets (created_at)"))
 
 
 def _run_alembic_upgrade() -> bool:
@@ -213,6 +262,7 @@ def init_db() -> None:
 
     with engine.begin() as conn:
         _migrate_scans_table(conn)
+        _migrate_scan_configuration_presets_table(conn)
 
 
 def get_db() -> Generator[Session, None, None]:

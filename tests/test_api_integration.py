@@ -4,7 +4,15 @@ import re
 from fastapi.testclient import TestClient
 
 import app
-from database import AuditEvent, LearningFeedback, LearningPathProgress, Scan, SessionLocal, init_db
+from database import (
+    AuditEvent,
+    LearningFeedback,
+    LearningPathProgress,
+    Scan,
+    ScanConfigurationPreset,
+    SessionLocal,
+    init_db,
+)
 
 
 def _clear_scans() -> None:
@@ -14,6 +22,7 @@ def _clear_scans() -> None:
         session.query(AuditEvent).delete()
         session.query(LearningFeedback).delete()
         session.query(LearningPathProgress).delete()
+        session.query(ScanConfigurationPreset).delete()
         session.commit()
 
 
@@ -198,6 +207,59 @@ def test_get_scan_config_schema_endpoint():
     assert payload["title"] == "ScanConfigurationV1"
     assert payload["properties"]["schema_version"]["default"] == "scan-config/v1"
     assert "runtime" in payload["properties"]
+    app.app.dependency_overrides.clear()
+
+def test_scan_configuration_preset_crud_and_subject_isolation():
+    _clear_scans()
+    app.app.dependency_overrides[app.enforce_api_key] = lambda: None
+    app.app.dependency_overrides[app.enforce_operator_role] = lambda: "operator"
+    app.app.dependency_overrides[app.enforce_viewer_role] = lambda: "viewer"
+
+    with TestClient(app.app) as client:
+        create_response = client.post(
+            "/api/v1/scan-config/presets",
+            json={
+                "name": "Baseline didattica",
+                "description": "Preset con limiti conservativi",
+                "scan_type": "full",
+                "configuration": {
+                    "runtime": {"requests_per_minute": 45, "max_concurrency": 2, "request_timeout_seconds": 25},
+                    "crawler": {"enabled": True, "max_depth": 1},
+                },
+            },
+            cookies={app.settings.csrf_cookie_name: "tkn"},
+            headers={"x-csrf-token": "tkn", "x-data-subject": "student-alpha"},
+        )
+        assert create_response.status_code == 200
+        created_payload = create_response.json()
+        preset_id = created_payload["id"]
+        assert created_payload["scan_type"] == "full"
+        assert created_payload["configuration"]["crawler"]["max_depth"] == 1
+
+        list_response = client.get(
+            "/api/v1/scan-config/presets",
+            headers={"x-data-subject": "student-alpha"},
+        )
+        assert list_response.status_code == 200
+        listed = list_response.json()
+        assert len(listed) == 1
+        assert listed[0]["id"] == preset_id
+        assert listed[0]["name"] == "Baseline didattica"
+
+        unauthorized_delete = client.delete(
+            f"/api/v1/scan-config/presets/{preset_id}",
+            cookies={app.settings.csrf_cookie_name: "tkn2"},
+            headers={"x-csrf-token": "tkn2", "x-data-subject": "student-beta"},
+        )
+        assert unauthorized_delete.status_code == 404
+
+        delete_response = client.delete(
+            f"/api/v1/scan-config/presets/{preset_id}",
+            cookies={app.settings.csrf_cookie_name: "tkn3"},
+            headers={"x-csrf-token": "tkn3", "x-data-subject": "student-alpha"},
+        )
+        assert delete_response.status_code == 204
+
     app.app.dependency_overrides.clear()
 
 
