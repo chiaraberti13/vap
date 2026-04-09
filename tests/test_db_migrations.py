@@ -35,6 +35,9 @@ def test_init_db_bootstraps_schema_with_or_without_alembic(tmp_path):
         scan_columns = {row[1] for row in conn.execute("PRAGMA table_info(scans)")}
         assert "tests_performed" in scan_columns
         assert "redirect_from" in scan_columns
+        assert "scan_configuration_json" in scan_columns
+        assert "scan_configuration_version" in scan_columns
+        assert "scan_configuration_checksum" in scan_columns
 
         if importlib.util.find_spec("alembic"):
             assert "alembic_version" in tables

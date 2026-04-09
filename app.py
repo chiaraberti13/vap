@@ -46,6 +46,7 @@ from execution_guardrails import ExecutionGuardrailError, enforce_execution_guar
 from scan_configuration import (
     ScanConfigurationPolicyError,
     ScanConfigurationV1,
+    checksum_scan_config_v1,
     get_scan_config_schema_v1,
     validate_scan_configuration_policy_v1,
 )
@@ -537,6 +538,12 @@ class ScanStatus(BaseModel):
     progress: int
     priority: int
     data_classification: str
+
+
+class ScanConfigurationSnapshot(BaseModel):
+    schema_version: str
+    checksum: str
+    configuration: ScanConfigurationV1
 
 
 class ScanDelete(BaseModel):
@@ -1588,6 +1595,9 @@ def create_scan(
         created_at=datetime.now(timezone.utc),
         progress=0,
         priority=payload.priority,
+        scan_configuration_json=payload.scan_configuration.model_dump_json(),
+        scan_configuration_version=payload.scan_configuration.schema_version,
+        scan_configuration_checksum=checksum_scan_config_v1(payload.scan_configuration),
         data_subject_id=subject_id,
         data_classification=data_classification,
     )
@@ -2028,6 +2038,37 @@ def get_scan_config_schema_endpoint(
     response_payload = get_scan_config_schema_v1()
     _set_cached_json(cache_key, response_payload)
     return response_payload
+
+
+@app.get("/api/v1/scans/{scan_id}/configuration", response_model=ScanConfigurationSnapshot)
+@limiter.limit(settings.rate_limit_read)
+def get_scan_configuration_snapshot(
+    request: Request,
+    scan_id: int,
+    db: Session = Depends(get_db),
+    _: None = Depends(enforce_api_key),
+    __: str = Depends(enforce_viewer_role),
+) -> ScanConfigurationSnapshot:
+    scan = _active_scan_query(db).filter(Scan.id == scan_id).first()
+    if not scan:
+        raise HTTPException(status_code=404, detail="Scan non trovata")
+    if not scan.scan_configuration_json or not scan.scan_configuration_version or not scan.scan_configuration_checksum:
+        raise HTTPException(
+            status_code=404,
+            detail="Configurazione scansione non disponibile per questa esecuzione.",
+        )
+    try:
+        scan_config = ScanConfigurationV1.model_validate_json(scan.scan_configuration_json)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=500,
+            detail="Snapshot configurazione corrotto: impossibile ricostruire la scansione.",
+        ) from exc
+    return ScanConfigurationSnapshot(
+        schema_version=scan.scan_configuration_version,
+        checksum=scan.scan_configuration_checksum,
+        configuration=scan_config,
+    )
 
 
 @app.get("/api/v1/scans/{scan_id}/status", response_model=ScanStatus)

@@ -80,6 +80,9 @@ class Scan(Base):
     completed_scanners = Column(Integer, nullable=True)
     logs_json = Column(Text, nullable=True)
     notifications_json = Column(Text, nullable=True)
+    scan_configuration_json = Column(Text, nullable=True)
+    scan_configuration_version = Column(String(32), nullable=True)
+    scan_configuration_checksum = Column(String(64), nullable=True)
     data_subject_id = Column(String(64), nullable=True)
     data_classification = Column(String(40), nullable=False, default="internal")
     # B9 – scan stats & redirect tracking
@@ -168,12 +171,18 @@ _B9_MIGRATIONS = [
     ("redirect_from", "VARCHAR(512)"),
 ]
 
+_A4_MIGRATIONS = [
+    ("scan_configuration_json", "TEXT"),
+    ("scan_configuration_version", "VARCHAR(32)"),
+    ("scan_configuration_checksum", "VARCHAR(64)"),
+]
+
 
 def _migrate_scans_table(conn) -> None:
-    """Add B9 columns to an existing scans table (idempotent)."""
+    """Add post-initial columns to an existing scans table (idempotent)."""
     inspector = inspect(conn)
     existing = {col["name"] for col in inspector.get_columns("scans")}
-    for col_name, col_type in _B9_MIGRATIONS:
+    for col_name, col_type in [*_B9_MIGRATIONS, *_A4_MIGRATIONS]:
         if col_name not in existing:
             conn.execute(text(f"ALTER TABLE scans ADD COLUMN {col_name} {col_type}"))
 
