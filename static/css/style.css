@@ -72,6 +72,43 @@ body {
     line-height: var(--line-height-relaxed);
 }
 
+.content-shell {
+    margin-inline: auto;
+    width: min(100%, 72rem);
+}
+
+.content-stack-lg > * + * {
+    margin-top: 1.5rem;
+}
+
+.content-card {
+    border-radius: 1rem;
+    border: 1px solid rgb(30 41 59 / 0.9);
+    background: rgb(15 23 42 / 0.72);
+    padding: 1rem;
+}
+
+.content-kpi-grid {
+    display: grid;
+    gap: 0.75rem;
+}
+
+@media (min-width: 768px) {
+    .content-card {
+        padding: 1.25rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    .content-stack-lg > * + * {
+        margin-top: 2rem;
+    }
+
+    .content-kpi-grid {
+        gap: 1rem;
+    }
+}
+
 .form-control-invalid {
     border-color: rgba(248, 113, 113, 0.9) !important;
     box-shadow: 0 0 0 2px rgba(248, 113, 113, 0.28);
