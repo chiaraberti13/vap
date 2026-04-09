@@ -1227,6 +1227,8 @@ def create_scan_form(
     scan_type: str = Form("full"),
     priority: int = Form(5),
     data_classification: str = Form("internal"),
+    scope_acknowledged: Optional[str] = Form(None),
+    scope_reference: str = Form(""),
     accept_privacy: Optional[str] = Form(None),
     accept_terms: Optional[str] = Form(None),
     csrf_token: str = Form(""),
@@ -1245,6 +1247,15 @@ def create_scan_form(
             validate_nmap_target(target)
         else:
             validate_target(target)
+        if not scope_acknowledged:
+            raise ScanValidationError(
+                "Conferma il perimetro legale autorizzato prima di avviare la scansione."
+            )
+        normalized_scope_reference = scope_reference.strip()
+        if len(normalized_scope_reference) > 120:
+            raise ScanValidationError(
+                "Il riferimento autorizzazione supera il limite massimo di 120 caratteri."
+            )
     except ValueError:
         csrf_token = generate_csrf_token()
         kpi_metrics = _build_kpi_metrics(db)
@@ -1468,6 +1479,8 @@ def create_scan_form(
         scan_id=scan.id,
         scan_type=scan.scan_type,
         data_classification=scan.data_classification,
+        scope_reference_provided=bool(normalized_scope_reference),
+        scope_reference_length=len(normalized_scope_reference),
     )
 
     return RedirectResponse(url=redirect_url, status_code=303)

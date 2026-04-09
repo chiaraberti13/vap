@@ -32,6 +32,8 @@
   const targetInput = guidedForm?.querySelector("input[name='target']");
   const targetError = document.getElementById("target-error");
   const learningGoalError = document.getElementById("learning-goal-error");
+  const scopeAcknowledged = document.getElementById("scope-acknowledged");
+  const scopeAuthorizationError = document.getElementById("scope-authorization-error");
   const consentError = document.getElementById("consent-error");
 
   if (
@@ -65,6 +67,8 @@
     !targetInput ||
     !targetError ||
     !learningGoalError ||
+    !scopeAcknowledged ||
+    !scopeAuthorizationError ||
     !consentError ||
     glossaryButtons.length === 0
   ) {
@@ -443,6 +447,15 @@
       } else {
         learningGoalError.classList.add("hidden");
       }
+
+      if (!scopeAcknowledged.checked) {
+        messages.push("Conferma il perimetro legale autorizzato prima di procedere con la scansione.");
+        scopeAcknowledged.setAttribute("aria-invalid", "true");
+        scopeAuthorizationError.classList.remove("hidden");
+      } else {
+        scopeAcknowledged.setAttribute("aria-invalid", "false");
+        scopeAuthorizationError.classList.add("hidden");
+      }
     }
 
     if (shouldValidate(3)) {
@@ -480,7 +493,9 @@
   }
 
   stepNext.addEventListener("click", () => {
-    validateCurrentStep();
+    if (!validateCurrentStep()) {
+      return;
+    }
     currentStep = Math.min(totalSteps, currentStep + 1);
     updateStepperUi();
   });
@@ -491,7 +506,9 @@
   });
 
   guidedForm.addEventListener("submit", () => {
-    validateSteps([1, 3]);
+    if (!validateSteps([1, 3])) {
+      return;
+    }
     currentStep = 4;
     updateStepperUi();
   });
@@ -503,6 +520,14 @@
     targetInput.setAttribute("aria-invalid", "false");
     targetError.classList.add("hidden");
     targetError.textContent = "";
+  });
+
+  scopeAcknowledged.addEventListener("change", () => {
+    if (!scopeAcknowledged.checked) {
+      return;
+    }
+    scopeAcknowledged.setAttribute("aria-invalid", "false");
+    scopeAuthorizationError.classList.add("hidden");
   });
 
   compareToggle.addEventListener("click", () => {

@@ -669,6 +669,8 @@ def test_guided_scan_form_end_to_end_journey(monkeypatch):
             data={
                 "target": "https://example.com",
                 "learning_goal": "baseline",
+                "scope_acknowledged": "on",
+                "scope_reference": "CAB-2026-041",
                 "scan_type": "wordpress",
                 "priority": "7",
                 "data_classification": "internal",
@@ -721,6 +723,7 @@ def test_guided_scan_form_blocks_submission_without_required_consents(monkeypatc
             data={
                 "target": "https://consent-missing.example",
                 "learning_goal": "baseline",
+                "scope_acknowledged": "on",
                 "scan_type": "full",
                 "priority": "5",
                 "data_classification": "internal",
@@ -735,6 +738,49 @@ def test_guided_scan_form_blocks_submission_without_required_consents(monkeypatc
 
     with SessionLocal() as session:
         blocked_scan = session.query(Scan).filter(Scan.target == "https://consent-missing.example").first()
+        assert blocked_scan is None
+
+    app.app.dependency_overrides.clear()
+
+
+def test_guided_scan_form_blocks_submission_without_scope_acknowledgement(monkeypatch):
+    """Step 1 negativo: senza conferma scope legale il server deve bloccare la creazione scan."""
+    _clear_scans()
+    app.app.dependency_overrides[app.enforce_api_key_form_dependency] = lambda: None
+
+    class DummyResult:
+        id = "dummy-task-should-not-run"
+
+    def fake_apply_async(*_args, **_kwargs):
+        return DummyResult()
+
+    monkeypatch.setattr(app.orchestrate_scan, "apply_async", fake_apply_async)
+
+    with TestClient(app.app) as client:
+        homepage = client.get("/")
+        assert homepage.status_code == 200
+        csrf_cookie = client.cookies.get(app.settings.csrf_cookie_name)
+        assert csrf_cookie
+
+        create_response = client.post(
+            "/scans",
+            data={
+                "target": "https://scope-missing.example",
+                "learning_goal": "baseline",
+                "scan_type": "light",
+                "priority": "5",
+                "data_classification": "internal",
+                "accept_privacy": "on",
+                "accept_terms": "on",
+                "csrf_token": csrf_cookie,
+            },
+        )
+
+    assert create_response.status_code == 400
+    assert "perimetro legale autorizzato" in create_response.text
+
+    with SessionLocal() as session:
+        blocked_scan = session.query(Scan).filter(Scan.target == "https://scope-missing.example").first()
         assert blocked_scan is None
 
     app.app.dependency_overrides.clear()
