@@ -41,6 +41,7 @@ from compliance import (
 )
 from config import settings
 from database import AuditEvent, ConsentRecord, LearningFeedback, LearningPathProgress, Scan, SessionLocal, get_db, init_db
+from database import ScanConfigurationPreset
 from scan_catalog import get_scan_catalog
 from execution_guardrails import ExecutionGuardrailError, enforce_execution_guardrails
 from scan_configuration import (
@@ -544,6 +545,25 @@ class ScanConfigurationSnapshot(BaseModel):
     schema_version: str
     checksum: str
     configuration: ScanConfigurationV1
+
+
+class ScanConfigurationPresetCreate(BaseModel):
+    name: str = Field(..., min_length=3, max_length=80)
+    description: Optional[str] = Field(None, max_length=255)
+    scan_type: str = Field(..., max_length=50)
+    configuration: ScanConfigurationV1
+
+
+class ScanConfigurationPresetStatus(BaseModel):
+    id: int
+    name: str
+    description: Optional[str]
+    scan_type: str
+    schema_version: str
+    checksum: str
+    configuration: ScanConfigurationV1
+    created_at: datetime
+    updated_at: datetime
 
 
 class ScanDelete(BaseModel):
@@ -2069,6 +2089,111 @@ def get_scan_configuration_snapshot(
         checksum=scan.scan_configuration_checksum,
         configuration=scan_config,
     )
+
+
+def _serialize_scan_configuration_preset(preset: ScanConfigurationPreset) -> ScanConfigurationPresetStatus:
+    return ScanConfigurationPresetStatus(
+        id=preset.id,
+        name=preset.name,
+        description=preset.description,
+        scan_type=preset.scan_type,
+        schema_version=preset.config_version,
+        checksum=preset.config_checksum,
+        configuration=ScanConfigurationV1.model_validate_json(preset.config_json),
+        created_at=preset.created_at,
+        updated_at=preset.updated_at,
+    )
+
+
+@app.post("/api/v1/scan-config/presets", response_model=ScanConfigurationPresetStatus)
+@limiter.limit(settings.rate_limit_create_scan)
+def create_scan_configuration_preset(
+    request: Request,
+    payload: ScanConfigurationPresetCreate,
+    db: Session = Depends(get_db),
+    _: None = Depends(enforce_api_key),
+    __: str = Depends(enforce_operator_role),
+) -> ScanConfigurationPresetStatus:
+    scan_type = payload.scan_type.strip().lower()
+    if scan_type not in SCAN_TYPES:
+        raise HTTPException(status_code=400, detail="Tipologia di scansione non valida per il preset.")
+
+    subject_id = get_subject_id(request)
+    now = datetime.now(timezone.utc)
+    preset = ScanConfigurationPreset(
+        subject_id=subject_id,
+        name=payload.name.strip(),
+        description=payload.description.strip() if payload.description else None,
+        scan_type=scan_type,
+        config_json=payload.configuration.model_dump_json(),
+        config_version=payload.configuration.schema_version,
+        config_checksum=checksum_scan_config_v1(payload.configuration),
+        created_at=now,
+        updated_at=now,
+    )
+    db.add(preset)
+    db.commit()
+    db.refresh(preset)
+
+    _record_audit(
+        db,
+        request,
+        "scan_config_preset_created",
+        subject_id=subject_id,
+        preset_id=preset.id,
+        scan_type=scan_type,
+    )
+    return _serialize_scan_configuration_preset(preset)
+
+
+@app.get("/api/v1/scan-config/presets", response_model=List[ScanConfigurationPresetStatus])
+@limiter.limit(settings.rate_limit_read)
+def list_scan_configuration_presets(
+    request: Request,
+    db: Session = Depends(get_db),
+    _: None = Depends(enforce_api_key),
+    __: str = Depends(enforce_viewer_role),
+) -> List[ScanConfigurationPresetStatus]:
+    subject_id = get_subject_id(request)
+    presets = (
+        db.query(ScanConfigurationPreset)
+        .filter(ScanConfigurationPreset.subject_id == subject_id)
+        .order_by(ScanConfigurationPreset.updated_at.desc(), ScanConfigurationPreset.id.desc())
+        .all()
+    )
+    return [_serialize_scan_configuration_preset(preset) for preset in presets]
+
+
+@app.delete("/api/v1/scan-config/presets/{preset_id}", status_code=204)
+@limiter.limit(settings.rate_limit_create_scan)
+def delete_scan_configuration_preset(
+    request: Request,
+    preset_id: int,
+    db: Session = Depends(get_db),
+    _: None = Depends(enforce_api_key),
+    __: str = Depends(enforce_operator_role),
+) -> Response:
+    subject_id = get_subject_id(request)
+    preset = (
+        db.query(ScanConfigurationPreset)
+        .filter(
+            ScanConfigurationPreset.id == preset_id,
+            ScanConfigurationPreset.subject_id == subject_id,
+        )
+        .first()
+    )
+    if not preset:
+        raise HTTPException(status_code=404, detail="Preset configurazione non trovato.")
+    db.delete(preset)
+    db.commit()
+    _record_audit(
+        db,
+        request,
+        "scan_config_preset_deleted",
+        subject_id=subject_id,
+        preset_id=preset_id,
+    )
+    return Response(status_code=204)
 
 
 @app.get("/api/v1/scans/{scan_id}/status", response_model=ScanStatus)

@@ -70,7 +70,7 @@ Creare un piano operativo **didattico e incrementale** per trasformare VAP in un
   - [x] Kill switch globale su nuove scansioni + auto-abort su pattern anomali (alto tasso errori scanner).
 
 - [ ] **A4. Persistenza configurazioni e profili utente**
-  - [ ] Salvare preset personalizzati (“Baseline didattica”, “OWASP top focus”, “WordPress deep”).
+  - [x] Salvare preset personalizzati (“Baseline didattica”, “OWASP top focus”, “WordPress deep”).
   - [x] Versioning + checksum config per reproducibility (snapshot configurazione salvato per ogni scansione con endpoint dedicato di retrieval).
 
 ## Fase B — UX didattica e configurazione guidata (P0/P1)
@@ -152,6 +152,6 @@ Un task è completato solo se:
 ---
 
 ## 6) Primo task consigliato (prossimo ciclo)
-**A4 — Persistenza configurazioni e profili utente**.
+**B1 — Nuovo “Scan Builder” multi-step (Step 1 Scope legale/target)**.
 
-Motivo: con A1/A2/A3 completati, il prossimo passo ad alto valore è salvare preset/versioni delle configurazioni per garantire reproducibility, auditabilità e UX operativa più fluida.
+Motivo: con preset e reproducibility ormai disponibili, il collo di bottiglia UX resta l’assenza di un builder guidato; partire dallo Step 1 consente di ridurre errori operativi e migliorare usabilità senza introdurre complessità eccessiva.

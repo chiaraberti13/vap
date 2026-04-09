@@ -31,6 +31,7 @@ def test_init_db_bootstraps_schema_with_or_without_alembic(tmp_path):
     with sqlite3.connect(db_path) as conn:
         tables = {row[0] for row in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
         assert "scans" in tables
+        assert "scan_configuration_presets" in tables
 
         scan_columns = {row[1] for row in conn.execute("PRAGMA table_info(scans)")}
         assert "tests_performed" in scan_columns
