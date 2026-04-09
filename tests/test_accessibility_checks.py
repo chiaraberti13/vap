@@ -170,6 +170,22 @@ def test_homepage_shows_scan_risk_badges_before_submit():
     assert "Rumore: medio" in html
 
 
+def test_homepage_exposes_impact_simulation_panel_for_step_4_run_review():
+    with TestClient(app.app) as client:
+        response = client.get("/")
+
+    assert response.status_code == 200
+    html = response.text
+
+    assert 'id="scan-impact-panel"' in html
+    assert 'id="scan-impact-confidence"' in html
+    assert 'id="scan-impact-duration"' in html
+    assert 'id="scan-impact-noise"' in html
+    assert 'id="scan-impact-risk"' in html
+    assert 'id="scan-impact-note"' in html
+    assert "Simulazione impatto stimato" in html
+
+
 def test_homepage_uses_single_primary_action_in_hero_and_stepper_navigation():
     with TestClient(app.app) as client:
         response = client.get("/")

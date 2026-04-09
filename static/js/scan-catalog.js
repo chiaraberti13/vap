@@ -41,6 +41,11 @@
   const modulesSummary = document.getElementById("scan-modules-summary");
   const advancedModulesList = document.getElementById("advanced-module-config-list");
   const advancedModulesInput = document.getElementById("advanced-modules-json");
+  const impactDuration = document.getElementById("scan-impact-duration");
+  const impactNoise = document.getElementById("scan-impact-noise");
+  const impactRisk = document.getElementById("scan-impact-risk");
+  const impactNote = document.getElementById("scan-impact-note");
+  const impactConfidence = document.getElementById("scan-impact-confidence");
 
   if (
     !payloadNode ||
@@ -82,6 +87,11 @@
     !modulesSummary ||
     !advancedModulesList ||
     !advancedModulesInput ||
+    !impactDuration ||
+    !impactNoise ||
+    !impactRisk ||
+    !impactNote ||
+    !impactConfidence ||
     glossaryButtons.length === 0
   ) {
     return;
@@ -321,6 +331,7 @@
     if (selectedModules.size > 0) {
       moduleSelectionError.classList.add("hidden");
     }
+    updateImpactSimulation(getSelectedEntry());
   }
 
   function updateModulesSummary(entry) {
@@ -334,6 +345,51 @@
       .map((moduleId) => labelMap.get(moduleId) || moduleId)
       .join(", ");
     modulesSummary.textContent = labels;
+  }
+
+  function updateImpactSimulation(entry) {
+    if (!entry) {
+      return;
+    }
+
+    const baseMinutesMap = { light: 8, full: 34, wordpress: 22 };
+    const baseMinutes = baseMinutesMap[entry.id] || 18;
+    const selectedModulesCount = Math.max(1, selectedModules.size);
+    const moduleFactor = 1 + (selectedModulesCount - 1) * 0.18;
+
+    let timeoutAccumulator = 0;
+    let payloadAccumulator = 0;
+    Array.from(selectedModules).forEach((moduleId) => {
+      const config = advancedModuleConfig[moduleId];
+      timeoutAccumulator += Number(config?.timeout_seconds || 20);
+      payloadAccumulator += Number(config?.max_payloads || 30);
+    });
+
+    const avgTimeout = timeoutAccumulator / selectedModulesCount;
+    const avgPayloads = payloadAccumulator / selectedModulesCount;
+    const timeoutFactor = Math.min(2.2, Math.max(0.7, avgTimeout / 20));
+    const payloadFactor = Math.min(2.2, Math.max(0.7, avgPayloads / 30));
+    const estimatedMinutes = Math.max(
+      4,
+      Math.round(baseMinutes * moduleFactor * timeoutFactor * payloadFactor)
+    );
+
+    const baseNoiseScore = riskScoreFromLabel(entry.noise_level);
+    const baseRiskScore = riskScoreFromLabel(entry.invasiveness);
+    const tuningScore = (avgPayloads >= 70 ? 1 : 0) + (avgTimeout >= 45 ? 1 : 0);
+    const noiseScore = Math.min(3, Math.max(1, baseNoiseScore + (tuningScore > 0 ? 1 : 0)));
+    const riskScore = Math.min(3, Math.max(1, Math.max(baseRiskScore, noiseScore)));
+    const levelByScore = { 1: "Basso", 2: "Medio", 3: "Alto" };
+
+    impactDuration.textContent = `~ ${estimatedMinutes} min`;
+    impactNoise.textContent = levelByScore[noiseScore] || "Medio";
+    impactRisk.textContent = levelByScore[riskScore] || "Medio";
+    impactNote.textContent =
+      riskScore >= 3
+        ? "Impatto elevato: pianifica finestra concordata, monitoraggio SOC e strategia di rollback prima dell'avvio."
+        : "Stima utile per preparare il run: verifica comunque autorizzazioni, disponibilità operativa e finestre di manutenzione.";
+    impactConfidence.textContent =
+      selectedModules.size <= 1 ? "Stima preliminare" : "Stima modulare";
   }
 
   function renderModuleSelector(entry) {
@@ -362,6 +418,7 @@
         updateSelectedModulesInput();
         updateModulesSummary(entry);
         renderAdvancedModuleConfig(entry);
+        updateImpactSimulation(entry);
       });
 
       const text = document.createElement("span");
@@ -374,6 +431,7 @@
     updateSelectedModulesInput();
     updateModulesSummary(entry);
     renderAdvancedModuleConfig(entry);
+    updateImpactSimulation(entry);
   }
 
   function renderAdvancedModuleConfig(entry) {
@@ -423,6 +481,7 @@
           timeout_seconds: timeout,
         };
         updateSelectedModulesInput();
+        updateImpactSimulation(entry);
       });
     });
     advancedModulesList.querySelectorAll("[data-advanced-payloads]").forEach((input) => {
@@ -438,6 +497,7 @@
           max_payloads: maxPayloads,
         };
         updateSelectedModulesInput();
+        updateImpactSimulation(entry);
       });
     });
   }
@@ -713,6 +773,7 @@
   renderCompare();
   updateSelectedModulesInput();
   updateModulesSummary(getSelectedEntry());
+  updateImpactSimulation(getSelectedEntry());
   registerGlossaryInteractions();
   updateStepperUi();
   updateCompareToggleUi();
