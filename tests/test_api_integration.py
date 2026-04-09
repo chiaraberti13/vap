@@ -386,6 +386,73 @@ def test_create_scan_rejects_high_risk_tool_without_admin_role(monkeypatch):
     app.app.dependency_overrides.clear()
 
 
+def test_create_scan_rejects_policy_override_without_capability(monkeypatch):
+    _clear_scans()
+    app.app.dependency_overrides[app.enforce_api_key] = lambda: None
+    app.app.dependency_overrides[app.enforce_operator_role] = lambda: "operator"
+
+    class DummyResult:
+        id = "dummy-task"
+
+    def fake_apply_async(*_args, **_kwargs):
+        return DummyResult()
+
+    monkeypatch.setattr(app.orchestrate_scan, "apply_async", fake_apply_async)
+
+    with TestClient(app.app) as client:
+        response = client.post(
+            "/api/v1/scans",
+            json={
+                "target": "example.com",
+                "scan_type": "full",
+                "priority": 3,
+                "accept_privacy": True,
+                "accept_terms": True,
+                "scan_configuration": {
+                    "policy_override_requested": True,
+                    "policy_override_reason": "Richiesta eccezione per test controllato.",
+                },
+            },
+        )
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Permessi insufficienti per la capability richiesta"
+    app.app.dependency_overrides.clear()
+
+
+def test_create_scan_allows_policy_override_for_admin(monkeypatch):
+    _clear_scans()
+    app.app.dependency_overrides[app.enforce_api_key] = lambda: None
+    app.app.dependency_overrides[app.enforce_operator_role] = lambda: "admin"
+
+    class DummyResult:
+        id = "dummy-task"
+
+    def fake_apply_async(*_args, **_kwargs):
+        return DummyResult()
+
+    monkeypatch.setattr(app.orchestrate_scan, "apply_async", fake_apply_async)
+
+    with TestClient(app.app) as client:
+        response = client.post(
+            "/api/v1/scans",
+            json={
+                "target": "example.com",
+                "scan_type": "full",
+                "priority": 3,
+                "accept_privacy": True,
+                "accept_terms": True,
+                "scan_configuration": {
+                    "policy_override_requested": True,
+                    "policy_override_reason": "Eccezione autorizzata da admin.",
+                },
+            },
+        )
+
+    assert response.status_code == 200
+    app.app.dependency_overrides.clear()
+
+
 def test_create_scan_rejects_tool_not_compatible_with_scan_type(monkeypatch):
     _clear_scans()
     app.app.dependency_overrides[app.enforce_api_key] = lambda: None

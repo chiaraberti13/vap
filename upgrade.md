@@ -96,11 +96,11 @@ Creare un piano operativo **didattico e incrementale** per trasformare VAP in un
   - [x] Verifica WCAG AA completa (contrasto, tastiera, screen reader labels) con report dedicato.
 
 ## Fase C — Sicurezza avanzata applicativa e operativa (P0/P1)
-- [ ] **C1. RBAC fine-grained sulle capability di scansione**
+- [x] **C1. RBAC fine-grained sulle capability di scansione**
   - [x] Permesso capability `create_scan_config` separato dal semplice ruolo viewer, applicato a creazione/cancellazione preset e creazione scansione API.
   - [x] Permesso capability `run_high_risk_scan` con enforcement esplicito (403) prima dell'orchestrazione per tool ad alto rischio.
   - [x] Permesso capability `export_sensitive_report` per download report classificati `confidential/restricted`.
-  - [ ] Permesso capability `override_scan_policy` (in attesa di workflow override policy dedicato in C2).
+  - [x] Permesso capability `override_scan_policy` con enforcement esplicito per richieste di eccezione policy in creazione scansione/preset (workflow approvativo avanzato resta in C2).
 
 - [ ] **C2. Approval workflow per scansioni ad alto rischio**
   - Double-confirmation + eventuale approvazione admin.
