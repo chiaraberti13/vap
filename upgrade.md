@@ -90,10 +90,10 @@ Creare un piano operativo **didattico e incrementale** per trasformare VAP in un
   - Tooltip “cosa cambia”, “trade-off”, “false positive impact”.
   - Esempi pratici e anti-pattern.
 
-- [ ] **B4. UX minimal e accessibile**
+- [x] **B4. UX minimal e accessibile**
   - [x] Stato errore più chiaro nel wizard: evidenziazione visuale coerente (`form-control-invalid`) per input/checkbox/fieldset invalidi + associazione ARIA esplicita tra campi e messaggi di errore inline.
   - [x] Riduzione densità visiva e migliori spaziature nelle viste principali (dashboard + dettagli scansione).
-  - [ ] Verifica WCAG AA completa (contrasto, tastiera, screen reader labels) con report dedicato.
+  - [x] Verifica WCAG AA completa (contrasto, tastiera, screen reader labels) con report dedicato.
 
 ## Fase C — Sicurezza avanzata applicativa e operativa (P0/P1)
 - [ ] **C1. RBAC fine-grained sulle capability di scansione**
@@ -153,6 +153,6 @@ Un task è completato solo se:
 ---
 
 ## 6) Primo task consigliato (prossimo ciclo)
-**B3 — Explainability inline per ogni parametro**.
+**C1 — RBAC fine-grained sulle capability di scansione**.
 
-Motivo: dopo l’introduzione del didactic mode, il passo successivo è aumentare comprensione e qualità decisionale con tooltip contestuali su trade-off, impatto su falsi positivi e anti-pattern operativi.
+Motivo: completate le fondamenta UX/accessibilità del builder, la priorità P0 resta il rafforzamento autorizzativo sulle capability sensibili (high-risk scan, override policy, export).
