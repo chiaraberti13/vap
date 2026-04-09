@@ -79,7 +79,7 @@ Creare un piano operativo **didattico e incrementale** per trasformare VAP in un
   - [x] Step 2 Selezione moduli scanner.
   - [x] Step 3 Parametri avanzati per modulo.
   - [x] Step 4 Simulazione impatto (durata/rumore/rischio stimato).
-  - Step 5 Conferma con checklist compliance.
+  - [x] Step 5 Conferma con checklist compliance.
 
 - [ ] **B2. Didactic Mode (Beginner / Analyst / Expert)**
   - Beginner: linguaggio semplificato + preset bloccati.
@@ -152,6 +152,6 @@ Un task è completato solo se:
 ---
 
 ## 6) Primo task consigliato (prossimo ciclo)
-**B1 — Nuovo “Scan Builder” multi-step (Step 5 Conferma con checklist compliance)**.
+**B2 — Didactic Mode (Beginner / Analyst / Expert)**.
 
-Motivo: gli step 1-4 sono ora operativi; il completamento dello step 5 chiude il flusso guided end-to-end con ultimo controllo esplicito su conformità e rischio prima del run.
+Motivo: con B1 completato end-to-end, il prossimo incremento ad alto impatto UX/didattico è la personalizzazione dell’interfaccia e dei guardrail in base al livello utente.

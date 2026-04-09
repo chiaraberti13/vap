@@ -20,7 +20,7 @@
             Guided Security Analysis per team tecnici e compliance.
           </h1>
           <p class="home-lead max-w-2xl text-slate-300">
-            Pianifica la scansione in 4 step, riduci errori operativi e genera report professionali con evidenze utili a remediation e audit.
+            Pianifica la scansione in 5 step, riduci errori operativi e genera report professionali con evidenze utili a remediation e audit.
           </p>
           <div class="flex flex-wrap items-center gap-3 pt-2">
             <a
@@ -44,8 +44,9 @@
           <ol class="mt-3 space-y-2 text-sm text-slate-200">
             <li><span class="font-semibold text-cyan-200">Step 1:</span> Definisci obiettivo e target autorizzato.</li>
             <li><span class="font-semibold text-cyan-200">Step 2:</span> Scegli il tipo di scansione più adatto.</li>
-            <li><span class="font-semibold text-cyan-200">Step 3:</span> Conferma consenso legale e policy.</li>
-            <li><span class="font-semibold text-cyan-200">Step 4:</span> Esegui e monitora i risultati.</li>
+            <li><span class="font-semibold text-cyan-200">Step 3:</span> Configura parametri e consensi legali.</li>
+            <li><span class="font-semibold text-cyan-200">Step 4:</span> Valuta impatto tecnico e rischio operativo.</li>
+            <li><span class="font-semibold text-cyan-200">Step 5:</span> Conferma checklist compliance prima del run.</li>
           </ol>
         </div>
       </div>
@@ -54,14 +55,15 @@
     <section class="sticky top-0 z-40 border-b border-slate-800/80 bg-slate-950/95 px-4 py-3 backdrop-blur sm:px-6" aria-label="Navigazione step guidati">
       <div class="home-container">
         <div class="flex flex-wrap items-center justify-between gap-3">
-          <ol id="scan-journey-nav" class="grid flex-1 gap-2 sm:grid-cols-4" aria-label="Stato corrente flusso step 1-4">
+          <ol id="scan-journey-nav" class="grid flex-1 gap-2 sm:grid-cols-5" aria-label="Stato corrente flusso step 1-5">
             <li class="rounded-lg border border-cyan-400 bg-cyan-500/10 px-3 py-2 text-[11px]" data-step-indicator="1" data-step-variant="compact" aria-current="step"><span class="font-semibold">Step 1</span><p class="mt-0.5 text-slate-300">Obiettivo</p></li>
             <li class="rounded-lg border border-slate-700 bg-slate-950/50 px-3 py-2 text-[11px]" data-step-indicator="2" data-step-variant="compact"><span class="font-semibold">Step 2</span><p class="mt-0.5 text-slate-300">Scansione</p></li>
             <li class="rounded-lg border border-slate-700 bg-slate-950/50 px-3 py-2 text-[11px]" data-step-indicator="3" data-step-variant="compact"><span class="font-semibold">Step 3</span><p class="mt-0.5 text-slate-300">Consenso</p></li>
-            <li class="rounded-lg border border-slate-700 bg-slate-950/50 px-3 py-2 text-[11px]" data-step-indicator="4" data-step-variant="compact"><span class="font-semibold">Step 4</span><p class="mt-0.5 text-slate-300">Run</p></li>
+            <li class="rounded-lg border border-slate-700 bg-slate-950/50 px-3 py-2 text-[11px]" data-step-indicator="4" data-step-variant="compact"><span class="font-semibold">Step 4</span><p class="mt-0.5 text-slate-300">Impatto</p></li>
+            <li class="rounded-lg border border-slate-700 bg-slate-950/50 px-3 py-2 text-[11px]" data-step-indicator="5" data-step-variant="compact"><span class="font-semibold">Step 5</span><p class="mt-0.5 text-slate-300">Compliance</p></li>
           </ol>
           <p id="scan-current-step-label" class="text-xs font-medium text-cyan-200" aria-live="polite">
-            Step corrente: 1/4 · Obiettivo utente
+            Step corrente: 1/5 · Obiettivo utente
           </p>
         </div>
       </div>
@@ -153,11 +155,12 @@
               <p class="font-semibold">Controlla i campi evidenziati:</p>
               <ul id="guided-form-error-list" class="mt-2 list-disc pl-5"></ul>
             </div>
-            <ol id="scan-stepper-nav" class="grid gap-2 sm:grid-cols-4" aria-label="Stepper pre-esecuzione scansione">
+            <ol id="scan-stepper-nav" class="grid gap-2 sm:grid-cols-5" aria-label="Stepper pre-esecuzione scansione">
               <li class="rounded-lg border border-cyan-400 bg-cyan-500/10 p-3 text-xs" data-step-indicator="1" aria-current="step"><span class="font-semibold">Step 1</span><p class="mt-1 text-slate-300">Obiettivo utente</p></li>
               <li class="rounded-lg border border-slate-700 bg-slate-950/50 p-3 text-xs" data-step-indicator="2"><span class="font-semibold">Step 2</span><p class="mt-1 text-slate-300">Scansione consigliata</p></li>
               <li class="rounded-lg border border-slate-700 bg-slate-950/50 p-3 text-xs" data-step-indicator="3"><span class="font-semibold">Step 3</span><p class="mt-1 text-slate-300">Consenso legale</p></li>
-              <li class="rounded-lg border border-slate-700 bg-slate-950/50 p-3 text-xs" data-step-indicator="4"><span class="font-semibold">Step 4</span><p class="mt-1 text-slate-300">Conferma ed esecuzione</p></li>
+              <li class="rounded-lg border border-slate-700 bg-slate-950/50 p-3 text-xs" data-step-indicator="4"><span class="font-semibold">Step 4</span><p class="mt-1 text-slate-300">Impatto operativo</p></li>
+              <li class="rounded-lg border border-slate-700 bg-slate-950/50 p-3 text-xs" data-step-indicator="5"><span class="font-semibold">Step 5</span><p class="mt-1 text-slate-300">Checklist compliance</p></li>
             </ol>
 
             <section class="grid gap-4" data-step-panel="1">
@@ -338,7 +341,7 @@
               </div>
             </section>
             <section class="grid gap-4" data-step-panel="4">
-              <h3 class="text-sm text-slate-200 font-semibold tracking-wide">Step 4 · Run scansione</h3>
+              <h3 class="text-sm text-slate-200 font-semibold tracking-wide">Step 4 · Simulazione impatto e rischio</h3>
               <p class="text-sm text-slate-400">Ricontrolla la priorità e la classificazione dati prima dell'esecuzione.</p>
               <article id="scan-impact-panel" class="rounded-lg border border-slate-800 bg-slate-950/50 p-4" aria-live="polite">
                 <div class="flex items-center justify-between gap-3 flex-wrap">
@@ -409,6 +412,27 @@
                   {% endfor %}
                 </select>
               </label>
+            </section>
+            <section class="grid gap-4" data-step-panel="5">
+              <h3 class="text-sm text-slate-200 font-semibold tracking-wide">Step 5 · Conferma finale checklist compliance</h3>
+              <article class="rounded-lg border border-slate-800 bg-slate-950/50 p-4 text-sm text-slate-300">
+                <p class="font-semibold text-slate-100">Conferma obbligatoria pre-run</p>
+                <p class="home-microcopy mt-2 text-slate-400">
+                  Prima dell'avvio verifica autorizzazione, finestra operativa e piano di gestione incidenti. Questo passaggio riduce i run non conformi e migliora la tracciabilità audit.
+                </p>
+                <ul class="mt-3 list-disc space-y-1 pl-5 text-slate-200">
+                  <li>Target e perimetro sono autorizzati e documentati.</li>
+                  <li>I team operativi sono informati della finestra di scansione.</li>
+                  <li>È disponibile un contatto tecnico per eventuale rollback o stop immediato.</li>
+                </ul>
+                <label class="mt-4 flex items-start gap-2 rounded-md border border-slate-700 bg-slate-950/60 px-3 py-3">
+                  <input type="checkbox" id="run-compliance-acknowledged" name="run_compliance_acknowledged" class="mt-1 accent-cyan-400" aria-invalid="false" />
+                  <span class="text-slate-100">Confermo la checklist compliance pre-run e mi assumo la responsabilità operativa dell'esecuzione.</span>
+                </label>
+                <p id="run-compliance-error" class="home-microcopy mt-3 hidden text-red-200">
+                  Devi confermare la checklist compliance prima di avviare la scansione.
+                </p>
+              </article>
               <button
                 type="submit"
                 class="w-full md:w-auto inline-flex items-center justify-center rounded-lg bg-cyan-500 px-6 py-3 font-semibold text-slate-900 hover:bg-cyan-400 transition"

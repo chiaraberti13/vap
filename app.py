@@ -1370,6 +1370,7 @@ def create_scan_form(
     advanced_modules_json: str = Form(""),
     scope_acknowledged: Optional[str] = Form(None),
     scope_reference: str = Form(""),
+    run_compliance_acknowledged: Optional[str] = Form(None),
     accept_privacy: Optional[str] = Form(None),
     accept_terms: Optional[str] = Form(None),
     csrf_token: str = Form(""),
@@ -1397,6 +1398,10 @@ def create_scan_form(
         if len(normalized_scope_reference) > 120:
             raise ScanValidationError(
                 "Il riferimento autorizzazione supera il limite massimo di 120 caratteri."
+            )
+        if not run_compliance_acknowledged:
+            raise ScanValidationError(
+                "Conferma la checklist compliance pre-run prima di avviare la scansione."
             )
         selected_modules = _safe_selected_modules(scan_type, selected_modules_json)
         module_overrides = _safe_module_overrides(
