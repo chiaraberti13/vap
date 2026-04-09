@@ -64,6 +64,36 @@ def test_download_report_endpoint_preserves_pdf_delivery_and_audit(tmp_path):
     assert metadata["scan_id"] == scan_id
     app.app.dependency_overrides.clear()
 
+
+def test_download_report_endpoint_blocks_sensitive_report_for_viewer(tmp_path):
+    _clear_scans()
+    report_file = tmp_path / "scan-report-sensitive.pdf"
+    report_file.write_bytes(b"%PDF-1.4\n% sensitive fixture\n")
+
+    with SessionLocal() as session:
+        scan = Scan(
+            target="example.com",
+            scan_type="full",
+            status="completed",
+            report_path=str(report_file),
+            data_classification="restricted",
+        )
+        session.add(scan)
+        session.commit()
+        session.refresh(scan)
+        scan_id = scan.id
+
+    app.app.dependency_overrides[app.enforce_api_key] = lambda: None
+    app.app.dependency_overrides[app.enforce_viewer_role] = lambda: "viewer"
+
+    with TestClient(app.app) as client:
+        response = client.get(f"/api/v1/scans/{scan_id}/report/download")
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Permessi insufficienti per la capability richiesta"
+    app.app.dependency_overrides.clear()
+
+
 def test_list_scans_empty():
     _clear_scans()
     app.app.dependency_overrides[app.enforce_api_key] = lambda: None
@@ -351,8 +381,8 @@ def test_create_scan_rejects_high_risk_tool_without_admin_role(monkeypatch):
             },
         )
 
-    assert response.status_code == 400
-    assert "richiedono ruolo admin" in response.json()["detail"]
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Permessi insufficienti per la capability richiesta"
     app.app.dependency_overrides.clear()
 
 
