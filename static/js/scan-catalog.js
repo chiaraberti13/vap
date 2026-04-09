@@ -154,6 +154,34 @@
     analyst: { timeoutSeconds: 90, maxPayloads: 80 },
     expert: { timeoutSeconds: 300, maxPayloads: 500 },
   };
+  const parameterExplainability = {
+    timeout_seconds: {
+      title: "Timeout (secondi)",
+      whatChanges:
+        "Aumenta la finestra di esecuzione del modulo: utile su target lenti, ma allunga la durata complessiva della run.",
+      tradeOff:
+        "Timeout troppo alto può saturare la finestra operativa e generare rumore prolungato su sistemi monitorati.",
+      falsePositiveImpact:
+        "Troppo basso può interrompere test legittimi e creare risultati incompleti (falsi negativi).",
+      antiPattern:
+        "Impostare il massimo per tutti i moduli senza una motivazione tecnica documentata.",
+      practicalExample:
+        "Esempio: porta timeout da 20s a 45s solo per moduli su endpoint storicamente lenti.",
+    },
+    max_payloads: {
+      title: "Budget payload",
+      whatChanges:
+        "Definisce quanti payload inviare per modulo: più payload = copertura maggiore e maggiore probabilità di finding.",
+      tradeOff:
+        "Valori alti aumentano traffico, tempi e probabilità di impatto operativo (rate-limit, WAF alert, log rumorosi).",
+      falsePositiveImpact:
+        "Valori molto bassi possono ridurre i segnali utili e nascondere vulnerabilità reali.",
+      antiPattern:
+        "Aumentare il budget payload in modalità Expert senza validare prima il comportamento con una run light.",
+      practicalExample:
+        "Esempio: passa da 30 a 60 payload dopo aver verificato che la baseline non copre un vettore OWASP prioritario.",
+    },
+  };
 
   function escapeHtml(value) {
     return String(value ?? "")
@@ -503,16 +531,41 @@
 
       const wrapper = document.createElement("fieldset");
       wrapper.className = "rounded-md border border-slate-700 bg-slate-950/60 p-3";
+      const timeoutHelpId = `advanced-help-timeout-${moduleId}`;
+      const payloadHelpId = `advanced-help-payload-${moduleId}`;
+      const timeoutExplainability = parameterExplainability.timeout_seconds;
+      const payloadExplainability = parameterExplainability.max_payloads;
+
       wrapper.innerHTML = `
         <legend class="px-1 text-xs font-semibold uppercase tracking-wide text-slate-300">${escapeHtml(moduleLabel)}</legend>
         <div class="mt-2 grid gap-2 sm:grid-cols-2">
           <label class="grid gap-1 text-xs text-slate-300">
-            <span>Timeout (secondi)</span>
-            <input type="number" min="1" max="${modeLimits.timeoutSeconds}" step="1" class="rounded border border-slate-700 bg-slate-950 px-2 py-1 text-slate-100" data-advanced-timeout="${moduleId}" value="${boundedTimeout}" />
+            <span>${escapeHtml(timeoutExplainability.title)}</span>
+            <input type="number" min="1" max="${modeLimits.timeoutSeconds}" step="1" class="rounded border border-slate-700 bg-slate-950 px-2 py-1 text-slate-100" data-advanced-timeout="${moduleId}" aria-describedby="${timeoutHelpId}" value="${boundedTimeout}" />
+            <details id="${timeoutHelpId}" class="rounded border border-slate-700/80 bg-slate-900/60 p-2 text-[11px] text-slate-300">
+              <summary class="cursor-pointer font-semibold text-cyan-200">Spiegazione parametro</summary>
+              <ul class="mt-2 list-disc space-y-1 pl-4">
+                <li><span class="font-semibold text-slate-100">Cosa cambia:</span> ${escapeHtml(timeoutExplainability.whatChanges)}</li>
+                <li><span class="font-semibold text-slate-100">Trade-off:</span> ${escapeHtml(timeoutExplainability.tradeOff)}</li>
+                <li><span class="font-semibold text-slate-100">Impatto false positive:</span> ${escapeHtml(timeoutExplainability.falsePositiveImpact)}</li>
+                <li><span class="font-semibold text-slate-100">Anti-pattern:</span> ${escapeHtml(timeoutExplainability.antiPattern)}</li>
+              </ul>
+              <p class="mt-2 text-slate-400">${escapeHtml(timeoutExplainability.practicalExample)}</p>
+            </details>
           </label>
           <label class="grid gap-1 text-xs text-slate-300">
-            <span>Budget payload</span>
-            <input type="number" min="1" max="${modeLimits.maxPayloads}" step="1" class="rounded border border-slate-700 bg-slate-950 px-2 py-1 text-slate-100" data-advanced-payloads="${moduleId}" value="${boundedPayloads}" />
+            <span>${escapeHtml(payloadExplainability.title)}</span>
+            <input type="number" min="1" max="${modeLimits.maxPayloads}" step="1" class="rounded border border-slate-700 bg-slate-950 px-2 py-1 text-slate-100" data-advanced-payloads="${moduleId}" aria-describedby="${payloadHelpId}" value="${boundedPayloads}" />
+            <details id="${payloadHelpId}" class="rounded border border-slate-700/80 bg-slate-900/60 p-2 text-[11px] text-slate-300">
+              <summary class="cursor-pointer font-semibold text-cyan-200">Spiegazione parametro</summary>
+              <ul class="mt-2 list-disc space-y-1 pl-4">
+                <li><span class="font-semibold text-slate-100">Cosa cambia:</span> ${escapeHtml(payloadExplainability.whatChanges)}</li>
+                <li><span class="font-semibold text-slate-100">Trade-off:</span> ${escapeHtml(payloadExplainability.tradeOff)}</li>
+                <li><span class="font-semibold text-slate-100">Impatto false positive:</span> ${escapeHtml(payloadExplainability.falsePositiveImpact)}</li>
+                <li><span class="font-semibold text-slate-100">Anti-pattern:</span> ${escapeHtml(payloadExplainability.antiPattern)}</li>
+              </ul>
+              <p class="mt-2 text-slate-400">${escapeHtml(payloadExplainability.practicalExample)}</p>
+            </details>
           </label>
         </div>
       `;

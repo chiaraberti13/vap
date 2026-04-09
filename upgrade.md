@@ -86,7 +86,7 @@ Creare un piano operativo **didattico e incrementale** per trasformare VAP in un
   - [x] Analyst: parametri intermedi con suggerimenti.
   - [x] Expert: pieno controllo con warning forti.
 
-- [ ] **B3. Explainability inline per ogni parametro**
+- [x] **B3. Explainability inline per ogni parametro**
   - Tooltip “cosa cambia”, “trade-off”, “false positive impact”.
   - Esempi pratici e anti-pattern.
 

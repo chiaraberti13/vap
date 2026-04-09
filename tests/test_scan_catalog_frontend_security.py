@@ -29,3 +29,14 @@ def test_scan_catalog_impact_simulation_is_recomputed_from_local_state():
     assert "const estimatedMinutes = Math.max(" in content
     assert "impactDuration.textContent" in content
     assert "updateImpactSimulation(getSelectedEntry());" in content
+
+
+def test_scan_catalog_has_inline_explainability_for_advanced_parameters():
+    content = SCAN_CATALOG_JS.read_text(encoding="utf-8")
+
+    assert "const parameterExplainability = {" in content
+    assert "Impatto false positive:" in content
+    assert "Anti-pattern:" in content
+    assert "Spiegazione parametro" in content
+    assert 'aria-describedby="${timeoutHelpId}"' in content
+    assert 'aria-describedby="${payloadHelpId}"' in content
