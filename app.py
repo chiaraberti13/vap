@@ -237,6 +237,72 @@ def _safe_selected_modules(scan_type: str, selected_modules_json: str) -> List[s
     return normalized_modules
 
 
+def _safe_module_overrides(
+    scan_type: str,
+    selected_modules: List[str],
+    advanced_modules_json: str,
+) -> Dict[str, Dict[str, int | bool]]:
+    allowed_modules = {module["id"] for module in _scan_modules_for_scan_type(scan_type)}
+    selected_set = set(selected_modules)
+    payload_by_module: Dict[str, Dict[str, Any]] = {}
+
+    if advanced_modules_json.strip():
+        try:
+            raw_payload = json.loads(advanced_modules_json)
+        except json.JSONDecodeError as exc:
+            raise ScanValidationError("Formato parametri avanzati moduli non valido.") from exc
+        if not isinstance(raw_payload, dict):
+            raise ScanValidationError("I parametri avanzati dei moduli devono essere un oggetto JSON.")
+
+        for raw_module_id, raw_module_payload in raw_payload.items():
+            if not isinstance(raw_module_id, str):
+                raise ScanValidationError("Chiave modulo non valida nei parametri avanzati.")
+            module_id = raw_module_id.lower().strip()
+            if module_id not in allowed_modules:
+                raise ScanValidationError(
+                    "Parametri avanzati non compatibili con il tipo scansione scelto."
+                )
+            if module_id not in selected_set:
+                raise ScanValidationError(
+                    "Non puoi configurare parametri avanzati per moduli non selezionati."
+                )
+            if not isinstance(raw_module_payload, dict):
+                raise ScanValidationError(
+                    "Ogni configurazione avanzata modulo deve essere un oggetto JSON."
+                )
+            payload_by_module[module_id] = raw_module_payload
+
+    overrides: Dict[str, Dict[str, int | bool]] = {}
+    for module_id in allowed_modules:
+        override_payload = payload_by_module.get(module_id, {})
+        timeout_seconds = override_payload.get("timeout_seconds", 20)
+        max_payloads = override_payload.get("max_payloads", 30)
+
+        if not isinstance(timeout_seconds, int):
+            raise ScanValidationError(
+                f"timeout_seconds non valido per il modulo '{module_id}'."
+            )
+        if not isinstance(max_payloads, int):
+            raise ScanValidationError(
+                f"max_payloads non valido per il modulo '{module_id}'."
+            )
+        if timeout_seconds < 1 or timeout_seconds > 300:
+            raise ScanValidationError(
+                f"timeout_seconds fuori range per il modulo '{module_id}' (1-300)."
+            )
+        if max_payloads < 1 or max_payloads > 500:
+            raise ScanValidationError(
+                f"max_payloads fuori range per il modulo '{module_id}' (1-500)."
+            )
+
+        overrides[module_id] = {
+            "enabled": module_id in selected_set,
+            "timeout_seconds": timeout_seconds,
+            "max_payloads": max_payloads,
+        }
+    return overrides
+
+
 def _scan_catalog_by_id() -> Dict[str, Dict[str, Any]]:
     return {entry["id"]: entry for entry in get_scan_catalog()}
 
@@ -1301,6 +1367,7 @@ def create_scan_form(
     priority: int = Form(5),
     data_classification: str = Form("internal"),
     selected_modules_json: str = Form(""),
+    advanced_modules_json: str = Form(""),
     scope_acknowledged: Optional[str] = Form(None),
     scope_reference: str = Form(""),
     accept_privacy: Optional[str] = Form(None),
@@ -1309,6 +1376,7 @@ def create_scan_form(
     api_key: Optional[str] = Depends(enforce_api_key_form_dependency),
     db: Session = Depends(get_db),
 ) -> Response:
+    module_overrides: Optional[Dict[str, Dict[str, int | bool]]] = None
     try:
         enforce_csrf(request, csrf_token)
         scan_type = scan_type.lower().strip()
@@ -1331,7 +1399,12 @@ def create_scan_form(
                 "Il riferimento autorizzazione supera il limite massimo di 120 caratteri."
             )
         selected_modules = _safe_selected_modules(scan_type, selected_modules_json)
-    except ValueError:
+        module_overrides = _safe_module_overrides(
+            scan_type,
+            selected_modules,
+            advanced_modules_json,
+        )
+    except ScanValidationError as exc:
         csrf_token = generate_csrf_token()
         kpi_metrics = _build_kpi_metrics(db)
         dashboard_timestamp = datetime.now(timezone.utc)
@@ -1344,7 +1417,7 @@ def create_scan_form(
                 "scan_catalog_entries": _scan_catalog_for_ui(),
                 "scan_explorer_enabled": settings.ui_guided_scan_explorer_enabled,
                 "api_key_required": bool(settings.api_key or settings.api_key_hash),
-                "error": "Token CSRF non valido o scaduto.",
+                "error": str(exc),
                 "csrf_token": csrf_token,
                 "data_classifications": DATA_CLASSIFICATIONS,
                 "privacy_policy_version": settings.privacy_policy_version,
@@ -1362,7 +1435,7 @@ def create_scan_form(
             samesite="lax",
         )
         return response
-    except ScanValidationError as exc:
+    except ValueError:
         csrf_token = generate_csrf_token()
         kpi_metrics = _build_kpi_metrics(db)
         dashboard_timestamp = datetime.now(timezone.utc)
@@ -1375,7 +1448,7 @@ def create_scan_form(
                 "scan_catalog_entries": _scan_catalog_for_ui(),
                 "scan_explorer_enabled": settings.ui_guided_scan_explorer_enabled,
                 "api_key_required": bool(settings.api_key or settings.api_key_hash),
-                "error": str(exc),
+                "error": "Token CSRF non valido o scaduto.",
                 "csrf_token": csrf_token,
                 "data_classifications": DATA_CLASSIFICATIONS,
                 "privacy_policy_version": settings.privacy_policy_version,
@@ -1455,12 +1528,7 @@ def create_scan_form(
                     version=version,
                 )
 
-    form_scan_configuration = ScanConfigurationV1(
-        tool_overrides={
-            module["id"]: {"enabled": module["id"] in selected_modules}
-            for module in _scan_modules_for_scan_type(scan_type)
-        }
-    )
+    form_scan_configuration = ScanConfigurationV1(tool_overrides=module_overrides or {})
     try:
         validate_scan_configuration_policy_v1(
             form_scan_configuration,
