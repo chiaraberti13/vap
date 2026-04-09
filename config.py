@@ -64,6 +64,26 @@ class Settings:
     rbac_admin_roles: List[str] = field(
         default_factory=lambda: _split_env_roles(os.getenv("VAP_RBAC_ADMIN_ROLES", "admin"))
     )
+    rbac_capability_create_config_roles: List[str] = field(
+        default_factory=lambda: _split_env_roles(
+            os.getenv("VAP_RBAC_CAPABILITY_CREATE_CONFIG_ROLES", "operator,admin")
+        )
+    )
+    rbac_capability_run_high_risk_scan_roles: List[str] = field(
+        default_factory=lambda: _split_env_roles(
+            os.getenv("VAP_RBAC_CAPABILITY_RUN_HIGH_RISK_SCAN_ROLES", "admin")
+        )
+    )
+    rbac_capability_export_sensitive_report_roles: List[str] = field(
+        default_factory=lambda: _split_env_roles(
+            os.getenv("VAP_RBAC_CAPABILITY_EXPORT_SENSITIVE_REPORT_ROLES", "admin")
+        )
+    )
+    rbac_capability_override_policy_roles: List[str] = field(
+        default_factory=lambda: _split_env_roles(
+            os.getenv("VAP_RBAC_CAPABILITY_OVERRIDE_POLICY_ROLES", "admin")
+        )
+    )
     trusted_proxy_ip: str = os.getenv("VAP_TRUSTED_PROXY_IP", "")
     cors_allowed_origins: List[str] = field(
         default_factory=lambda: _split_env_list(os.getenv("VAP_CORS_ALLOWED_ORIGINS", ""))

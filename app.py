@@ -694,6 +694,37 @@ def enforce_admin_role(request: Request) -> str:
     return _enforce_roles(request, set(settings.rbac_admin_roles))
 
 
+SCAN_CAPABILITY_ALLOWED_ROLES: Dict[str, Set[str]] = {
+    "create_scan_config": set(settings.rbac_capability_create_config_roles),
+    "run_high_risk_scan": set(settings.rbac_capability_run_high_risk_scan_roles),
+    "export_sensitive_report": set(settings.rbac_capability_export_sensitive_report_roles),
+    "override_scan_policy": set(settings.rbac_capability_override_policy_roles),
+}
+
+
+def _scan_has_high_risk_tools(scan_config: ScanConfigurationV1) -> bool:
+    return any(
+        override.enabled and tool_name.strip().lower() in HIGH_RISK_TOOLS
+        for tool_name, override in scan_config.tool_overrides.items()
+    )
+
+
+def _enforce_scan_capability(request: Request, *, user_role: str, capability: str) -> None:
+    if not settings.rbac_enabled:
+        return
+    allowed_roles = SCAN_CAPABILITY_ALLOWED_ROLES.get(capability, set(settings.rbac_admin_roles))
+    if user_role in allowed_roles:
+        return
+    log_audit_event(
+        "rbac_capability_denied",
+        request=request,
+        role=user_role,
+        capability=capability,
+        allowed_roles=sorted(allowed_roles),
+    )
+    raise HTTPException(status_code=403, detail="Permessi insufficienti per la capability richiesta")
+
+
 def enforce_csrf(request: Request, token: str) -> None:
     if request.method in {"GET", "HEAD", "OPTIONS"}:
         return
@@ -1811,6 +1842,9 @@ def create_scan(
     user_role: str = Depends(enforce_operator_role),
 ) -> ScanStatus:
     try:
+        _enforce_scan_capability(request, user_role=user_role, capability="create_scan_config")
+        if _scan_has_high_risk_tools(payload.scan_configuration):
+            _enforce_scan_capability(request, user_role=user_role, capability="run_high_risk_scan")
         scan_type = payload.scan_type.lower().strip()
         data_classification = payload.data_classification.lower().strip()
         if scan_type not in SCAN_TYPES:
@@ -2242,11 +2276,17 @@ def download_report_ui(
     scan_id: int,
     db: Session = Depends(get_db),
     _: None = Depends(enforce_api_key),
-    __: str = Depends(enforce_viewer_role),
+    viewer_role: str = Depends(enforce_viewer_role),
 ) -> FileResponse:
     scan = _active_scan_query(db).filter(Scan.id == scan_id).first()
     if not scan or not scan.report_path:
         raise HTTPException(status_code=404, detail="Report non disponibile")
+    if scan.data_classification in {"confidential", "restricted"}:
+        _enforce_scan_capability(
+            request,
+            user_role=viewer_role,
+            capability="export_sensitive_report",
+        )
 
     _record_audit(
         db,
@@ -2382,8 +2422,9 @@ def create_scan_configuration_preset(
     payload: ScanConfigurationPresetCreate,
     db: Session = Depends(get_db),
     _: None = Depends(enforce_api_key),
-    __: str = Depends(enforce_operator_role),
+    user_role: str = Depends(enforce_operator_role),
 ) -> ScanConfigurationPresetStatus:
+    _enforce_scan_capability(request, user_role=user_role, capability="create_scan_config")
     scan_type = payload.scan_type.strip().lower()
     if scan_type not in SCAN_TYPES:
         raise HTTPException(status_code=400, detail="Tipologia di scansione non valida per il preset.")
@@ -2441,8 +2482,9 @@ def delete_scan_configuration_preset(
     preset_id: int,
     db: Session = Depends(get_db),
     _: None = Depends(enforce_api_key),
-    __: str = Depends(enforce_operator_role),
+    user_role: str = Depends(enforce_operator_role),
 ) -> Response:
+    _enforce_scan_capability(request, user_role=user_role, capability="create_scan_config")
     subject_id = get_subject_id(request)
     preset = (
         db.query(ScanConfigurationPreset)
@@ -2504,11 +2546,17 @@ def download_report(
     scan_id: int,
     db: Session = Depends(get_db),
     _: None = Depends(enforce_api_key),
-    __: str = Depends(enforce_viewer_role),
+    viewer_role: str = Depends(enforce_viewer_role),
 ) -> FileResponse:
     scan = _active_scan_query(db).filter(Scan.id == scan_id).first()
     if not scan or not scan.report_path:
         raise HTTPException(status_code=404, detail="Report non disponibile")
+    if scan.data_classification in {"confidential", "restricted"}:
+        _enforce_scan_capability(
+            request,
+            user_role=viewer_role,
+            capability="export_sensitive_report",
+        )
 
     _record_audit(
         db,
