@@ -70,8 +70,8 @@ Creare un piano operativo **didattico e incrementale** per trasformare VAP in un
   - [x] Kill switch globale su nuove scansioni + auto-abort su pattern anomali (alto tasso errori scanner).
 
 - [ ] **A4. Persistenza configurazioni e profili utente**
-  - Salvare preset personalizzati (“Baseline didattica”, “OWASP top focus”, “WordPress deep”).
-  - Versioning + checksum config per reproducibility.
+  - [ ] Salvare preset personalizzati (“Baseline didattica”, “OWASP top focus”, “WordPress deep”).
+  - [x] Versioning + checksum config per reproducibility (snapshot configurazione salvato per ogni scansione con endpoint dedicato di retrieval).
 
 ## Fase B — UX didattica e configurazione guidata (P0/P1)
 - [ ] **B1. Nuovo “Scan Builder” multi-step**
@@ -137,7 +137,7 @@ Creare un piano operativo **didattico e incrementale** per trasformare VAP in un
 - [ ] Possibile overload cognitivo nelle viste principali con molte informazioni contemporanee.
 - [ ] Necessità di uniformare ulteriormente copywriting tecnico tra UI, catalogo e PDF.
 - [ ] Mancanza di una governance esplicita “scan config lifecycle” (draft/review/approved/deprecated).
-- [ ] Test regressione CSP disallineato (`tests/test_security_headers.py::test_csp_disallows_inline_scripts_by_default`): il test si aspetta `https://cdn.tailwindcss.com`, ma la policy corrente usa solo script locali.
+- [ ] Test regressione CSP disallineato (`tests/test_security_headers.py::test_csp_disallows_inline_scripts_by_default`): il test si aspetta `https://cdn.tailwindcss.com`, ma la policy corrente usa solo script locali (confermato anche nel run completo del 2026-04-09).
 
 ---
 

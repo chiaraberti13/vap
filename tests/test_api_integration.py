@@ -71,7 +71,7 @@ def test_list_scans_empty():
 def test_create_scan(monkeypatch):
     _clear_scans()
     app.app.dependency_overrides[app.enforce_api_key] = lambda: None
-    app.app.dependency_overrides[app.enforce_operator_role] = lambda: "operator"
+    app.app.dependency_overrides[app.enforce_operator_role] = lambda: "admin"
 
     class DummyResult:
         id = "dummy-task"
@@ -92,6 +92,49 @@ def test_create_scan(monkeypatch):
     assert payload["target"] == "example.com"
     assert payload["scan_type"] == "full"
     assert payload["priority"] == 3
+    app.app.dependency_overrides.clear()
+
+
+def test_scan_configuration_snapshot_is_persisted_and_retrievable(monkeypatch):
+    _clear_scans()
+    app.app.dependency_overrides[app.enforce_api_key] = lambda: None
+    app.app.dependency_overrides[app.enforce_operator_role] = lambda: "operator"
+    app.app.dependency_overrides[app.enforce_viewer_role] = lambda: "viewer"
+
+    class DummyResult:
+        id = "dummy-task"
+
+    def fake_apply_async(*_args, **_kwargs):
+        return DummyResult()
+
+    monkeypatch.setattr(app.orchestrate_scan, "apply_async", fake_apply_async)
+
+    with TestClient(app.app) as client:
+        create_response = client.post(
+            "/api/v1/scans",
+            json={
+                "target": "example.com",
+                "scan_type": "full",
+                "priority": 3,
+                "accept_privacy": True,
+                "accept_terms": True,
+                    "scan_configuration": {
+                        "crawler": {"enabled": True, "max_depth": 2},
+                        "runtime": {"requests_per_minute": 80, "max_concurrency": 3, "request_timeout_seconds": 20},
+                    },
+                },
+            )
+        assert create_response.status_code == 200
+        scan_id = create_response.json()["id"]
+
+        snapshot_response = client.get(f"/api/v1/scans/{scan_id}/configuration")
+
+    assert snapshot_response.status_code == 200
+    snapshot_payload = snapshot_response.json()
+    assert snapshot_payload["schema_version"] == "scan-config/v1"
+    assert re.match(r"^[a-f0-9]{64}$", snapshot_payload["checksum"])
+    assert snapshot_payload["configuration"]["crawler"]["max_depth"] == 2
+    assert snapshot_payload["configuration"]["runtime"]["requests_per_minute"] == 80
     app.app.dependency_overrides.clear()
 
 
