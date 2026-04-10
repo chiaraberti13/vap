@@ -160,6 +160,7 @@ def test_scan_configuration_snapshot_is_persisted_and_retrievable(monkeypatch):
                     "scan_configuration": {
                         "crawler": {"enabled": True, "max_depth": 2},
                         "runtime": {"requests_per_minute": 80, "max_concurrency": 3, "request_timeout_seconds": 20},
+                        "auth": {"mode": "bearer", "bearer_token": "secret-bearer-token"},
                     },
                 },
             )
@@ -174,6 +175,7 @@ def test_scan_configuration_snapshot_is_persisted_and_retrievable(monkeypatch):
     assert re.match(r"^[a-f0-9]{64}$", snapshot_payload["checksum"])
     assert snapshot_payload["configuration"]["crawler"]["max_depth"] == 2
     assert snapshot_payload["configuration"]["runtime"]["requests_per_minute"] == 80
+    assert snapshot_payload["configuration"]["auth"]["bearer_token"] == "********"
     app.app.dependency_overrides.clear()
 
 
@@ -255,6 +257,7 @@ def test_scan_configuration_preset_crud_and_subject_isolation():
                 "configuration": {
                     "runtime": {"requests_per_minute": 45, "max_concurrency": 2, "request_timeout_seconds": 25},
                     "crawler": {"enabled": True, "max_depth": 1},
+                    "auth": {"mode": "basic", "username": "student", "password": "super-secret-password"},
                 },
             },
             cookies={app.settings.csrf_cookie_name: "tkn"},
@@ -265,6 +268,7 @@ def test_scan_configuration_preset_crud_and_subject_isolation():
         preset_id = created_payload["id"]
         assert created_payload["scan_type"] == "full"
         assert created_payload["configuration"]["crawler"]["max_depth"] == 1
+        assert created_payload["configuration"]["auth"]["password"] == "********"
 
         list_response = client.get(
             "/api/v1/scan-config/presets",
@@ -275,6 +279,7 @@ def test_scan_configuration_preset_crud_and_subject_isolation():
         assert len(listed) == 1
         assert listed[0]["id"] == preset_id
         assert listed[0]["name"] == "Baseline didattica"
+        assert listed[0]["configuration"]["auth"]["password"] == "********"
 
         unauthorized_delete = client.delete(
             f"/api/v1/scan-config/presets/{preset_id}",

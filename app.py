@@ -50,6 +50,7 @@ from scan_configuration import (
     ScanConfigurationV1,
     checksum_scan_config_v1,
     get_scan_config_schema_v1,
+    redact_scan_configuration_secrets,
     validate_scan_configuration_policy_v1,
 )
 from scanner_engine import (
@@ -2403,11 +2404,12 @@ def get_scan_configuration_snapshot(
     return ScanConfigurationSnapshot(
         schema_version=scan.scan_configuration_version,
         checksum=scan.scan_configuration_checksum,
-        configuration=scan_config,
+        configuration=redact_scan_configuration_secrets(scan_config),
     )
 
 
 def _serialize_scan_configuration_preset(preset: ScanConfigurationPreset) -> ScanConfigurationPresetStatus:
+    parsed_configuration = ScanConfigurationV1.model_validate_json(preset.config_json)
     return ScanConfigurationPresetStatus(
         id=preset.id,
         name=preset.name,
@@ -2415,7 +2417,7 @@ def _serialize_scan_configuration_preset(preset: ScanConfigurationPreset) -> Sca
         scan_type=preset.scan_type,
         schema_version=preset.config_version,
         checksum=preset.config_checksum,
-        configuration=ScanConfigurationV1.model_validate_json(preset.config_json),
+        configuration=redact_scan_configuration_secrets(parsed_configuration),
         created_at=preset.created_at,
         updated_at=preset.updated_at,
     )
