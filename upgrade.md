@@ -111,9 +111,9 @@ Creare un piano operativo **didattico e incrementale** per trasformare VAP in un
   - [x] Mascheramento forte e rotazione chiavi guidata.
 
 - [ ] **C4. Security regression suite estesa**
-  - Fuzzing input config.
-  - Test anti-IDOR su risorse scansione/report.
-  - Test policy bypass e privilege escalation.
+  - [x] Fuzzing input config.
+  - [ ] Test anti-IDOR su risorse scansione/report.
+  - [ ] Test policy bypass e privilege escalation.
 
 ## Fase D — Reporting PDF/UI (P1)
 - [ ] **D1. Nuovo template PDF minimal/professional**
