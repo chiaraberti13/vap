@@ -386,6 +386,127 @@ def test_create_scan_rejects_high_risk_tool_without_admin_role(monkeypatch):
     app.app.dependency_overrides.clear()
 
 
+def test_create_scan_rejects_high_risk_without_double_confirmation(monkeypatch):
+    _clear_scans()
+    app.app.dependency_overrides[app.enforce_api_key] = lambda: None
+    app.app.dependency_overrides[app.enforce_operator_role] = lambda: "admin"
+
+    class DummyResult:
+        id = "dummy-task"
+
+    def fake_apply_async(*_args, **_kwargs):
+        return DummyResult()
+
+    monkeypatch.setattr(app.orchestrate_scan, "apply_async", fake_apply_async)
+
+    with TestClient(app.app) as client:
+        response = client.post(
+            "/api/v1/scans",
+            json={
+                "target": "example.com",
+                "scan_type": "full",
+                "priority": 3,
+                "accept_privacy": True,
+                "accept_terms": True,
+                "scan_configuration": {"tool_overrides": {"sqlmap": {"enabled": True}}},
+            },
+        )
+
+    assert response.status_code == 400
+    assert "high_risk_acknowledged" in response.json()["detail"]
+    app.app.dependency_overrides.clear()
+
+
+def test_create_scan_allows_high_risk_with_double_confirmation(monkeypatch):
+    _clear_scans()
+    app.app.dependency_overrides[app.enforce_api_key] = lambda: None
+    app.app.dependency_overrides[app.enforce_operator_role] = lambda: "admin"
+
+    class DummyResult:
+        id = "dummy-task"
+
+    def fake_apply_async(*_args, **_kwargs):
+        return DummyResult()
+
+    monkeypatch.setattr(app.orchestrate_scan, "apply_async", fake_apply_async)
+
+    with TestClient(app.app) as client:
+        response = client.post(
+            "/api/v1/scans",
+            json={
+                "target": "example.com",
+                "scan_type": "full",
+                "priority": 3,
+                "accept_privacy": True,
+                "accept_terms": True,
+                "scan_configuration": {
+                    "tool_overrides": {"sqlmap": {"enabled": True}},
+                    "high_risk_acknowledged": True,
+                },
+            },
+        )
+
+    assert response.status_code == 200
+    app.app.dependency_overrides.clear()
+
+
+def test_create_scan_non_admin_high_risk_requires_admin_approval_reference(monkeypatch):
+    _clear_scans()
+    original_roles = list(app.settings.rbac_capability_run_high_risk_scan_roles)
+    object.__setattr__(app.settings, "rbac_capability_run_high_risk_scan_roles", ["operator", "admin"])
+    app.SCAN_CAPABILITY_ALLOWED_ROLES["run_high_risk_scan"] = {"operator", "admin"}
+    app.app.dependency_overrides[app.enforce_api_key] = lambda: None
+    app.app.dependency_overrides[app.enforce_operator_role] = lambda: "operator"
+
+    class DummyResult:
+        id = "dummy-task"
+
+    def fake_apply_async(*_args, **_kwargs):
+        return DummyResult()
+
+    monkeypatch.setattr(app.orchestrate_scan, "apply_async", fake_apply_async)
+
+    try:
+        with TestClient(app.app) as client:
+            denied_response = client.post(
+                "/api/v1/scans",
+                json={
+                    "target": "example.com",
+                    "scan_type": "full",
+                    "priority": 3,
+                    "accept_privacy": True,
+                    "accept_terms": True,
+                    "scan_configuration": {
+                        "tool_overrides": {"sqlmap": {"enabled": True}},
+                        "high_risk_acknowledged": True,
+                    },
+                },
+            )
+            allowed_response = client.post(
+                "/api/v1/scans",
+                json={
+                    "target": "example.com",
+                    "scan_type": "full",
+                    "priority": 3,
+                    "accept_privacy": True,
+                    "accept_terms": True,
+                    "scan_configuration": {
+                        "tool_overrides": {"sqlmap": {"enabled": True}},
+                        "high_risk_acknowledged": True,
+                        "admin_approval_reference": "apr-12345",
+                    },
+                },
+            )
+
+        assert denied_response.status_code == 400
+        assert "admin_approval_reference" in denied_response.json()["detail"]
+        assert allowed_response.status_code == 200
+    finally:
+        object.__setattr__(app.settings, "rbac_capability_run_high_risk_scan_roles", original_roles)
+        app.SCAN_CAPABILITY_ALLOWED_ROLES["run_high_risk_scan"] = set(original_roles)
+        app.app.dependency_overrides.clear()
+
+
 def test_create_scan_rejects_policy_override_without_capability(monkeypatch):
     _clear_scans()
     app.app.dependency_overrides[app.enforce_api_key] = lambda: None
