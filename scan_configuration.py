@@ -191,3 +191,22 @@ def get_scan_config_schema_v1() -> Dict[str, object]:
 def checksum_scan_config_v1(config: ScanConfigurationV1) -> str:
     payload = json.dumps(config.model_dump(mode="json"), sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def _mask_secret(value: Optional[str]) -> Optional[str]:
+    if value is None:
+        return None
+    normalized = value.strip()
+    if not normalized:
+        return None
+    return "********"
+
+
+def redact_scan_configuration_secrets(config: ScanConfigurationV1) -> ScanConfigurationV1:
+    """Restituisce una copia della configurazione con segreti auth mascherati per output UI/API."""
+
+    redacted = config.model_copy(deep=True)
+    redacted.auth.password = _mask_secret(redacted.auth.password)
+    redacted.auth.bearer_token = _mask_secret(redacted.auth.bearer_token)
+    redacted.auth.cookie_header = _mask_secret(redacted.auth.cookie_header)
+    return redacted
