@@ -155,3 +155,54 @@ def test_validate_csrf_request_raises(monkeypatch):
     request = SimpleNamespace(cookies={"vap_csrf": "t"})
     with pytest.raises(ValueError):
         security.validate_csrf_request(request, "t")
+
+
+def test_redact_sensitive_data_masks_nested_secrets():
+    payload = {
+        "api_key": "my-real-key",
+        "nested": {
+            "password": "super-secret",
+            "notes": "safe",
+            "headers": {"Authorization": "Bearer abc"},
+        },
+        "items": [{"token": "tok"}, {"value": "ok"}],
+    }
+
+    redacted = security.redact_sensitive_data(payload)
+
+    assert redacted["api_key"].startswith("sha256:")
+    assert redacted["nested"]["password"] == "<redacted>"
+    assert redacted["nested"]["headers"]["Authorization"] == "<redacted>"
+    assert redacted["items"][0]["token"] == "<redacted>"
+    assert redacted["nested"]["notes"] == "safe"
+
+
+def test_log_audit_event_redacts_sensitive_fields(monkeypatch):
+    captured = {}
+
+    class _Logger:
+        def info(self, **kwargs):
+            captured.update(kwargs)
+
+    monkeypatch.setattr(
+        security,
+        "settings",
+        SimpleNamespace(audit_logging_enabled=True, app_env="test", trusted_proxy_ip=""),
+    )
+    monkeypatch.setattr(security, "audit_logger", _Logger())
+    request = SimpleNamespace(
+        headers={"user-agent": "pytest"},
+        url=SimpleNamespace(path="/api/v1/scans"),
+        method="POST",
+        client=SimpleNamespace(host="127.0.0.1"),
+    )
+
+    security.log_audit_event(
+        "scan_created",
+        request=request,
+        api_key="real-key",
+        bearer_token="secret-token",
+    )
+
+    assert captured["api_key"].startswith("sha256:")
+    assert captured["bearer_token"] == "<redacted>"

@@ -65,7 +65,7 @@ def test_sorted_scan_coverage_orders_ports_and_deduplicates_tests():
 
 def test_scan_parameters_rows_prioritizes_required_fields_and_enumerate_flags():
     params = {
-        "authentication": "token",
+        "authentication": {"mode": "bearer", "bearer_token": "secret-token"},
         "detection_mode": "passive",
         "enumerate_plugins": True,
         "enumerate_users": False,
@@ -74,7 +74,7 @@ def test_scan_parameters_rows_prioritizes_required_fields_and_enumerate_flags():
     assert _scan_parameters_rows("https://target.local", "wordpress", params) == [
         ("target", "https://target.local"),
         ("scan_type", "wordpress"),
-        ("authentication", "token"),
+        ("authentication", "{'mode': 'bearer', 'bearer_token': '<redacted>'}"),
         ("detection_mode", "passive"),
         ("enumerate_plugins", "True"),
         ("enumerate_users", "False"),

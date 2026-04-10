@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 
 from config import settings
 from database import AuditEvent, ConsentRecord, Scan
-from security import get_request_ip, redact_api_key, verify_jwt_token
+from security import get_request_ip, redact_api_key, redact_sensitive_data, verify_jwt_token
 
 
 CONSENT_TYPES = ("privacy_policy", "terms_of_service")
@@ -98,7 +98,7 @@ def record_audit_event(
     subject_id: Optional[str] = None,
     metadata: Optional[Dict[str, Any]] = None,
 ) -> AuditEvent:
-    payload = json.dumps(metadata or {}, ensure_ascii=False)
+    payload = json.dumps(redact_sensitive_data(metadata or {}), ensure_ascii=False)
     audit_event = AuditEvent(
         event=event,
         subject_id=subject_id,
