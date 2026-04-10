@@ -78,10 +78,16 @@ python -m alembic revision -m "descrizione_migrazione"
 | --- | --- | --- |
 | `VAP_API_KEY` | `""` | API key in chiaro. |
 | `VAP_API_KEY_HASH` | `""` | Hash API key (preferibile). |
+| `VAP_API_KEY_LAST_ROTATED_AT` | `""` | Data ultima rotazione API key (`YYYY-MM-DD`) usata dalla startup security checklist. |
+| `VAP_API_KEY_ROTATION_MAX_DAYS` | `90` | Finestra massima consigliata (giorni) tra rotazioni API key. |
 | `VAP_CSRF_SECRET` | `""` → autogenerato | Secret CSRF. |
+| `VAP_CSRF_LAST_ROTATED_AT` | `""` | Data ultima rotazione secret CSRF (`YYYY-MM-DD`) per checklist hardening. |
+| `VAP_CSRF_ROTATION_MAX_DAYS` | `180` | Finestra consigliata (giorni) per rotazione secret CSRF. |
 | `VAP_CSRF_COOKIE` | `vap_csrf` | Nome cookie CSRF. |
 | `VAP_CSRF_TTL` | `3600` | TTL CSRF (sec). |
 | `VAP_JWT_SECRET` | `""` | Secret JWT. |
+| `VAP_JWT_LAST_ROTATED_AT` | `""` | Data ultima rotazione secret JWT (`YYYY-MM-DD`) per controlli startup. |
+| `VAP_JWT_ROTATION_MAX_DAYS` | `90` | Finestra massima consigliata (giorni) per rotazione JWT secret. |
 | `VAP_JWT_ALGORITHM` | `HS256` | Algoritmo JWT. |
 | `VAP_JWT_ISSUER` | `vap` | Issuer JWT. |
 | `VAP_JWT_AUDIENCE` | `vap-users` | Audience JWT. |

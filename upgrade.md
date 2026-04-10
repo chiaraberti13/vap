@@ -108,7 +108,7 @@ Creare un piano operativo **didattico e incrementale** per trasformare VAP in un
 - [ ] **C3. Secret management hardening**
   - [x] Nessun segreto in chiaro in output API di snapshot/preset configurazione (mascheramento server-side dei campi auth sensibili).
   - [x] Nessun segreto in chiaro in form/log/report.
-  - Mascheramento forte e rotazione chiavi guidata.
+  - [x] Mascheramento forte e rotazione chiavi guidata.
 
 - [ ] **C4. Security regression suite estesa**
   - Fuzzing input config.
@@ -157,6 +157,6 @@ Un task è completato solo se:
 ---
 
 ## 6) Primo task consigliato (prossimo ciclo)
-**C1 — RBAC fine-grained sulle capability di scansione**.
+**C4 — Security regression suite estesa (fuzzing config + anti-IDOR + policy bypass)**.
 
-Motivo: completate le fondamenta UX/accessibilità del builder, la priorità P0 resta il rafforzamento autorizzativo sulle capability sensibili (high-risk scan, override policy, export).
+Motivo: dopo il completamento di C3, resta il principale blocco P0/P1 lato sicurezza per prevenire regressioni su autorizzazioni e validazioni input.

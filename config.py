@@ -5,10 +5,11 @@ Configurazione centrale per Vulnerability Assessment Platform.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import date
 import os
 from pathlib import Path
 import secrets
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from dotenv import load_dotenv
 
@@ -26,6 +27,16 @@ def _split_env_roles(value: str) -> List[str]:
     return [item.lower() for item in _split_env_list(value)]
 
 
+def _parse_iso_date(value: str) -> Optional[date]:
+    raw = (value or "").strip()
+    if not raw:
+        return None
+    try:
+        return date.fromisoformat(raw)
+    except ValueError:
+        return None
+
+
 @dataclass(frozen=True)
 class Settings:
     app_name: str = "Vulnerability Assessment Platform"
@@ -41,11 +52,17 @@ class Settings:
     max_concurrent_scanners: int = int(os.getenv("VAP_MAX_CONCURRENT_SCANNERS", "5"))
     api_key: str = os.getenv("VAP_API_KEY", "")
     api_key_hash: str = os.getenv("VAP_API_KEY_HASH", "")
+    api_key_rotation_max_days: int = int(os.getenv("VAP_API_KEY_ROTATION_MAX_DAYS", "90"))
+    api_key_last_rotated_at: str = os.getenv("VAP_API_KEY_LAST_ROTATED_AT", "")
     require_https: bool = os.getenv("VAP_REQUIRE_HTTPS", "false").lower() == "true"
     csrf_secret: str = os.getenv("VAP_CSRF_SECRET", "") or secrets.token_urlsafe(32)
+    csrf_rotation_max_days: int = int(os.getenv("VAP_CSRF_ROTATION_MAX_DAYS", "180"))
+    csrf_last_rotated_at: str = os.getenv("VAP_CSRF_LAST_ROTATED_AT", "")
     csrf_cookie_name: str = os.getenv("VAP_CSRF_COOKIE", "vap_csrf")
     csrf_token_ttl_seconds: int = int(os.getenv("VAP_CSRF_TTL", "3600"))
     jwt_secret: str = os.getenv("VAP_JWT_SECRET", "")
+    jwt_rotation_max_days: int = int(os.getenv("VAP_JWT_ROTATION_MAX_DAYS", "90"))
+    jwt_last_rotated_at: str = os.getenv("VAP_JWT_LAST_ROTATED_AT", "")
     jwt_algorithm: str = os.getenv("VAP_JWT_ALGORITHM", "HS256")
     jwt_issuer: str = os.getenv("VAP_JWT_ISSUER", "vap")
     jwt_audience: str = os.getenv("VAP_JWT_AUDIENCE", "vap-users")
@@ -325,6 +342,91 @@ def build_startup_security_checklist() -> List[Dict[str, str]]:
                 "remediation": (
                     "Definire VAP_TARGET_ALLOWLIST con domini/IP consentiti per deployment production."
                 ),
+            }
+        )
+
+    today = date.today()
+
+    jwt_last_rotated = _parse_iso_date(settings.jwt_last_rotated_at)
+    if settings.jwt_secret and not jwt_last_rotated:
+        checks.append(
+            {
+                "severity": "medium",
+                "code": "jwt_rotation_date_missing",
+                "message": "Manca VAP_JWT_LAST_ROTATED_AT: impossibile verificare la rotazione del secret JWT.",
+                "remediation": (
+                    "Impostare VAP_JWT_LAST_ROTATED_AT (YYYY-MM-DD) e ruotare VAP_JWT_SECRET "
+                    f"al massimo ogni {settings.jwt_rotation_max_days} giorni."
+                ),
+            }
+        )
+    elif jwt_last_rotated and (today - jwt_last_rotated).days > settings.jwt_rotation_max_days:
+        checks.append(
+            {
+                "severity": "high",
+                "code": "jwt_rotation_overdue",
+                "message": (
+                    "VAP_JWT_SECRET oltre finestra di rotazione consigliata: "
+                    f"{(today - jwt_last_rotated).days} giorni."
+                ),
+                "remediation": (
+                    "Ruotare VAP_JWT_SECRET e aggiornare VAP_JWT_LAST_ROTATED_AT tramite secret manager."
+                ),
+            }
+        )
+
+    csrf_last_rotated = _parse_iso_date(settings.csrf_last_rotated_at)
+    if settings.csrf_secret and not csrf_last_rotated:
+        checks.append(
+            {
+                "severity": "low",
+                "code": "csrf_rotation_date_missing",
+                "message": "Manca VAP_CSRF_LAST_ROTATED_AT: impossibile verificare la rotazione del secret CSRF.",
+                "remediation": (
+                    "Impostare VAP_CSRF_LAST_ROTATED_AT (YYYY-MM-DD) e pianificare la rotazione periodica "
+                    f"entro {settings.csrf_rotation_max_days} giorni."
+                ),
+            }
+        )
+    elif csrf_last_rotated and (today - csrf_last_rotated).days > settings.csrf_rotation_max_days:
+        checks.append(
+            {
+                "severity": "medium",
+                "code": "csrf_rotation_overdue",
+                "message": (
+                    "VAP_CSRF_SECRET oltre finestra di rotazione consigliata: "
+                    f"{(today - csrf_last_rotated).days} giorni."
+                ),
+                "remediation": (
+                    "Ruotare VAP_CSRF_SECRET, aggiornare VAP_CSRF_LAST_ROTATED_AT e invalidare "
+                    "le sessioni legacy."
+                ),
+            }
+        )
+
+    api_key_last_rotated = _parse_iso_date(settings.api_key_last_rotated_at)
+    if (settings.api_key or settings.api_key_hash) and not api_key_last_rotated:
+        checks.append(
+            {
+                "severity": "medium",
+                "code": "api_key_rotation_date_missing",
+                "message": "Manca VAP_API_KEY_LAST_ROTATED_AT: impossibile verificare la rotazione API key.",
+                "remediation": (
+                    "Impostare VAP_API_KEY_LAST_ROTATED_AT (YYYY-MM-DD) e ruotare la chiave "
+                    f"entro {settings.api_key_rotation_max_days} giorni."
+                ),
+            }
+        )
+    elif api_key_last_rotated and (today - api_key_last_rotated).days > settings.api_key_rotation_max_days:
+        checks.append(
+            {
+                "severity": "high",
+                "code": "api_key_rotation_overdue",
+                "message": (
+                    "API key oltre finestra di rotazione consigliata: "
+                    f"{(today - api_key_last_rotated).days} giorni."
+                ),
+                "remediation": "Ruotare VAP_API_KEY/VAP_API_KEY_HASH e aggiornare VAP_API_KEY_LAST_ROTATED_AT.",
             }
         )
 
