@@ -112,7 +112,7 @@ Creare un piano operativo **didattico e incrementale** per trasformare VAP in un
 
 - [ ] **C4. Security regression suite estesa**
   - [x] Fuzzing input config.
-  - [ ] Test anti-IDOR su risorse scansione/report.
+  - [x] Test anti-IDOR su risorse scansione/report.
   - [ ] Test policy bypass e privilege escalation.
 
 ## Fase D — Reporting PDF/UI (P1)
@@ -157,6 +157,6 @@ Un task è completato solo se:
 ---
 
 ## 6) Primo task consigliato (prossimo ciclo)
-**C4 — Security regression suite estesa (fuzzing config + anti-IDOR + policy bypass)**.
+**C4 — completare test policy bypass e privilege escalation**.
 
-Motivo: dopo il completamento di C3, resta il principale blocco P0/P1 lato sicurezza per prevenire regressioni su autorizzazioni e validazioni input.
+Motivo: anti-IDOR e fuzzing sono ora coperti; resta l'ultima porzione critica della suite di regressione sicurezza per chiudere C4.
