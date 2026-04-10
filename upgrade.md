@@ -102,7 +102,7 @@ Creare un piano operativo **didattico e incrementale** per trasformare VAP in un
   - [x] Permesso capability `export_sensitive_report` per download report classificati `confidential/restricted`.
   - [x] Permesso capability `override_scan_policy` con enforcement esplicito per richieste di eccezione policy in creazione scansione/preset (workflow approvativo avanzato resta in C2).
 
-- [ ] **C2. Approval workflow per scansioni ad alto rischio**
+- [x] **C2. Approval workflow per scansioni ad alto rischio**
   - Double-confirmation + eventuale approvazione admin.
 
 - [ ] **C3. Secret management hardening**

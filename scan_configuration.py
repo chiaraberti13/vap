@@ -87,6 +87,8 @@ class ScanConfigurationV1(BaseModel):
     severity_threshold: SeverityThreshold = Field("low")
     minimum_evidence: EvidenceMinimum = Field("standard")
     tool_overrides: Dict[str, ToolOverrideConfig] = Field(default_factory=dict)
+    high_risk_acknowledged: bool = Field(False)
+    admin_approval_reference: Optional[str] = Field(None, max_length=64)
     policy_override_requested: bool = Field(False)
     policy_override_reason: Optional[str] = Field(None, max_length=500)
 
@@ -101,10 +103,18 @@ class ScanConfigurationV1(BaseModel):
     @model_validator(mode="after")
     def _validate_policy_override(self) -> "ScanConfigurationV1":
         reason = self.policy_override_reason.strip() if self.policy_override_reason else None
+        approval_reference = (
+            self.admin_approval_reference.strip().upper() if self.admin_approval_reference else None
+        )
         if self.policy_override_requested and not reason:
             raise ValueError("Inserire una motivazione quando richiedi override della policy.")
         if not self.policy_override_requested and reason:
             raise ValueError("policy_override_reason è ammesso solo se policy_override_requested=true.")
+        if approval_reference and not approval_reference.startswith("APR-"):
+            raise ValueError("admin_approval_reference deve iniziare con 'APR-'.")
+        if approval_reference and len(approval_reference) < 8:
+            raise ValueError("admin_approval_reference non valido.")
+        self.admin_approval_reference = approval_reference
         self.policy_override_reason = reason
         return self
 
@@ -160,10 +170,17 @@ def validate_scan_configuration_policy_v1(
             )
 
     restricted_tools = enabled_tools & HIGH_RISK_TOOLS
-    if restricted_tools and normalized_role not in RESTRICTED_ROLES_FOR_HIGH_RISK:
-        blocked = ", ".join(sorted(restricted_tools))
+    if restricted_tools and not config.high_risk_acknowledged:
         raise ScanConfigurationPolicyError(
-            f"I tool ad alto rischio [{blocked}] richiedono ruolo admin."
+            "Conferma obbligatoria: abilita high_risk_acknowledged prima di eseguire tool ad alto rischio."
+        )
+    if (
+        restricted_tools
+        and normalized_role not in RESTRICTED_ROLES_FOR_HIGH_RISK
+        and not config.admin_approval_reference
+    ):
+        raise ScanConfigurationPolicyError(
+            "Per ruoli non admin è richiesto un riferimento di approvazione amministrativa (admin_approval_reference)."
         )
 
 
