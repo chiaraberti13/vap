@@ -2,6 +2,7 @@ import json
 import re
 
 from fastapi.testclient import TestClient
+import pytest
 
 import app
 from database import (
@@ -203,6 +204,78 @@ def test_create_scan_rejects_unknown_scan_configuration_fields(monkeypatch):
                 "accept_terms": True,
                 "scan_configuration": {"unexpected_field": True},
             },
+        )
+
+    assert response.status_code == 422
+    app.app.dependency_overrides.clear()
+
+
+@pytest.mark.parametrize(
+    "scan_configuration",
+    [
+        {"runtime": {"requests_per_minute": {"value": 100}}},
+        {"runtime": {"max_concurrency": 0}},
+        {"crawler": {"enabled": False, "max_depth": -1}},
+        {"auth": {"mode": "bearer", "bearer_token": {"nested": "token"}}},
+        {"tool_overrides": {"sqlmap": {"enabled": True, "unknown_option": True}}},
+        {"scope": {"allowed_hosts": ["example.com", "example.com"]}},
+    ],
+)
+def test_create_scan_rejects_fuzzed_invalid_configuration_payloads(monkeypatch, scan_configuration):
+    _clear_scans()
+    app.app.dependency_overrides[app.enforce_api_key] = lambda: None
+    app.app.dependency_overrides[app.enforce_operator_role] = lambda: "operator"
+
+    class DummyResult:
+        id = "dummy-task"
+
+    def fake_apply_async(*_args, **_kwargs):
+        return DummyResult()
+
+    monkeypatch.setattr(app.orchestrate_scan, "apply_async", fake_apply_async)
+
+    with TestClient(app.app) as client:
+        response = client.post(
+            "/api/v1/scans",
+            json={
+                "target": "example.com",
+                "scan_type": "full",
+                "priority": 3,
+                "accept_privacy": True,
+                "accept_terms": True,
+                "scan_configuration": scan_configuration,
+            },
+        )
+
+    assert response.status_code == 422
+    app.app.dependency_overrides.clear()
+
+
+@pytest.mark.parametrize(
+    "configuration",
+    [
+        {"auth": {"mode": "basic", "username": "student"}},
+        {"exclusions": ["a" * 201]},
+        {"policy_override_reason": "bypass senza flag"},
+        {"admin_approval_reference": "INVALID-REF"},
+        {"tool_overrides": {"zap": {"enabled": True, "timeout_seconds": {"value": 60}}}},
+    ],
+)
+def test_create_preset_rejects_fuzzed_invalid_configuration_payloads(configuration):
+    _clear_scans()
+    app.app.dependency_overrides[app.enforce_api_key] = lambda: None
+    app.app.dependency_overrides[app.enforce_operator_role] = lambda: "operator"
+
+    with TestClient(app.app) as client:
+        response = client.post(
+            "/api/v1/scan-config/presets",
+            json={
+                "name": "Preset invalid fuzz",
+                "scan_type": "full",
+                "configuration": configuration,
+            },
+            cookies={app.settings.csrf_cookie_name: "tkn"},
+            headers={"x-csrf-token": "tkn", "x-data-subject": "student-alpha"},
         )
 
     assert response.status_code == 422
