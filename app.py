@@ -709,6 +709,10 @@ def _scan_has_high_risk_tools(scan_config: ScanConfigurationV1) -> bool:
     )
 
 
+def _scan_requires_policy_override(scan_config: ScanConfigurationV1) -> bool:
+    return bool(scan_config.policy_override_requested)
+
+
 def _enforce_scan_capability(request: Request, *, user_role: str, capability: str) -> None:
     if not settings.rbac_enabled:
         return
@@ -1845,6 +1849,8 @@ def create_scan(
         _enforce_scan_capability(request, user_role=user_role, capability="create_scan_config")
         if _scan_has_high_risk_tools(payload.scan_configuration):
             _enforce_scan_capability(request, user_role=user_role, capability="run_high_risk_scan")
+        if _scan_requires_policy_override(payload.scan_configuration):
+            _enforce_scan_capability(request, user_role=user_role, capability="override_scan_policy")
         scan_type = payload.scan_type.lower().strip()
         data_classification = payload.data_classification.lower().strip()
         if scan_type not in SCAN_TYPES:
@@ -2425,6 +2431,8 @@ def create_scan_configuration_preset(
     user_role: str = Depends(enforce_operator_role),
 ) -> ScanConfigurationPresetStatus:
     _enforce_scan_capability(request, user_role=user_role, capability="create_scan_config")
+    if _scan_requires_policy_override(payload.configuration):
+        _enforce_scan_capability(request, user_role=user_role, capability="override_scan_policy")
     scan_type = payload.scan_type.strip().lower()
     if scan_type not in SCAN_TYPES:
         raise HTTPException(status_code=400, detail="Tipologia di scansione non valida per il preset.")

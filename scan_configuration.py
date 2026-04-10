@@ -87,6 +87,8 @@ class ScanConfigurationV1(BaseModel):
     severity_threshold: SeverityThreshold = Field("low")
     minimum_evidence: EvidenceMinimum = Field("standard")
     tool_overrides: Dict[str, ToolOverrideConfig] = Field(default_factory=dict)
+    policy_override_requested: bool = Field(False)
+    policy_override_reason: Optional[str] = Field(None, max_length=500)
 
     @field_validator("exclusions")
     @classmethod
@@ -95,6 +97,16 @@ class ScanConfigurationV1(BaseModel):
         if any(len(value) > 200 for value in normalized):
             raise ValueError("Ogni esclusione deve avere massimo 200 caratteri.")
         return normalized
+
+    @model_validator(mode="after")
+    def _validate_policy_override(self) -> "ScanConfigurationV1":
+        reason = self.policy_override_reason.strip() if self.policy_override_reason else None
+        if self.policy_override_requested and not reason:
+            raise ValueError("Inserire una motivazione quando richiedi override della policy.")
+        if not self.policy_override_requested and reason:
+            raise ValueError("policy_override_reason è ammesso solo se policy_override_requested=true.")
+        self.policy_override_reason = reason
+        return self
 
 
 class ScanConfigurationPolicyError(ValueError):
