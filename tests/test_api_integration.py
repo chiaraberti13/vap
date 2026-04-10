@@ -95,6 +95,39 @@ def test_download_report_endpoint_blocks_sensitive_report_for_viewer(tmp_path):
     app.app.dependency_overrides.clear()
 
 
+def test_download_report_endpoint_blocks_cross_subject_access(tmp_path):
+    _clear_scans()
+    report_file = tmp_path / "scan-report-cross-subject.pdf"
+    report_file.write_bytes(b"%PDF-1.4\n% cross-subject fixture\n")
+
+    with SessionLocal() as session:
+        scan = Scan(
+            target="example.com",
+            scan_type="full",
+            status="completed",
+            report_path=str(report_file),
+            data_subject_id="subject-owner",
+            data_classification="internal",
+        )
+        session.add(scan)
+        session.commit()
+        session.refresh(scan)
+        scan_id = scan.id
+
+    app.app.dependency_overrides[app.enforce_api_key] = lambda: None
+    app.app.dependency_overrides[app.enforce_viewer_role] = lambda: "viewer"
+
+    with TestClient(app.app) as client:
+        response = client.get(
+            f"/api/v1/scans/{scan_id}/report/download",
+            headers={"x-data-subject": "subject-attacker"},
+        )
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Report non disponibile"
+    app.app.dependency_overrides.clear()
+
+
 def test_list_scans_empty():
     _clear_scans()
     app.app.dependency_overrides[app.enforce_api_key] = lambda: None
@@ -177,6 +210,49 @@ def test_scan_configuration_snapshot_is_persisted_and_retrievable(monkeypatch):
     assert snapshot_payload["configuration"]["crawler"]["max_depth"] == 2
     assert snapshot_payload["configuration"]["runtime"]["requests_per_minute"] == 80
     assert snapshot_payload["configuration"]["auth"]["bearer_token"] == "********"
+    app.app.dependency_overrides.clear()
+
+
+def test_scan_configuration_snapshot_blocks_cross_subject_access(monkeypatch):
+    _clear_scans()
+    app.app.dependency_overrides[app.enforce_api_key] = lambda: None
+    app.app.dependency_overrides[app.enforce_operator_role] = lambda: "operator"
+    app.app.dependency_overrides[app.enforce_viewer_role] = lambda: "viewer"
+
+    class DummyResult:
+        id = "dummy-task"
+
+    def fake_apply_async(*_args, **_kwargs):
+        return DummyResult()
+
+    monkeypatch.setattr(app.orchestrate_scan, "apply_async", fake_apply_async)
+
+    with TestClient(app.app) as client:
+        create_response = client.post(
+            "/api/v1/scans",
+            headers={"x-data-subject": "subject-owner"},
+            json={
+                "target": "example.com",
+                "scan_type": "full",
+                "priority": 3,
+                "accept_privacy": True,
+                "accept_terms": True,
+                "scan_configuration": {
+                    "crawler": {"enabled": True, "max_depth": 2},
+                    "runtime": {"requests_per_minute": 80, "max_concurrency": 3, "request_timeout_seconds": 20},
+                },
+            },
+        )
+        assert create_response.status_code == 200
+        scan_id = create_response.json()["id"]
+
+        snapshot_response = client.get(
+            f"/api/v1/scans/{scan_id}/configuration",
+            headers={"x-data-subject": "subject-attacker"},
+        )
+
+    assert snapshot_response.status_code == 404
+    assert snapshot_response.json()["detail"] == "Scan non trovata"
     app.app.dependency_overrides.clear()
 
 

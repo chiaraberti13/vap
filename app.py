@@ -19,7 +19,7 @@ from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_
 from pydantic import BaseModel, Field
 from redis import Redis
 from redis.exceptions import RedisError
-from sqlalchemy import text
+from sqlalchemy import or_, text
 from sqlalchemy.orm import Query, Session
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -412,6 +412,15 @@ def _record_audit(
 ) -> None:
     log_audit_event(event, request=request, **metadata)
     record_audit_event(db, request=request, event=event, subject_id=subject_id, metadata=metadata)
+
+
+def _subject_scoped_scan_query(db: Session, subject_id: str) -> Query:
+    return _active_scan_query(db).filter(
+        or_(
+            Scan.data_subject_id == subject_id,
+            Scan.data_subject_id.is_(None),  # compatibilità con scans legacy senza subject.
+        )
+    )
 
 
 class APIKeyUIError(Exception):
@@ -1977,7 +1986,7 @@ def create_scan(
                 ),
             )
 
-    _invalidate_cache_keys(_cache_key("scans:list"))
+    _invalidate_cache_keys(_cache_key("scans:list", subject_id))
 
     _record_audit(
         db,
@@ -2319,11 +2328,12 @@ def list_scans(
     _: None = Depends(enforce_api_key),
     __: str = Depends(enforce_viewer_role),
 ) -> List[ScanStatus]:
-    cache_key = _cache_key("scans:list")
+    subject_id = get_subject_id(request)
+    cache_key = _cache_key("scans:list", subject_id)
     cached_payload = _get_cached_json(cache_key)
     if cached_payload:
         return [ScanStatus.model_validate(item) for item in cached_payload]
-    scans = _active_scan_query(db).order_by(Scan.created_at.desc()).all()
+    scans = _subject_scoped_scan_query(db, subject_id).order_by(Scan.created_at.desc()).all()
     response_payload = [
         ScanStatus(
             id=scan.id,
@@ -2386,7 +2396,8 @@ def get_scan_configuration_snapshot(
     _: None = Depends(enforce_api_key),
     __: str = Depends(enforce_viewer_role),
 ) -> ScanConfigurationSnapshot:
-    scan = _active_scan_query(db).filter(Scan.id == scan_id).first()
+    subject_id = get_subject_id(request)
+    scan = _subject_scoped_scan_query(db, subject_id).filter(Scan.id == scan_id).first()
     if not scan:
         raise HTTPException(status_code=404, detail="Scan non trovata")
     if not scan.scan_configuration_json or not scan.scan_configuration_version or not scan.scan_configuration_checksum:
@@ -2527,11 +2538,12 @@ def scan_status(
     _: None = Depends(enforce_api_key),
     __: str = Depends(enforce_viewer_role),
 ) -> ScanStatus:
-    cache_key = _cache_key("scans", str(scan_id), "status")
+    subject_id = get_subject_id(request)
+    cache_key = _cache_key("scans", subject_id, str(scan_id), "status")
     cached_payload = _get_cached_json(cache_key)
     if cached_payload:
         return ScanStatus.model_validate(cached_payload)
-    scan = _active_scan_query(db).filter(Scan.id == scan_id).first()
+    scan = _subject_scoped_scan_query(db, subject_id).filter(Scan.id == scan_id).first()
     if not scan:
         raise HTTPException(status_code=404, detail="Scan non trovata")
 
@@ -2558,7 +2570,8 @@ def download_report(
     _: None = Depends(enforce_api_key),
     viewer_role: str = Depends(enforce_viewer_role),
 ) -> FileResponse:
-    scan = _active_scan_query(db).filter(Scan.id == scan_id).first()
+    subject_id = get_subject_id(request)
+    scan = _subject_scoped_scan_query(db, subject_id).filter(Scan.id == scan_id).first()
     if not scan or not scan.report_path:
         raise HTTPException(status_code=404, detail="Report non disponibile")
     if scan.data_classification in {"confidential", "restricted"}:
@@ -2593,7 +2606,8 @@ def scan_task_status(
     _: None = Depends(enforce_api_key),
     __: str = Depends(enforce_viewer_role),
 ) -> Dict[str, Any]:
-    scan = _active_scan_query(db).filter(Scan.id == scan_id).first()
+    subject_id = get_subject_id(request)
+    scan = _subject_scoped_scan_query(db, subject_id).filter(Scan.id == scan_id).first()
     if not scan:
         raise HTTPException(status_code=404, detail="Scan non trovata")
     status = None
@@ -2616,7 +2630,8 @@ def cancel_scan(
     _: None = Depends(enforce_api_key),
     __: str = Depends(enforce_operator_role),
 ) -> Dict[str, Any]:
-    scan = _active_scan_query(db).filter(Scan.id == scan_id).first()
+    subject_id = get_subject_id(request)
+    scan = _subject_scoped_scan_query(db, subject_id).filter(Scan.id == scan_id).first()
     if not scan:
         raise HTTPException(status_code=404, detail="Scan non trovata")
     if scan.status in {"completed", "report_failed"}:
@@ -2634,8 +2649,8 @@ def cancel_scan(
             celery_app.control.revoke(task_id, terminate=True)
 
     _invalidate_cache_keys(
-        _cache_key("scans:list"),
-        _cache_key("scans", str(scan_id), "status"),
+        _cache_key("scans:list", subject_id),
+        _cache_key("scans", subject_id, str(scan_id), "status"),
     )
     _record_audit(
         db,
@@ -2658,7 +2673,8 @@ def soft_delete_scan(
     _: None = Depends(enforce_api_key),
     __: str = Depends(enforce_admin_role),
 ) -> ScanStatus:
-    scan = _active_scan_query(db).filter(Scan.id == scan_id).first()
+    subject_id = get_subject_id(request)
+    scan = _subject_scoped_scan_query(db, subject_id).filter(Scan.id == scan_id).first()
     if not scan:
         raise HTTPException(status_code=404, detail="Scan non trovata")
     scan.deleted_at = datetime.now(timezone.utc)
@@ -2677,8 +2693,8 @@ def soft_delete_scan(
     )
 
     _invalidate_cache_keys(
-        _cache_key("scans:list"),
-        _cache_key("scans", str(scan_id), "status"),
+        _cache_key("scans:list", subject_id),
+        _cache_key("scans", subject_id, str(scan_id), "status"),
     )
     return ScanStatus(
         id=scan.id,
