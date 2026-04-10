@@ -7,6 +7,7 @@ from datetime import datetime, timedelta, timezone
 import hashlib
 import hmac
 import logging
+import re
 import secrets
 from typing import Any, Dict, Optional
 
@@ -23,6 +24,10 @@ from config import settings
 pwd_context = CryptContext(schemes=["argon2", "bcrypt"], deprecated="auto")
 
 audit_logger = structlog.get_logger("vap.audit")
+_SENSITIVE_KEY_RE = re.compile(
+    r"(password|secret|token|api[_-]?key|authorization|cookie|session|credential)",
+    re.IGNORECASE,
+)
 
 
 def configure_structlog() -> None:
@@ -63,6 +68,28 @@ def redact_api_key(raw_key: Optional[str]) -> str:
         return ""
     digest = hashlib.sha256(raw_key.encode("utf-8")).hexdigest()
     return f"sha256:{digest[:10]}"
+
+
+def redact_sensitive_data(data: Any) -> Any:
+    """Recursively redact sensitive values in nested payloads."""
+    if isinstance(data, dict):
+        redacted: Dict[Any, Any] = {}
+        for key, value in data.items():
+            key_text = str(key)
+            if _SENSITIVE_KEY_RE.search(key_text):
+                lower_key = key_text.lower()
+                if "api" in lower_key and "key" in lower_key:
+                    redacted[key] = redact_api_key(str(value)) if value else ""
+                else:
+                    redacted[key] = "<redacted>"
+                continue
+            redacted[key] = redact_sensitive_data(value)
+        return redacted
+    if isinstance(data, list):
+        return [redact_sensitive_data(item) for item in data]
+    if isinstance(data, tuple):
+        return tuple(redact_sensitive_data(item) for item in data)
+    return data
 
 
 csrf_serializer = URLSafeTimedSerializer(settings.csrf_secret, salt="vap-csrf")
@@ -123,7 +150,7 @@ def get_request_ip(request: Request) -> str:
 def log_audit_event(event: str, request: Optional[Request] = None, **data: Any) -> None:
     if not settings.audit_logging_enabled:
         return
-    payload = dict(data)
+    payload = redact_sensitive_data(dict(data))
     if request:
         payload.update(
             {

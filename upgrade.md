@@ -107,7 +107,7 @@ Creare un piano operativo **didattico e incrementale** per trasformare VAP in un
 
 - [ ] **C3. Secret management hardening**
   - [x] Nessun segreto in chiaro in output API di snapshot/preset configurazione (mascheramento server-side dei campi auth sensibili).
-  - [ ] Nessun segreto in chiaro in form/log/report.
+  - [x] Nessun segreto in chiaro in form/log/report.
   - Mascheramento forte e rotazione chiavi guidata.
 
 - [ ] **C4. Security regression suite estesa**

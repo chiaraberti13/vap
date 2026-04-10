@@ -28,6 +28,7 @@ from reportlab.graphics.charts.barcharts import VerticalBarChart
 from reportlab.graphics.charts.piecharts import Pie
 
 from config import settings
+from security import redact_sensitive_data
 
 # ── Palette ────────────────────────────────────────────────────────────────────
 BRAND_DARK   = colors.HexColor("#1a2e4a")
@@ -992,7 +993,7 @@ def _scan_parameters_rows(
     scan_parameters: Optional[Dict[str, Any]],
 ) -> List[Tuple[str, str]]:
     """Return ordered scan parameters required by the report specification."""
-    params = scan_parameters or {}
+    params = redact_sensitive_data(scan_parameters or {})
     def _stringify(value: Any, fallback: str = "—") -> str:
         if value is None:
             return fallback
