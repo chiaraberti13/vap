@@ -2412,6 +2412,12 @@ def get_scan_configuration_snapshot(
             status_code=500,
             detail="Snapshot configurazione corrotto: impossibile ricostruire la scansione.",
         ) from exc
+    expected_checksum = checksum_scan_config_v1(scan_config)
+    if expected_checksum != scan.scan_configuration_checksum:
+        raise HTTPException(
+            status_code=500,
+            detail="Snapshot configurazione corrotto: checksum non valido.",
+        )
     return ScanConfigurationSnapshot(
         schema_version=scan.scan_configuration_version,
         checksum=scan.scan_configuration_checksum,
@@ -2421,6 +2427,12 @@ def get_scan_configuration_snapshot(
 
 def _serialize_scan_configuration_preset(preset: ScanConfigurationPreset) -> ScanConfigurationPresetStatus:
     parsed_configuration = ScanConfigurationV1.model_validate_json(preset.config_json)
+    expected_checksum = checksum_scan_config_v1(parsed_configuration)
+    if expected_checksum != preset.config_checksum:
+        raise HTTPException(
+            status_code=500,
+            detail="Preset configurazione corrotto: checksum non valido.",
+        )
     return ScanConfigurationPresetStatus(
         id=preset.id,
         name=preset.name,

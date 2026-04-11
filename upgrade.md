@@ -69,9 +69,9 @@ Creare un piano operativo **didattico e incrementale** per trasformare VAP in un
   - [x] Safe mode obbligatorio per ruoli non admin (depth/payload cap).
   - [x] Kill switch globale su nuove scansioni + auto-abort su pattern anomali (alto tasso errori scanner).
 
-- [ ] **A4. Persistenza configurazioni e profili utente**
+- [x] **A4. Persistenza configurazioni e profili utente**
   - [x] Salvare preset personalizzati (“Baseline didattica”, “OWASP top focus”, “WordPress deep”).
-  - [x] Versioning + checksum config per reproducibility (snapshot configurazione salvato per ogni scansione con endpoint dedicato di retrieval).
+  - [x] Versioning + checksum config per reproducibility (snapshot configurazione salvato per ogni scansione con endpoint dedicato di retrieval + verifica checksum server-side su snapshot/preset per intercettare tampering).
 
 ## Fase B — UX didattica e configurazione guidata (P0/P1)
 - [ ] **B1. Nuovo “Scan Builder” multi-step**
