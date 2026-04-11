@@ -185,6 +185,7 @@ def test_scan_configuration_snapshot_is_persisted_and_retrievable(monkeypatch):
     with TestClient(app.app) as client:
         create_response = client.post(
             "/api/v1/scans",
+            headers={"x-data-subject": "student-alpha"},
             json={
                 "target": "example.com",
                 "scan_type": "full",
@@ -201,7 +202,10 @@ def test_scan_configuration_snapshot_is_persisted_and_retrievable(monkeypatch):
         assert create_response.status_code == 200
         scan_id = create_response.json()["id"]
 
-        snapshot_response = client.get(f"/api/v1/scans/{scan_id}/configuration")
+        snapshot_response = client.get(
+            f"/api/v1/scans/{scan_id}/configuration",
+            headers={"x-data-subject": "student-alpha"},
+        )
 
     assert snapshot_response.status_code == 200
     snapshot_payload = snapshot_response.json()
@@ -210,6 +214,55 @@ def test_scan_configuration_snapshot_is_persisted_and_retrievable(monkeypatch):
     assert snapshot_payload["configuration"]["crawler"]["max_depth"] == 2
     assert snapshot_payload["configuration"]["runtime"]["requests_per_minute"] == 80
     assert snapshot_payload["configuration"]["auth"]["bearer_token"] == "********"
+    app.app.dependency_overrides.clear()
+
+
+def test_scan_configuration_snapshot_rejects_checksum_tampering(monkeypatch):
+    _clear_scans()
+    app.app.dependency_overrides[app.enforce_api_key] = lambda: None
+    app.app.dependency_overrides[app.enforce_operator_role] = lambda: "operator"
+    app.app.dependency_overrides[app.enforce_viewer_role] = lambda: "viewer"
+
+    class DummyResult:
+        id = "dummy-task"
+
+    def fake_apply_async(*_args, **_kwargs):
+        return DummyResult()
+
+    monkeypatch.setattr(app.orchestrate_scan, "apply_async", fake_apply_async)
+
+    with TestClient(app.app) as client:
+        create_response = client.post(
+            "/api/v1/scans",
+            headers={"x-data-subject": "student-alpha"},
+            json={
+                "target": "example.com",
+                "scan_type": "full",
+                "priority": 3,
+                "accept_privacy": True,
+                "accept_terms": True,
+                "scan_configuration": {
+                    "runtime": {"requests_per_minute": 70, "max_concurrency": 2, "request_timeout_seconds": 25},
+                },
+            },
+        )
+        assert create_response.status_code == 200
+        scan_id = create_response.json()["id"]
+
+    with SessionLocal() as session:
+        stored_scan = session.query(Scan).filter(Scan.id == scan_id).first()
+        assert stored_scan is not None
+        stored_scan.scan_configuration_checksum = "0" * 64
+        session.commit()
+
+    with TestClient(app.app) as client:
+        snapshot_response = client.get(
+            f"/api/v1/scans/{scan_id}/configuration",
+            headers={"x-data-subject": "student-alpha"},
+        )
+
+    assert snapshot_response.status_code == 500
+    assert snapshot_response.json()["detail"] == "Snapshot configurazione corrotto: checksum non valido."
     app.app.dependency_overrides.clear()
 
 
@@ -444,6 +497,45 @@ def test_scan_configuration_preset_crud_and_subject_isolation():
         )
         assert delete_response.status_code == 204
 
+    app.app.dependency_overrides.clear()
+
+
+def test_scan_configuration_preset_list_rejects_checksum_tampering():
+    _clear_scans()
+    app.app.dependency_overrides[app.enforce_api_key] = lambda: None
+    app.app.dependency_overrides[app.enforce_operator_role] = lambda: "operator"
+    app.app.dependency_overrides[app.enforce_viewer_role] = lambda: "viewer"
+
+    with TestClient(app.app) as client:
+        create_response = client.post(
+            "/api/v1/scan-config/presets",
+            json={
+                "name": "Preset integrity",
+                "scan_type": "full",
+                "configuration": {
+                    "runtime": {"requests_per_minute": 40, "max_concurrency": 2, "request_timeout_seconds": 20},
+                },
+            },
+            cookies={app.settings.csrf_cookie_name: "tkn"},
+            headers={"x-csrf-token": "tkn", "x-data-subject": "student-alpha"},
+        )
+        assert create_response.status_code == 200
+        preset_id = create_response.json()["id"]
+
+    with SessionLocal() as session:
+        preset = session.query(ScanConfigurationPreset).filter(ScanConfigurationPreset.id == preset_id).first()
+        assert preset is not None
+        preset.config_checksum = "f" * 64
+        session.commit()
+
+    with TestClient(app.app) as client:
+        list_response = client.get(
+            "/api/v1/scan-config/presets",
+            headers={"x-data-subject": "student-alpha"},
+        )
+
+    assert list_response.status_code == 500
+    assert list_response.json()["detail"] == "Preset configurazione corrotto: checksum non valido."
     app.app.dependency_overrides.clear()
 
 
