@@ -105,7 +105,7 @@ Creare un piano operativo **didattico e incrementale** per trasformare VAP in un
 - [x] **C2. Approval workflow per scansioni ad alto rischio**
   - Double-confirmation + eventuale approvazione admin.
 
-- [ ] **C3. Secret management hardening**
+- [x] **C3. Secret management hardening**
   - [x] Nessun segreto in chiaro in output API di snapshot/preset configurazione (mascheramento server-side dei campi auth sensibili).
   - [x] Nessun segreto in chiaro in form/log/report.
   - [x] Mascheramento forte e rotazione chiavi guidata.
@@ -143,6 +143,7 @@ Creare un piano operativo **didattico e incrementale** per trasformare VAP in un
 - [ ] Necessità di uniformare ulteriormente copywriting tecnico tra UI, catalogo e PDF.
 - [ ] Mancanza di una governance esplicita “scan config lifecycle” (draft/review/approved/deprecated).
 - [ ] Test regressione CSP disallineato (`tests/test_security_headers.py::test_csp_disallows_inline_scripts_by_default`): il test si aspetta `https://cdn.tailwindcss.com`, ma la policy corrente usa solo script locali (confermato anche nel run completo del 2026-04-09).
+- [ ] Test integrazione flakey su approval high-risk (`tests/test_api_integration.py::test_create_scan_non_admin_high_risk_requires_admin_approval_reference`): il secondo POST nello stesso test può ricevere `429 Too Many Requests` per interferenza del rate limiter condiviso (rilevato nel run completo del 2026-04-12).
 
 ---
 
