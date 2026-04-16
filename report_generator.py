@@ -273,6 +273,116 @@ def _build_executive_kpi_strip(counts: Counter, total_findings: int, risk_level:
     return kpi_table
 
 
+def _build_severity_heatmap_table(counts: Counter, ss: Any) -> Table:
+    """Render a compact severity heatmap suitable for the executive page."""
+    thresholds = [
+        ("critical", 1, 3),
+        ("high", 3, 6),
+        ("medium", 5, 10),
+        ("low", 8, 20),
+        ("info", 10, 30),
+    ]
+
+    def _band_for(severity: str, count: int) -> Tuple[str, colors.Color]:
+        _, medium_threshold, high_threshold = next(
+            (entry for entry in thresholds if entry[0] == severity),
+            (severity, 1, 3),
+        )
+        if count <= 0:
+            return ("None", colors.HexColor("#f8fafc"))
+        if count < medium_threshold:
+            return ("Low", colors.HexColor("#dcfce7"))
+        if count < high_threshold:
+            return ("Medium", colors.HexColor("#fef3c7"))
+        return ("High", colors.HexColor("#fee2e2"))
+
+    rows: List[List[Any]] = [[
+        Paragraph("Severity", ss["TableHeader"]),
+        Paragraph("Count", ss["TableHeader"]),
+        Paragraph("Exposure band", ss["TableHeader"]),
+    ]]
+    row_backgrounds: List[colors.Color] = [SECTION_BG]
+
+    for severity in SEVERITY_ORDER:
+        count = counts.get(severity, 0)
+        band_label, band_bg = _band_for(severity, count)
+        rows.append([
+            Paragraph(severity.title(), ss["TableCell"]),
+            Paragraph(str(count), ss["TableCell"]),
+            Paragraph(band_label, ss["TableCell"]),
+        ])
+        row_backgrounds.append(band_bg)
+
+    table = Table(rows, colWidths=[4.8 * cm, 2.2 * cm, CONTENT_W - 7.0 * cm])
+    table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), SECTION_BG),
+        ("ROWBACKGROUNDS", (0, 1), (-1, -1), row_backgrounds[1:]),
+        ("BOX", (0, 0), (-1, -1), 0.5, BORDER_COLOR),
+        ("LINEBELOW", (0, 0), (-1, 0), 0.5, BORDER_COLOR),
+        ("LEFTPADDING", (0, 0), (-1, -1), 8),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 8),
+        ("TOPPADDING", (0, 0), (-1, -1), 6),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+        ("ALIGN", (1, 0), (1, -1), "CENTER"),
+    ]))
+    return table
+
+
+def _build_remediation_roadmap(findings: List[Dict[str, Any]], ss: Any, *, limit: int = 5) -> Table:
+    """Build a priority-first remediation roadmap for executive consumption."""
+    if not findings:
+        rows = [[Paragraph("Priority", ss["TableHeader"]), Paragraph("Action", ss["TableHeader"])]]
+        rows.append([Paragraph("—", ss["TableCell"]), Paragraph("No remediation actions required.", ss["TableCell"])])
+        table = Table(rows, colWidths=[2.3 * cm, CONTENT_W - 2.3 * cm])
+        table.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), SECTION_BG),
+            ("BOX", (0, 0), (-1, -1), 0.5, BORDER_COLOR),
+            ("LEFTPADDING", (0, 0), (-1, -1), 8),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 8),
+            ("TOPPADDING", (0, 0), (-1, -1), 6),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+        ]))
+        return table
+
+    sev_rank = {severity: idx for idx, severity in enumerate(SEVERITY_ORDER)}
+    sorted_findings = sorted(
+        findings,
+        key=lambda finding: (
+            sev_rank.get(str(finding.get("severity", "info")).lower(), len(SEVERITY_ORDER)),
+            -_parse_cvss(finding.get("cvss_score") or finding.get("cvss") or -1) if _parse_cvss(finding.get("cvss_score") or finding.get("cvss")) is not None else 1,
+            str(finding.get("title", "")),
+        ),
+    )
+
+    rows: List[List[Any]] = [[
+        Paragraph("Priority", ss["TableHeader"]),
+        Paragraph("Action", ss["TableHeader"]),
+    ]]
+    for index, finding in enumerate(sorted_findings[:limit], start=1):
+        title = str(finding.get("title", "Untitled finding")).strip() or "Untitled finding"
+        recommendation = str(finding.get("recommendation", "")).strip() or "Review finding details and define a mitigation plan."
+        severity = str(finding.get("severity", "info")).lower()
+        priority_label = f"P{index} · {severity.title()}"
+        action_text = f"<b>{html_escape(title)}</b><br/>{html_escape(recommendation)}"
+        rows.append([
+            Paragraph(priority_label, ss["TableCell"]),
+            Paragraph(action_text, ss["TableCell"]),
+        ])
+
+    table = Table(rows, colWidths=[2.3 * cm, CONTENT_W - 2.3 * cm])
+    table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), SECTION_BG),
+        ("BOX", (0, 0), (-1, -1), 0.5, BORDER_COLOR),
+        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, ROW_ALT]),
+        ("LEFTPADDING", (0, 0), (-1, -1), 8),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 8),
+        ("TOPPADDING", (0, 0), (-1, -1), 6),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+    ]))
+    return table
+
+
 def _format_cve_summary(details: Dict[str, Any], fallback_references: List[Any]) -> str:
     summary_parts: List[str] = []
 
@@ -1117,6 +1227,12 @@ def generate_report(
     )
     story.append(Spacer(1, 14))
     story.append(_build_executive_kpi_strip(counts, len(findings), risk_level, ss))
+    story.append(Spacer(1, 12))
+    story.append(Paragraph("Executive severity heatmap", ss["SectionHeader"]))
+    story.append(_build_severity_heatmap_table(counts, ss))
+    story.append(Spacer(1, 10))
+    story.append(Paragraph("Remediation roadmap (top priorities)", ss["SectionHeader"]))
+    story.append(_build_remediation_roadmap(sorted_findings, ss, limit=5))
     story.append(Spacer(1, 12))
 
     # ── Summary ────────────────────────────────────────────────────────

@@ -116,7 +116,7 @@ Creare un piano operativo **didattico e incrementale** per trasformare VAP in un
   - [x] Test policy bypass e privilege escalation.
 
 ## Fase D — Reporting PDF/UI (P1)
-- [ ] **D1. Nuovo template PDF minimal/professional**
+- [x] **D1. Nuovo template PDF minimal/professional**
   - Copertina pulita, sommario executive 1 pagina, severity heatmap, remediation roadmap by priority.
 
 - [ ] **D2. Report didattico dual-layer**
@@ -158,6 +158,6 @@ Un task è completato solo se:
 ---
 
 ## 6) Primo task consigliato (prossimo ciclo)
-**C4 — completare test policy bypass e privilege escalation**.
+**D2 — Report didattico dual-layer (executive + tecnico)**.
 
-Motivo: anti-IDOR e fuzzing sono ora coperti; resta l'ultima porzione critica della suite di regressione sicurezza per chiudere C4.
+Motivo: dopo l'introduzione del template minimal/professional in D1, il passo successivo naturale è separare in modo esplicito il layer manageriale dal layer tecnico con evidenze e validazione operativa.
