@@ -1,4 +1,7 @@
 from report_generator import (
+    _build_remediation_roadmap,
+    _build_severity_heatmap_table,
+    _build_styles,
     _ensure_list,
     _is_technology_finding,
     _normalize_cve_details,
@@ -118,3 +121,30 @@ def test_normalize_technologies_filters_non_dict_entries():
     ])
 
     assert normalized == [{"software": "nginx", "version": "1.26", "category": "Web Server"}]
+
+
+def test_build_severity_heatmap_table_includes_expected_rows():
+    ss = _build_styles()
+    table = _build_severity_heatmap_table({"critical": 2, "high": 1, "info": 5}, ss)
+    rendered_rows = table._cellvalues
+
+    assert rendered_rows[0][0].getPlainText() == "Severity"
+    assert len(rendered_rows) == 6
+    assert rendered_rows[1][0].getPlainText() == "Critical"
+    assert rendered_rows[1][1].getPlainText() == "2"
+
+
+def test_build_remediation_roadmap_orders_highest_severity_first():
+    ss = _build_styles()
+    findings = [
+        {"title": "Informational banner", "severity": "info", "recommendation": "No action."},
+        {"title": "SQL Injection", "severity": "critical", "recommendation": "Use parameterized queries."},
+        {"title": "Weak CSP", "severity": "medium", "recommendation": "Tighten script-src policy."},
+    ]
+
+    table = _build_remediation_roadmap(findings, ss, limit=2)
+    rendered_rows = table._cellvalues
+
+    assert len(rendered_rows) == 3
+    assert rendered_rows[1][0].getPlainText() == "P1 · Critical"
+    assert "SQL Injection" in rendered_rows[1][1].getPlainText()
