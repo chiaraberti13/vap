@@ -130,7 +130,7 @@ Creare un piano operativo **didattico e incrementale** per trasformare VAP in un
   - [x] Copertura test dedicata per garantire coerenza token UI/PDF nel tempo.
 
 ## Fase E — Osservabilità e qualità continua (P1/P2)
-- [ ] **E1. Telemetria UX del funnel Scan Builder**
+- [x] **E1. Telemetria UX del funnel Scan Builder**
   - Drop-off per step, errori frequenti, tempo decisionale.
 
 - [ ] **E2. KPI didattici**
@@ -161,6 +161,6 @@ Un task è completato solo se:
 ---
 
 ## 6) Primo task consigliato (prossimo ciclo)
-**E1 — Telemetria UX del funnel Scan Builder**.
+**E2 — KPI didattici**.
 
-Motivo: completata la coerenza visiva UI/PDF (D3), il miglior investimento successivo è misurare drop-off/errori per step così da guidare iterazioni UX basate su dati reali.
+Motivo: dopo l'introduzione della telemetria funnel (E1) conviene misurare outcome formativi (quiz accuracy, false positive confermati, time-to-remediation) per guidare la roadmap didattica su evidenze.

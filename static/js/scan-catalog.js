@@ -129,6 +129,41 @@
   let selectedModules = new Set();
   let advancedModuleConfig = {};
   const totalSteps = stepPanels.length;
+  const csrfTokenInput = guidedForm.querySelector("input[name='csrf_token']");
+  const telemetrySessionId =
+    window.crypto?.randomUUID?.() ||
+    `sb-${Date.now()}-${Math.random().toString(16).slice(2, 10)}`;
+  let stepEnteredAtMs = performance.now();
+  let lastValidationErrorCount = 0;
+
+  function sendScanBuilderTelemetry(eventType, overrides = {}) {
+    const payload = {
+      session_id: telemetrySessionId,
+      step: overrides.step || currentStep,
+      event_type: eventType,
+      didactic_mode: selectedDidacticMode(),
+      ...overrides,
+    };
+    if (!csrfTokenInput?.value) {
+      return;
+    }
+    fetch("/api/v1/telemetry/scan-builder", {
+      method: "POST",
+      credentials: "same-origin",
+      keepalive: true,
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRF-Token": csrfTokenInput.value,
+      },
+      body: JSON.stringify(payload),
+    }).catch(() => {
+      // Telemetria best-effort: non deve alterare UX o flusso scansione.
+    });
+  }
+
+  function elapsedStepDecisionTimeMs() {
+    return Math.max(0, Math.round(performance.now() - stepEnteredAtMs));
+  }
 
   function setFieldValidationState(field, hasError) {
     if (!field) {
@@ -835,11 +870,13 @@
     }
 
     if (messages.length === 0) {
+      lastValidationErrorCount = 0;
       errorSummary.classList.add("hidden");
       errorSummaryList.innerHTML = "";
       return true;
     }
 
+    lastValidationErrorCount = messages.length;
     errorSummaryList.innerHTML = "";
     messages.forEach((message) => {
       const listItem = document.createElement("li");
@@ -853,22 +890,45 @@
 
   stepNext.addEventListener("click", () => {
     if (!validateCurrentStep()) {
+      sendScanBuilderTelemetry("validation_error", {
+        validation_errors_count: lastValidationErrorCount,
+      });
       return;
     }
+    sendScanBuilderTelemetry("step_advance", {
+      decision_time_ms: elapsedStepDecisionTimeMs(),
+    });
     currentStep = Math.min(totalSteps, currentStep + 1);
+    stepEnteredAtMs = performance.now();
+    sendScanBuilderTelemetry("step_view");
     updateStepperUi();
   });
 
   stepPrev.addEventListener("click", () => {
+    sendScanBuilderTelemetry("step_back", {
+      decision_time_ms: elapsedStepDecisionTimeMs(),
+    });
     currentStep = Math.max(1, currentStep - 1);
+    stepEnteredAtMs = performance.now();
+    sendScanBuilderTelemetry("step_view");
     updateStepperUi();
   });
 
-  guidedForm.addEventListener("submit", () => {
+  guidedForm.addEventListener("submit", (event) => {
     if (!validateSteps([1, 2, 3, 5])) {
+      event.preventDefault();
+      sendScanBuilderTelemetry("validation_error", {
+        step: currentStep,
+        validation_errors_count: lastValidationErrorCount,
+      });
       return;
     }
+    sendScanBuilderTelemetry("submit", {
+      step: 5,
+      decision_time_ms: elapsedStepDecisionTimeMs(),
+    });
     currentStep = 5;
+    stepEnteredAtMs = performance.now();
     updateStepperUi();
   });
 
@@ -930,4 +990,5 @@
   applyDidacticModeGuidance();
   updateStepperUi();
   updateCompareToggleUi();
+  sendScanBuilderTelemetry("step_view", { step: 1 });
 })();
