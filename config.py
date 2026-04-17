@@ -240,6 +240,8 @@ class Settings:
     scan_guardrails_safe_mode_max_depth: int = int(os.getenv("VAP_SCAN_GUARDRAILS_SAFE_MAX_DEPTH", "2"))
     scan_guardrails_safe_mode_max_payloads: int = int(os.getenv("VAP_SCAN_GUARDRAILS_SAFE_MAX_PAYLOADS", "80"))
     scan_guardrails_auto_abort_error_threshold: int = int(os.getenv("VAP_SCAN_GUARDRAILS_AUTO_ABORT_ERRORS", "3"))
+    scan_runtime_sla_seconds: int = int(os.getenv("VAP_SCAN_RUNTIME_SLA_SECONDS", "900"))
+    report_render_sla_seconds: int = int(os.getenv("VAP_REPORT_RENDER_SLA_SECONDS", "20"))
     ui_guided_scan_explorer_enabled: bool = os.getenv("VAP_UI_GUIDED_SCAN_EXPLORER_ENABLED", "true").lower() == "true"
     # ── Telemetria centralizzata ──────────────────────────────────────────────
     # Prometheus remote-write: esporta metriche a Prometheus/Thanos/Mimir.
