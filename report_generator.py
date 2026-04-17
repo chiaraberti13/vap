@@ -510,6 +510,40 @@ def _is_technology_finding(finding: Dict[str, Any]) -> bool:
     )
 
 
+def _validation_steps_for_finding(finding: Dict[str, Any]) -> List[str]:
+    """Return normalized validation steps for technical verification workflows."""
+    raw_steps = finding.get("validation_steps")
+    steps: List[str] = []
+
+    if isinstance(raw_steps, list):
+        steps = [str(step).strip() for step in raw_steps if str(step).strip()]
+    elif isinstance(raw_steps, str) and raw_steps.strip():
+        steps = [raw_steps.strip()]
+
+    if steps:
+        return steps[:5]
+
+    fallback_fields = [
+        ("method", "Re-run request with method"),
+        ("url", "Verify affected endpoint"),
+        ("parameters", "Confirm affected parameters"),
+    ]
+    for field_name, prefix in fallback_fields:
+        value = finding.get(field_name)
+        if isinstance(value, list):
+            value = ", ".join(str(item).strip() for item in value if str(item).strip())
+        value_text = str(value or "").strip()
+        if value_text:
+            steps.append(f"{prefix}: {value_text}")
+
+    if finding.get("evidence"):
+        steps.append("Cross-check scanner evidence and reproduce on staging before remediation.")
+    if finding.get("recommendation"):
+        steps.append("After remediation, execute a focused re-scan to confirm closure.")
+
+    return steps[:5]
+
+
 def _scan_type_label(scan_type: str) -> str:
     labels = {
         "light": "Light (surface checks only)",
@@ -814,6 +848,7 @@ def _build_finding_card(finding: Dict[str, Any], ss: Any) -> List[Any]:
     epss_score = finding.get("epss_score")
     epss_percentile = finding.get("epss_percentile")
     cisa_kev = finding.get("cisa_kev")
+    validation_steps = _validation_steps_for_finding(finding)
 
     STRIP_W   = 0.35 * cm
     INNER_W   = CONTENT_W - STRIP_W
@@ -929,6 +964,11 @@ def _build_finding_card(finding: Dict[str, Any], ss: Any) -> List[Any]:
         body_rows.append([Paragraph("<b>Classification:</b>", ss["SmallBold"])])
         for line in classify_lines:
             body_rows.append([Paragraph(html_escape(line), ss["Small"])])
+
+    if validation_steps:
+        body_rows.append([Paragraph("<b>Validation steps:</b>", ss["SmallBold"])])
+        for index, step in enumerate(validation_steps, start=1):
+            body_rows.append([Paragraph(f"{index}. {html_escape(step)}", ss["Small"])])
 
     if cve_list:
         cve_rows = [[
@@ -1226,6 +1266,12 @@ def generate_report(
         )
     )
     story.append(Spacer(1, 14))
+    story.append(Paragraph("Layer 1 — Executive view", ss["SectionHeader"]))
+    story.append(Paragraph(
+        "Managerial overview focused on risk posture, impact concentration and remediation priorities.",
+        ss["BodyMuted"],
+    ))
+    story.append(Spacer(1, 6))
     story.append(_build_executive_kpi_strip(counts, len(findings), risk_level, ss))
     story.append(Spacer(1, 12))
     story.append(Paragraph("Executive severity heatmap", ss["SectionHeader"]))
@@ -1294,8 +1340,38 @@ def generate_report(
         story.append(owasp_tbl)
         story.append(Spacer(1, 12))
 
-    # ── Findings ───────────────────────────────────────────────────────
+    # ── Technical layer ────────────────────────────────────────────────
     story.append(PageBreak())
+    story.append(Paragraph("Layer 2 — Technical evidence", ss["SectionHeader"]))
+    story.append(Paragraph(
+        (
+            "Full technical appendix with evidence, classification metadata and validation steps "
+            "to support triage, remediation and re-test."
+        ),
+        ss["BodyMuted"],
+    ))
+    story.append(Spacer(1, 4))
+    story.append(Paragraph("Validation checklist", ss["SubHeader"]))
+    checklist_rows = [
+        [Paragraph("Step", ss["TableHeader"]), Paragraph("Objective", ss["TableHeader"])],
+        [Paragraph("1", ss["TableCell"]), Paragraph("Confirm URL, method and parameters impacted by the finding.", ss["TableCell"])],
+        [Paragraph("2", ss["TableCell"]), Paragraph("Reproduce evidence in a controlled environment with least-privilege credentials.", ss["TableCell"])],
+        [Paragraph("3", ss["TableCell"]), Paragraph("Apply remediation and run focused re-test to verify closure.", ss["TableCell"])],
+    ]
+    checklist_table = Table(checklist_rows, colWidths=[1.2 * cm, CONTENT_W - 1.2 * cm])
+    checklist_table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), SECTION_BG),
+        ("BOX", (0, 0), (-1, -1), 0.5, BORDER_COLOR),
+        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, ROW_ALT]),
+        ("LEFTPADDING", (0, 0), (-1, -1), 8),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 8),
+        ("TOPPADDING", (0, 0), (-1, -1), 6),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("ALIGN", (0, 0), (0, -1), "CENTER"),
+    ]))
+    story.append(checklist_table)
+    story.append(Spacer(1, 8))
     story.append(Paragraph("Findings", ss["SectionHeader"]))
     story.append(Spacer(1, 4))
 
