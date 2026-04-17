@@ -123,8 +123,11 @@ Creare un piano operativo **didattico e incrementale** per trasformare VAP in un
   - [x] Layer 1: executive (manageriale) con sezione dedicata esplicita nel PDF.
   - [x] Layer 2: tecnico con evidenze complete e passi di validazione (checklist + validation steps per finding).
 
-- [ ] **D3. Design tokens condivisi UI/PDF**
-  - Palette, tipografia, spacing coerenti in tutta la piattaforma.
+- [x] **D3. Design tokens condivisi UI/PDF**
+  - [x] Introdotto catalogo token condiviso (`design_tokens.py`) per palette, tipografia, spacing e severity.
+  - [x] UI aggiornata con stylesheet dedicato (`/static/css/design-tokens.css`) caricato in tutte le viste HTML prima di `style.css`.
+  - [x] PDF generator allineato ai token condivisi (rimozione valori hardcoded duplicati).
+  - [x] Copertura test dedicata per garantire coerenza token UI/PDF nel tempo.
 
 ## Fase E — Osservabilità e qualità continua (P1/P2)
 - [ ] **E1. Telemetria UX del funnel Scan Builder**
@@ -158,6 +161,6 @@ Un task è completato solo se:
 ---
 
 ## 6) Primo task consigliato (prossimo ciclo)
-**D3 — Design tokens condivisi UI/PDF**.
+**E1 — Telemetria UX del funnel Scan Builder**.
 
-Motivo: con D2 completato, il passo successivo naturale è uniformare palette, tipografia e spacing tra interfaccia web e report PDF per coerenza visuale e riduzione debito di design.
+Motivo: completata la coerenza visiva UI/PDF (D3), il miglior investimento successivo è misurare drop-off/errori per step così da guidare iterazioni UX basate su dati reali.
