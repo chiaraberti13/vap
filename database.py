@@ -167,6 +167,7 @@ class ScanConfigurationPreset(Base):
     __tablename__ = "scan_configuration_presets"
     __table_args__ = (
         Index("ix_scan_config_presets_subject", "subject_id"),
+        Index("ix_scan_config_presets_subject_lifecycle", "subject_id", "lifecycle_state"),
         Index("ix_scan_config_presets_scan_type", "scan_type"),
         Index("ix_scan_config_presets_created_at", "created_at"),
     )
@@ -176,6 +177,7 @@ class ScanConfigurationPreset(Base):
     name = Column(String(80), nullable=False)
     description = Column(String(255), nullable=True)
     scan_type = Column(String(50), nullable=False)
+    lifecycle_state = Column(String(20), nullable=False, default="draft")
     config_json = Column(Text, nullable=False)
     config_version = Column(String(32), nullable=False)
     config_checksum = Column(String(64), nullable=False)
@@ -211,29 +213,54 @@ def _migrate_scan_configuration_presets_table(conn) -> None:
     """Create scan_configuration_presets table on legacy environments (idempotent)."""
     inspector = inspect(conn)
     table_names = set(inspector.get_table_names())
-    if "scan_configuration_presets" in table_names:
-        return
-    conn.execute(
-        text(
-            """
-            CREATE TABLE scan_configuration_presets (
-                id INTEGER PRIMARY KEY,
-                subject_id VARCHAR(64) NOT NULL,
-                name VARCHAR(80) NOT NULL,
-                description VARCHAR(255),
-                scan_type VARCHAR(50) NOT NULL,
-                config_json TEXT NOT NULL,
-                config_version VARCHAR(32) NOT NULL,
-                config_checksum VARCHAR(64) NOT NULL,
-                created_at DATETIME NOT NULL,
-                updated_at DATETIME NOT NULL
+    if "scan_configuration_presets" not in table_names:
+        conn.execute(
+            text(
+                """
+                CREATE TABLE scan_configuration_presets (
+                    id INTEGER PRIMARY KEY,
+                    subject_id VARCHAR(64) NOT NULL,
+                    name VARCHAR(80) NOT NULL,
+                    description VARCHAR(255),
+                    scan_type VARCHAR(50) NOT NULL,
+                    lifecycle_state VARCHAR(20) NOT NULL DEFAULT 'draft',
+                    config_json TEXT NOT NULL,
+                    config_version VARCHAR(32) NOT NULL,
+                    config_checksum VARCHAR(64) NOT NULL,
+                    created_at DATETIME NOT NULL,
+                    updated_at DATETIME NOT NULL
+                )
+                """
             )
-            """
         )
-    )
-    conn.execute(text("CREATE INDEX ix_scan_config_presets_subject ON scan_configuration_presets (subject_id)"))
-    conn.execute(text("CREATE INDEX ix_scan_config_presets_scan_type ON scan_configuration_presets (scan_type)"))
-    conn.execute(text("CREATE INDEX ix_scan_config_presets_created_at ON scan_configuration_presets (created_at)"))
+        conn.execute(text("CREATE INDEX ix_scan_config_presets_subject ON scan_configuration_presets (subject_id)"))
+        conn.execute(text("CREATE INDEX ix_scan_config_presets_scan_type ON scan_configuration_presets (scan_type)"))
+        conn.execute(text("CREATE INDEX ix_scan_config_presets_created_at ON scan_configuration_presets (created_at)"))
+        conn.execute(
+            text(
+                "CREATE INDEX ix_scan_config_presets_subject_lifecycle "
+                "ON scan_configuration_presets (subject_id, lifecycle_state)"
+            )
+        )
+        return
+
+    existing_columns = {col["name"] for col in inspector.get_columns("scan_configuration_presets")}
+    if "lifecycle_state" not in existing_columns:
+        conn.execute(
+            text(
+                "ALTER TABLE scan_configuration_presets "
+                "ADD COLUMN lifecycle_state VARCHAR(20) NOT NULL DEFAULT 'draft'"
+            )
+        )
+
+    existing_indexes = {index["name"] for index in inspector.get_indexes("scan_configuration_presets")}
+    if "ix_scan_config_presets_subject_lifecycle" not in existing_indexes:
+        conn.execute(
+            text(
+                "CREATE INDEX ix_scan_config_presets_subject_lifecycle "
+                "ON scan_configuration_presets (subject_id, lifecycle_state)"
+            )
+        )
 
 
 def _run_alembic_upgrade() -> bool:

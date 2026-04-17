@@ -470,6 +470,7 @@ def test_scan_configuration_preset_crud_and_subject_isolation():
         created_payload = create_response.json()
         preset_id = created_payload["id"]
         assert created_payload["scan_type"] == "full"
+        assert created_payload["lifecycle_state"] == "draft"
         assert created_payload["configuration"]["crawler"]["max_depth"] == 1
         assert created_payload["configuration"]["auth"]["password"] == "********"
 
@@ -482,6 +483,7 @@ def test_scan_configuration_preset_crud_and_subject_isolation():
         assert len(listed) == 1
         assert listed[0]["id"] == preset_id
         assert listed[0]["name"] == "Baseline didattica"
+        assert listed[0]["lifecycle_state"] == "draft"
         assert listed[0]["configuration"]["auth"]["password"] == "********"
 
         unauthorized_delete = client.delete(
@@ -537,6 +539,106 @@ def test_scan_configuration_preset_list_rejects_checksum_tampering():
 
     assert list_response.status_code == 500
     assert list_response.json()["detail"] == "Preset configurazione corrotto: checksum non valido."
+    app.app.dependency_overrides.clear()
+
+
+def test_scan_configuration_preset_lifecycle_requires_admin_for_approval():
+    _clear_scans()
+    app.app.dependency_overrides[app.enforce_api_key] = lambda: None
+    app.app.dependency_overrides[app.enforce_operator_role] = lambda: "operator"
+    app.app.dependency_overrides[app.enforce_viewer_role] = lambda: "viewer"
+
+    with TestClient(app.app) as client:
+        create_response = client.post(
+            "/api/v1/scan-config/presets",
+            json={
+                "name": "Preset governance",
+                "scan_type": "full",
+                "configuration": {"runtime": {"requests_per_minute": 45}},
+            },
+            cookies={app.settings.csrf_cookie_name: "tkn"},
+            headers={"x-csrf-token": "tkn", "x-data-subject": "team-alpha"},
+        )
+        assert create_response.status_code == 200
+        preset_id = create_response.json()["id"]
+
+        to_review_response = client.patch(
+            f"/api/v1/scan-config/presets/{preset_id}/lifecycle",
+            json={"lifecycle_state": "review"},
+            cookies={app.settings.csrf_cookie_name: "tkn-2"},
+            headers={"x-csrf-token": "tkn-2", "x-data-subject": "team-alpha"},
+        )
+        assert to_review_response.status_code == 200
+        assert to_review_response.json()["lifecycle_state"] == "review"
+
+        to_approved_response = client.patch(
+            f"/api/v1/scan-config/presets/{preset_id}/lifecycle",
+            json={"lifecycle_state": "approved"},
+            cookies={app.settings.csrf_cookie_name: "tkn-3"},
+            headers={"x-csrf-token": "tkn-3", "x-data-subject": "team-alpha"},
+        )
+        assert to_approved_response.status_code == 403
+        assert to_approved_response.json()["detail"] == "Solo gli admin possono approvare un preset in stato review."
+
+    app.app.dependency_overrides.clear()
+
+
+def test_scan_configuration_preset_lifecycle_filters_and_transition_flow_for_admin():
+    _clear_scans()
+    app.app.dependency_overrides[app.enforce_api_key] = lambda: None
+    app.app.dependency_overrides[app.enforce_operator_role] = lambda: "admin"
+    app.app.dependency_overrides[app.enforce_viewer_role] = lambda: "viewer"
+
+    with TestClient(app.app) as client:
+        create_response = client.post(
+            "/api/v1/scan-config/presets",
+            json={
+                "name": "Preset lifecycle completo",
+                "scan_type": "full",
+                "configuration": {"runtime": {"requests_per_minute": 55}},
+            },
+            cookies={app.settings.csrf_cookie_name: "tkn-admin"},
+            headers={"x-csrf-token": "tkn-admin", "x-data-subject": "team-admin"},
+        )
+        assert create_response.status_code == 200
+        preset_id = create_response.json()["id"]
+
+        for state in ("review", "approved", "deprecated"):
+            transition_response = client.patch(
+                f"/api/v1/scan-config/presets/{preset_id}/lifecycle",
+                json={"lifecycle_state": state},
+                cookies={app.settings.csrf_cookie_name: f"csrf-{state}"},
+                headers={"x-csrf-token": f"csrf-{state}", "x-data-subject": "team-admin"},
+            )
+            assert transition_response.status_code == 200
+            assert transition_response.json()["lifecycle_state"] == state
+
+        invalid_transition = client.patch(
+            f"/api/v1/scan-config/presets/{preset_id}/lifecycle",
+            json={"lifecycle_state": "draft"},
+            cookies={app.settings.csrf_cookie_name: "csrf-invalid"},
+            headers={"x-csrf-token": "csrf-invalid", "x-data-subject": "team-admin"},
+        )
+        assert invalid_transition.status_code == 400
+        assert "Transizione lifecycle non consentita" in invalid_transition.json()["detail"]
+
+        approved_filter = client.get(
+            "/api/v1/scan-config/presets?lifecycle_state=approved",
+            headers={"x-data-subject": "team-admin"},
+        )
+        assert approved_filter.status_code == 200
+        assert approved_filter.json() == []
+
+        deprecated_filter = client.get(
+            "/api/v1/scan-config/presets?lifecycle_state=deprecated",
+            headers={"x-data-subject": "team-admin"},
+        )
+        assert deprecated_filter.status_code == 200
+        deprecated_payload = deprecated_filter.json()
+        assert len(deprecated_payload) == 1
+        assert deprecated_payload[0]["id"] == preset_id
+        assert deprecated_payload[0]["lifecycle_state"] == "deprecated"
+
     app.app.dependency_overrides.clear()
 
 
