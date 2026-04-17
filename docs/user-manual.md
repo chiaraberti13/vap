@@ -43,3 +43,15 @@ Se attive, devi includere:
 - JWT Bearer (`Authorization`)
 
 Vedi **Security** per dettagli.
+
+## 6. KPI didattici
+
+Per monitorare l'efficacia del percorso formativo sono disponibili endpoint dedicati (protetti da API key + ruolo viewer/operator/admin):
+
+- `POST /api/v1/learning-quiz-attempts`  
+  Registra un tentativo quiz per modulo (`module_id`, numero domande, risposte corrette, durata).
+- `GET /api/v1/learning-kpis`  
+  Restituisce KPI aggregati per soggetto:
+  - accuratezza quiz;
+  - trend di riduzione dei finding da validare (proxy false positive confermati);
+  - tempo medio di remediation e miglioramento rispetto alla baseline storica.

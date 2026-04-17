@@ -1,5 +1,6 @@
 import json
 import re
+from datetime import datetime, timedelta, timezone
 
 from fastapi.testclient import TestClient
 import pytest
@@ -1851,6 +1852,108 @@ def test_learning_progress_rejects_invalid_path_id():
 
     assert response.status_code == 422
     assert response.json()["detail"] == "path_id non valido."
+    app.app.dependency_overrides.clear()
+
+
+def test_submit_learning_quiz_attempt_records_audit_event():
+    _clear_scans()
+    app.app.dependency_overrides[app.enforce_api_key] = lambda: None
+    app.app.dependency_overrides[app.enforce_viewer_role] = lambda: "viewer"
+
+    with TestClient(app.app) as client:
+        response = client.post(
+            "/api/v1/learning-quiz-attempts",
+            headers={"x-data-subject": "learner-kpi-001"},
+            json={
+                "module_id": "triage-basics",
+                "total_questions": 10,
+                "correct_answers": 8,
+                "attempt_duration_ms": 38000,
+            },
+        )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["module_id"] == "triage-basics"
+    assert payload["accuracy_ratio"] == 0.8
+
+    with SessionLocal() as session:
+        audit_event = (
+            session.query(AuditEvent)
+            .filter(
+                AuditEvent.event == "learning_quiz_submitted",
+                AuditEvent.subject_id == "learner-kpi-001",
+            )
+            .order_by(AuditEvent.id.desc())
+            .first()
+        )
+    assert audit_event is not None
+    metadata = json.loads(audit_event.metadata_json or "{}")
+    assert metadata["correct_answers"] == 8
+    assert metadata["total_questions"] == 10
+    app.app.dependency_overrides.clear()
+
+
+def test_learning_kpis_returns_quiz_and_remediation_metrics():
+    _clear_scans()
+    app.app.dependency_overrides[app.enforce_api_key] = lambda: None
+    app.app.dependency_overrides[app.enforce_viewer_role] = lambda: "viewer"
+
+    now = datetime.now(timezone.utc)
+    with SessionLocal() as session:
+        early_scan = Scan(
+            target="https://kpi.example",
+            scan_type="light",
+            status="completed",
+            data_subject_id="learner-kpi-002",
+            created_at=now - timedelta(hours=10),
+            completed_at=now - timedelta(hours=8),
+            findings_json=json.dumps(
+                [
+                    {"title": "A", "severity": "high", "confirmed": False, "false_positive_label": "alto"},
+                    {"title": "B", "severity": "medium", "confirmed": True},
+                ]
+            ),
+        )
+        recent_scan = Scan(
+            target="https://kpi.example",
+            scan_type="light",
+            status="completed",
+            data_subject_id="learner-kpi-002",
+            created_at=now - timedelta(hours=4),
+            completed_at=now - timedelta(hours=3),
+            findings_json=json.dumps(
+                [
+                    {"title": "C", "severity": "medium", "confirmed": True},
+                    {"title": "D", "severity": "low", "confirmed": True},
+                ]
+            ),
+        )
+        session.add_all([early_scan, recent_scan])
+        session.add(
+            AuditEvent(
+                event="learning_quiz_submitted",
+                subject_id="learner-kpi-002",
+                actor="session:learner-kpi-002",
+                created_at=now,
+                metadata_json=json.dumps({"total_questions": 5, "correct_answers": 4}),
+            )
+        )
+        session.commit()
+
+    with TestClient(app.app) as client:
+        response = client.get(
+            "/api/v1/learning-kpis",
+            headers={"x-data-subject": "learner-kpi-002"},
+        )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["quiz_attempts_total"] == 1
+    assert payload["quiz_accuracy_ratio"] == 0.8
+    assert payload["avg_time_to_remediation_hours"] == 1.5
+    assert payload["time_to_remediation_improvement_ratio"] == 0.5
+    assert payload["false_positive_confirmed_reduction_ratio"] == 1.0
     app.app.dependency_overrides.clear()
 
 
