@@ -28,31 +28,26 @@ from reportlab.graphics.charts.barcharts import VerticalBarChart
 from reportlab.graphics.charts.piecharts import Pie
 
 from config import settings
+from design_tokens import PALETTE, SEVERITY_BG_HEX, SEVERITY_COLORS_HEX
 from security import redact_sensitive_data
 
 # ── Palette ────────────────────────────────────────────────────────────────────
-BRAND_DARK   = colors.HexColor("#1a2e4a")
-BRAND_BLUE   = colors.HexColor("#2563eb")
-LIGHT_BG     = colors.HexColor("#f8fafc")
-BORDER_COLOR = colors.HexColor("#d1d5db")
-TEXT_DARK    = colors.HexColor("#111827")
-TEXT_MUTED   = colors.HexColor("#6b7280")
-SECTION_BG   = colors.HexColor("#f1f5f9")
-ROW_ALT      = colors.HexColor("#f9fafb")
+BRAND_DARK = colors.HexColor(PALETTE.brand_dark)
+BRAND_BLUE = colors.HexColor(PALETTE.brand_blue)
+LIGHT_BG = colors.HexColor(PALETTE.light_bg)
+BORDER_COLOR = colors.HexColor(PALETTE.border)
+TEXT_DARK = colors.HexColor(PALETTE.text_dark)
+TEXT_MUTED = colors.HexColor(PALETTE.text_muted)
+SECTION_BG = colors.HexColor(PALETTE.section_bg)
+ROW_ALT = colors.HexColor(PALETTE.row_alt)
 
 SEVERITY_COLORS: Dict[str, colors.Color] = {
-    "critical": colors.HexColor("#dc2626"),
-    "high":     colors.HexColor("#ea580c"),
-    "medium":   colors.HexColor("#d97706"),
-    "low":      colors.HexColor("#2563eb"),
-    "info":     colors.HexColor("#6b7280"),
+    severity: colors.HexColor(color_hex)
+    for severity, color_hex in SEVERITY_COLORS_HEX.items()
 }
 SEVERITY_BG: Dict[str, colors.Color] = {
-    "critical": colors.HexColor("#fef2f2"),
-    "high":     colors.HexColor("#fff7ed"),
-    "medium":   colors.HexColor("#fffbeb"),
-    "low":      colors.HexColor("#eff6ff"),
-    "info":     colors.HexColor("#f9fafb"),
+    severity: colors.HexColor(color_hex)
+    for severity, color_hex in SEVERITY_BG_HEX.items()
 }
 
 SEVERITY_ORDER = ("critical", "high", "medium", "low", "info")
