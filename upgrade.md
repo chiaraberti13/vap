@@ -133,7 +133,7 @@ Creare un piano operativo **didattico e incrementale** per trasformare VAP in un
 - [x] **E1. Telemetria UX del funnel Scan Builder**
   - Drop-off per step, errori frequenti, tempo decisionale.
 
-- [ ] **E2. KPI didattici**
+- [x] **E2. KPI didattici**
   - Accuratezza quiz, riduzione false positive confermati, miglioramento time-to-remediation.
 
 - [ ] **E3. Performance budget**
@@ -161,6 +161,6 @@ Un task è completato solo se:
 ---
 
 ## 6) Primo task consigliato (prossimo ciclo)
-**E2 — KPI didattici**.
+**E3 — Performance budget**.
 
-Motivo: dopo l'introduzione della telemetria funnel (E1) conviene misurare outcome formativi (quiz accuracy, false positive confermati, time-to-remediation) per guidare la roadmap didattica su evidenze.
+Motivo: con funnel (E1) e KPI didattici (E2) disponibili, il passo successivo è definire e far rispettare SLA espliciti su runtime scansioni e tempi di rendering report.

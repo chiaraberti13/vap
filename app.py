@@ -890,6 +890,27 @@ class LearningPathProgressStatus(BaseModel):
     updated_at: datetime
 
 
+class LearningQuizSubmission(BaseModel):
+    module_id: str = Field(..., min_length=2, max_length=80)
+    total_questions: int = Field(..., ge=1, le=100)
+    correct_answers: int = Field(..., ge=0, le=100)
+    attempt_duration_ms: Optional[int] = Field(default=None, ge=0, le=1_800_000)
+
+
+class LearningQuizSubmissionStatus(BaseModel):
+    ok: bool = True
+    module_id: str
+    accuracy_ratio: float
+
+
+class DidacticKpiStatus(BaseModel):
+    quiz_accuracy_ratio: float
+    quiz_attempts_total: int
+    false_positive_confirmed_reduction_ratio: float
+    avg_time_to_remediation_hours: float
+    time_to_remediation_improvement_ratio: float
+
+
 class ConnectionManager:
     def __init__(self) -> None:
         self.active_connections: Dict[int, Set[WebSocket]] = {}
@@ -947,6 +968,13 @@ def _normalize_learning_path_id(path_id: str) -> str:
     normalized = path_id.strip().lower()
     if not re.fullmatch(r"[a-z0-9][a-z0-9_-]{1,79}", normalized):
         raise HTTPException(status_code=422, detail="path_id non valido.")
+    return normalized
+
+
+def _normalize_learning_module_id(module_id: str) -> str:
+    normalized = module_id.strip().lower()
+    if not re.fullmatch(r"[a-z0-9][a-z0-9_-]{1,79}", normalized):
+        raise HTTPException(status_code=422, detail="module_id non valido.")
     return normalized
 
 
@@ -1388,6 +1416,83 @@ def _build_kpi_metrics(db: Session) -> Dict[str, Any]:
         "failed_scans": failed_scans,
         "avg_duration_minutes": avg_duration_minutes,
         "total_findings": total_findings,
+    }
+
+
+def _build_didactic_kpis(db: Session, *, subject_id: str) -> Dict[str, Any]:
+    audit_rows = (
+        db.query(AuditEvent.metadata_json)
+        .filter(
+            AuditEvent.subject_id == subject_id,
+            AuditEvent.event == "learning_quiz_submitted",
+            AuditEvent.metadata_json.isnot(None),
+        )
+        .all()
+    )
+    attempts = 0
+    total_questions = 0
+    total_correct = 0
+    for (metadata_json,) in audit_rows:
+        metadata = _load_json_object(metadata_json)
+        questions = metadata.get("total_questions")
+        correct = metadata.get("correct_answers")
+        if not isinstance(questions, int) or not isinstance(correct, int) or questions <= 0:
+            continue
+        if correct < 0 or correct > questions:
+            continue
+        attempts += 1
+        total_questions += questions
+        total_correct += correct
+    quiz_accuracy_ratio = round(total_correct / total_questions, 4) if total_questions else 0.0
+
+    completed_scans = (
+        _active_scan_query(db)
+        .filter(
+            Scan.data_subject_id == subject_id,
+            Scan.status == "completed",
+            Scan.findings_json.isnot(None),
+        )
+        .order_by(Scan.created_at.asc())
+        .all()
+    )
+
+    confirmed_counts: List[int] = []
+    durations_hours: List[float] = []
+    for scan in completed_scans:
+        findings = _prepare_findings_for_ui(_load_json_list(scan.findings_json))
+        confirmed_counts.append(
+            sum(1 for finding in findings if (finding.get("confidence_rubric") or {}).get("level") == "confirmed")
+        )
+        if scan.created_at and scan.completed_at:
+            created_at = scan.created_at if scan.created_at.tzinfo else scan.created_at.replace(tzinfo=timezone.utc)
+            completed_at = scan.completed_at if scan.completed_at.tzinfo else scan.completed_at.replace(
+                tzinfo=timezone.utc
+            )
+            durations_hours.append(max(0.0, (completed_at - created_at).total_seconds() / 3600))
+
+    false_positive_confirmed_reduction_ratio = 0.0
+    if len(confirmed_counts) >= 2:
+        half = max(1, len(confirmed_counts) // 2)
+        baseline = sum(confirmed_counts[:half]) / half
+        recent = sum(confirmed_counts[half:]) / max(len(confirmed_counts) - half, 1)
+        if baseline > 0:
+            false_positive_confirmed_reduction_ratio = round((recent - baseline) / baseline, 4)
+
+    avg_time_to_remediation_hours = round(sum(durations_hours) / len(durations_hours), 2) if durations_hours else 0.0
+    time_to_remediation_improvement_ratio = 0.0
+    if len(durations_hours) >= 2:
+        half = max(1, len(durations_hours) // 2)
+        baseline_hours = sum(durations_hours[:half]) / half
+        recent_hours = sum(durations_hours[half:]) / max(len(durations_hours) - half, 1)
+        if baseline_hours > 0:
+            time_to_remediation_improvement_ratio = round((baseline_hours - recent_hours) / baseline_hours, 4)
+
+    return {
+        "quiz_accuracy_ratio": quiz_accuracy_ratio,
+        "quiz_attempts_total": attempts,
+        "false_positive_confirmed_reduction_ratio": false_positive_confirmed_reduction_ratio,
+        "avg_time_to_remediation_hours": avg_time_to_remediation_hours,
+        "time_to_remediation_improvement_ratio": time_to_remediation_improvement_ratio,
     }
 
 
@@ -2234,6 +2339,38 @@ def upsert_learning_progress(
     )
 
 
+@app.post("/api/v1/learning-quiz-attempts", response_model=LearningQuizSubmissionStatus)
+def submit_learning_quiz_attempt(
+    request: Request,
+    payload: LearningQuizSubmission,
+    db: Session = Depends(get_db),
+    _: None = Depends(enforce_api_key),
+    __: str = Depends(enforce_viewer_role),
+) -> LearningQuizSubmissionStatus:
+    if payload.correct_answers > payload.total_questions:
+        raise HTTPException(status_code=422, detail="correct_answers non può superare total_questions.")
+
+    module_id = _normalize_learning_module_id(payload.module_id)
+    accuracy_ratio = round(payload.correct_answers / payload.total_questions, 4)
+    subject_id = get_subject_id(request)
+
+    _record_audit(
+        db,
+        request,
+        "learning_quiz_submitted",
+        subject_id=subject_id,
+        module_id=module_id,
+        total_questions=payload.total_questions,
+        correct_answers=payload.correct_answers,
+        accuracy_ratio=accuracy_ratio,
+        attempt_duration_ms=payload.attempt_duration_ms,
+    )
+    return LearningQuizSubmissionStatus(
+        module_id=module_id,
+        accuracy_ratio=accuracy_ratio,
+    )
+
+
 @app.get("/api/v1/learning-progress", response_model=List[LearningPathProgressStatus])
 def list_learning_progress(
     request: Request,
@@ -2259,6 +2396,17 @@ def list_learning_progress(
         )
         for row in progress_rows
     ]
+
+
+@app.get("/api/v1/learning-kpis", response_model=DidacticKpiStatus)
+def get_learning_kpis(
+    request: Request,
+    db: Session = Depends(get_db),
+    _: None = Depends(enforce_api_key),
+    __: str = Depends(enforce_viewer_role),
+) -> DidacticKpiStatus:
+    subject_id = get_subject_id(request)
+    return DidacticKpiStatus(**_build_didactic_kpis(db, subject_id=subject_id))
 
 
 @app.get("/api/v1/gdpr/export")
