@@ -145,7 +145,7 @@ Creare un piano operativo **didattico e incrementale** per trasformare VAP in un
 
 ## 4) Backlog bug/pre-esistenti da monitorare
 - [ ] Possibile overload cognitivo nelle viste principali con molte informazioni contemporanee.
-- [ ] Necessità di uniformare ulteriormente copywriting tecnico tra UI, catalogo e PDF.
+- [x] Uniformato il copywriting tecnico cross-canale su termini chiave di lettura finding/stato (UI dettaglio scansione + PDF report + catalogo didattico già allineato su lessico italiano operativo), riducendo mix IT/EN non necessario (completato il 2026-04-17).
 - [x] Governance esplicita “scan config lifecycle” (draft/review/approved/deprecated) introdotta su preset configurazione con transizioni controllate e approvazione admin obbligatoria per lo stato `approved` (completato il 2026-04-17).
 - [ ] Test regressione CSP disallineato (`tests/test_security_headers.py::test_csp_disallows_inline_scripts_by_default`): il test si aspetta `https://cdn.tailwindcss.com`, ma la policy corrente usa solo script locali (confermato anche nel run completo del 2026-04-09).
 - [ ] Test integrazione flakey su approval high-risk (`tests/test_api_integration.py::test_create_scan_non_admin_high_risk_requires_admin_approval_reference`): il secondo POST nello stesso test può ricevere `429 Too Many Requests` per interferenza del rate limiter condiviso (rilevato nel run completo del 2026-04-12).
