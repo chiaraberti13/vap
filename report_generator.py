@@ -742,13 +742,13 @@ def _build_summary(
         duration_str = "—"
 
     info_rows: List[Tuple[str, str]] = [
-        ("Start time:",    start_str),
-        ("Finish time:",   end_str),
-        ("Scan duration:", duration_str),
-        ("Scan type:",     _scan_type_label(scan_type)),
-        ("Findings:",      str(total_findings)),
-        ("Tests performed:", str(tests_performed) if tests_performed is not None else "—"),
-        ("Scan status:",   "Completed"),
+        ("Ora di avvio:", start_str),
+        ("Ora di chiusura:", end_str),
+        ("Durata scansione:", duration_str),
+        ("Tipologia scansione:", _scan_type_label(scan_type)),
+        ("Vulnerabilità rilevate:", str(total_findings)),
+        ("Test eseguiti:", str(tests_performed) if tests_performed is not None else "—"),
+        ("Stato scansione:", "Completata"),
     ]
     info_data: List[List[Any]] = [
         [Paragraph("Scan information:", ss["BodyMuted"]), Paragraph("", ss["BodyMuted"])],
@@ -757,7 +757,7 @@ def _build_summary(
         info_data.append([Paragraph(k, ss["LabelKey"]), Paragraph(v, ss["LabelVal"])])
 
     # last row: status badge
-    status_badge = _badge("Finished", colors.HexColor("#16a34a"), ss, col_w=2.2 * cm)
+    status_badge = _badge("Completata", colors.HexColor("#16a34a"), ss, col_w=2.2 * cm)
     info_data[-1][1] = status_badge
 
     panel3 = Table(info_data, colWidths=[3.0 * cm, 5.5 * cm])
@@ -816,7 +816,7 @@ def _build_finding_card(finding: Dict[str, Any], ss: Any) -> List[Any]:
 
     title_str   = html_escape(str(finding.get("title", "Finding")))
     confirmed   = finding.get("confirmed", True)
-    status_lbl  = "CONFIRMED" if confirmed else "UNCONFIRMED"
+    status_lbl  = "CONFERMATO" if confirmed else "DA VERIFICARE"
     status_bg   = colors.HexColor("#16a34a") if confirmed else TEXT_MUTED
 
     port      = str(finding.get("port", ""))
@@ -885,14 +885,14 @@ def _build_finding_card(finding: Dict[str, Any], ss: Any) -> List[Any]:
                       ss["SmallMuted"]),
         ])
 
-    # URL / Evidence table
+    # URL / Evidenze table
     if url_str or evidence:
         ev_table = Table(
             [
                 [Paragraph("URL", ss["TableHeader"]),
-                 Paragraph("Method", ss["TableHeader"]),
-                 Paragraph("Parameters", ss["TableHeader"]),
-                 Paragraph("Evidence", ss["TableHeader"])],
+                 Paragraph("Metodo", ss["TableHeader"]),
+                 Paragraph("Parametri", ss["TableHeader"]),
+                 Paragraph("Evidenza tecnica", ss["TableHeader"])],
                 [Paragraph(url_str or "—", ss["TableCell"]),
                  Paragraph(method or "—", ss["TableCell"]),
                  Paragraph(parameters_str or "—", ss["TableCell"]),
@@ -916,17 +916,17 @@ def _build_finding_card(finding: Dict[str, Any], ss: Any) -> List[Any]:
 
     # Details section header
     body_rows.append([Spacer(1, 6)])
-    body_rows.append([Paragraph("<b>▼ Details</b>", ss["SmallBold"])])
+    body_rows.append([Paragraph("<b>▼ Dettagli tecnici</b>", ss["SmallBold"])])
     body_rows.append([Spacer(1, 2)])
 
     if desc:
-        body_rows.append([Paragraph("<b>Risk description:</b>", ss["SmallBold"])])
+        body_rows.append([Paragraph("<b>Descrizione del rischio:</b>", ss["SmallBold"])])
         body_rows.append([Paragraph(desc, ss["Small"])])
 
     if rec:
-        body_rows.append([Paragraph("<b>Recommendation:</b>", ss["SmallBold"])])
+        body_rows.append([Paragraph("<b>Raccomandazione:</b>", ss["SmallBold"])])
         body_rows.append([Paragraph(rec, ss["Small"])])
-    body_rows.append([Paragraph("<b>Found by:</b>", ss["SmallBold"])])
+    body_rows.append([Paragraph("<b>Rilevato da:</b>", ss["SmallBold"])])
     body_rows.append([Paragraph(found_by, ss["Small"])])
 
     if references:
@@ -934,7 +934,7 @@ def _build_finding_card(finding: Dict[str, Any], ss: Any) -> List[Any]:
             f'<font color="#2563eb">{html_escape(str(r))}</font>'
             for r in references[:4]
         )
-        body_rows.append([Paragraph("<b>References:</b>", ss["SmallBold"])])
+        body_rows.append([Paragraph("<b>Riferimenti:</b>", ss["SmallBold"])])
         body_rows.append([Paragraph(refs_joined, ss["Small"])])
 
     # Classification

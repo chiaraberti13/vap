@@ -154,7 +154,7 @@
                     <span class="rounded-md bg-slate-700 border border-slate-600 px-2 py-0.5 text-xs text-slate-200">CVSS {{ finding.cvss_score }}</span>
                     {% endif %}
                     {% if finding.confirmed == false %}
-                    <span class="rounded-md bg-yellow-900/50 border border-yellow-600/40 px-2 py-0.5 text-xs text-yellow-300">UNCONFIRMED</span>
+                    <span class="rounded-md bg-yellow-900/50 border border-yellow-600/40 px-2 py-0.5 text-xs text-yellow-300">DA VERIFICARE</span>
                     {% endif %}
                     {% if finding.confidence_rubric %}
                     {% set confidence_level = finding.confidence_rubric.level %}
@@ -191,10 +191,10 @@
                 <p class="text-sm text-slate-200"><span class="text-slate-400">Impatto:</span> {{ finding.impact_preview }}</p>
                 {% endif %}
                 {% if finding.recommendation_preview %}
-                <p class="text-sm text-cyan-100"><span class="text-cyan-300">Fix:</span> {{ finding.recommendation_preview }}</p>
+                <p class="text-sm text-cyan-100"><span class="text-cyan-300">Raccomandazione:</span> {{ finding.recommendation_preview }}</p>
                 {% endif %}
                 {% if finding.evidence_preview %}
-                <p class="text-xs text-green-300 font-mono"><span class="text-slate-400 font-sans">Evidence:</span> {{ finding.evidence_preview }}</p>
+                <p class="text-xs text-green-300 font-mono"><span class="text-slate-400 font-sans">Evidenza tecnica:</span> {{ finding.evidence_preview }}</p>
                 {% endif %}
               </div>
 
@@ -221,7 +221,7 @@
 
               {% if finding.confidence_rubric %}
               <article class="rounded-lg border border-slate-700/70 bg-slate-950/50 p-4">
-                <p class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Confidence rubric</p>
+                <p class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Rubrica di affidabilità</p>
                 <p class="text-sm text-slate-100">
                   <span class="font-semibold">{{ finding.confidence_rubric.label }}.</span>
                   {{ finding.confidence_rubric.description }}
@@ -276,7 +276,7 @@
                   <!-- Evidence -->
                   {% if finding.evidence %}
                   <div>
-                    <p class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Evidence / Proof of Concept</p>
+                    <p class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Evidenza tecnica / Proof of Concept</p>
                     <pre class="text-xs text-green-300 bg-slate-800 border border-slate-700 rounded-lg p-3 font-mono">{{ finding.evidence }}</pre>
                   </div>
                   {% endif %}
