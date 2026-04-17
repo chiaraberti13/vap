@@ -136,8 +136,10 @@ Creare un piano operativo **didattico e incrementale** per trasformare VAP in un
 - [x] **E2. KPI didattici**
   - Accuratezza quiz, riduzione false positive confermati, miglioramento time-to-remediation.
 
-- [ ] **E3. Performance budget**
-  - SLA runtime scansioni e rendering report.
+- [x] **E3. Performance budget**
+  - [x] SLA runtime scansioni (`VAP_SCAN_RUNTIME_SLA_SECONDS`) con tracciamento automatico nei log scan.
+  - [x] SLA rendering report (`VAP_REPORT_RENDER_SLA_SECONDS`) con warning automatico su superamento soglia.
+  - [x] Copertura test unitari dedicata al motore di valutazione performance budget.
 
 ---
 
@@ -161,6 +163,6 @@ Un task è completato solo se:
 ---
 
 ## 6) Primo task consigliato (prossimo ciclo)
-**E3 — Performance budget**.
+**Backlog — Governance esplicita scan config lifecycle (draft/review/approved/deprecated)**.
 
-Motivo: con funnel (E1) e KPI didattici (E2) disponibili, il passo successivo è definire e far rispettare SLA espliciti su runtime scansioni e tempi di rendering report.
+Motivo: dopo aver completato anche E3, resta una lacuna strutturale di processo già evidenziata nel backlog pre-esistente e prioritaria per controllo qualità/configurazioni in ambienti reali multi-team.
