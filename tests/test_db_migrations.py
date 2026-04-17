@@ -42,3 +42,6 @@ def test_init_db_bootstraps_schema_with_or_without_alembic(tmp_path):
 
         if importlib.util.find_spec("alembic"):
             assert "alembic_version" in tables
+
+        preset_columns = {row[1] for row in conn.execute("PRAGMA table_info(scan_configuration_presets)")}
+        assert "lifecycle_state" in preset_columns

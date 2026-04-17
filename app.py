@@ -733,6 +733,13 @@ SCAN_CAPABILITY_ALLOWED_ROLES: Dict[str, Set[str]] = {
     "export_sensitive_report": set(settings.rbac_capability_export_sensitive_report_roles),
     "override_scan_policy": set(settings.rbac_capability_override_policy_roles),
 }
+SCAN_CONFIG_PRESET_LIFECYCLE_STATES = {"draft", "review", "approved", "deprecated"}
+SCAN_CONFIG_PRESET_LIFECYCLE_TRANSITIONS: Dict[str, Set[str]] = {
+    "draft": {"review"},
+    "review": {"draft", "approved"},
+    "approved": {"deprecated"},
+    "deprecated": set(),
+}
 
 
 def _scan_has_high_risk_tools(scan_config: ScanConfigurationV1) -> bool:
@@ -808,11 +815,16 @@ class ScanConfigurationPresetStatus(BaseModel):
     name: str
     description: Optional[str]
     scan_type: str
+    lifecycle_state: Literal["draft", "review", "approved", "deprecated"]
     schema_version: str
     checksum: str
     configuration: ScanConfigurationV1
     created_at: datetime
     updated_at: datetime
+
+
+class ScanConfigurationPresetLifecycleUpdate(BaseModel):
+    lifecycle_state: Literal["draft", "review", "approved", "deprecated"]
 
 
 class ScanDelete(BaseModel):
@@ -2662,12 +2674,45 @@ def _serialize_scan_configuration_preset(preset: ScanConfigurationPreset) -> Sca
         name=preset.name,
         description=preset.description,
         scan_type=preset.scan_type,
+        lifecycle_state=preset.lifecycle_state,
         schema_version=preset.config_version,
         checksum=preset.config_checksum,
         configuration=redact_scan_configuration_secrets(parsed_configuration),
         created_at=preset.created_at,
         updated_at=preset.updated_at,
     )
+
+
+def _enforce_scan_config_lifecycle_transition(
+    request: Request,
+    *,
+    user_role: str,
+    current_state: str,
+    next_state: str,
+) -> None:
+    if current_state not in SCAN_CONFIG_PRESET_LIFECYCLE_STATES:
+        raise HTTPException(status_code=500, detail="Preset configurazione con stato lifecycle non valido.")
+    if next_state not in SCAN_CONFIG_PRESET_LIFECYCLE_STATES:
+        raise HTTPException(status_code=400, detail="Stato lifecycle richiesto non supportato.")
+    if next_state == current_state:
+        return
+    allowed_transitions = SCAN_CONFIG_PRESET_LIFECYCLE_TRANSITIONS.get(current_state, set())
+    if next_state not in allowed_transitions:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Transizione lifecycle non consentita: {current_state} -> {next_state}.",
+        )
+    if next_state == "approved" and user_role not in set(settings.rbac_admin_roles):
+        log_audit_event(
+            "scan_config_lifecycle_approval_denied",
+            request=request,
+            role=user_role,
+            required_roles=sorted(set(settings.rbac_admin_roles)),
+        )
+        raise HTTPException(
+            status_code=403,
+            detail="Solo gli admin possono approvare un preset in stato review.",
+        )
 
 
 @app.post("/api/v1/scan-config/presets", response_model=ScanConfigurationPresetStatus)
@@ -2693,6 +2738,7 @@ def create_scan_configuration_preset(
         name=payload.name.strip(),
         description=payload.description.strip() if payload.description else None,
         scan_type=scan_type,
+        lifecycle_state="draft",
         config_json=payload.configuration.model_dump_json(),
         config_version=payload.configuration.schema_version,
         config_checksum=checksum_scan_config_v1(payload.configuration),
@@ -2718,18 +2764,67 @@ def create_scan_configuration_preset(
 @limiter.limit(settings.rate_limit_read)
 def list_scan_configuration_presets(
     request: Request,
+    lifecycle_state: Optional[Literal["draft", "review", "approved", "deprecated"]] = None,
     db: Session = Depends(get_db),
     _: None = Depends(enforce_api_key),
     __: str = Depends(enforce_viewer_role),
 ) -> List[ScanConfigurationPresetStatus]:
     subject_id = get_subject_id(request)
-    presets = (
+    query = (
         db.query(ScanConfigurationPreset)
         .filter(ScanConfigurationPreset.subject_id == subject_id)
-        .order_by(ScanConfigurationPreset.updated_at.desc(), ScanConfigurationPreset.id.desc())
-        .all()
     )
+    if lifecycle_state:
+        query = query.filter(ScanConfigurationPreset.lifecycle_state == lifecycle_state)
+    presets = query.order_by(ScanConfigurationPreset.updated_at.desc(), ScanConfigurationPreset.id.desc()).all()
     return [_serialize_scan_configuration_preset(preset) for preset in presets]
+
+
+@app.patch("/api/v1/scan-config/presets/{preset_id}/lifecycle", response_model=ScanConfigurationPresetStatus)
+@limiter.limit(settings.rate_limit_create_scan)
+def update_scan_configuration_preset_lifecycle(
+    request: Request,
+    preset_id: int,
+    payload: ScanConfigurationPresetLifecycleUpdate,
+    db: Session = Depends(get_db),
+    _: None = Depends(enforce_api_key),
+    user_role: str = Depends(enforce_operator_role),
+) -> ScanConfigurationPresetStatus:
+    _enforce_scan_capability(request, user_role=user_role, capability="create_scan_config")
+    subject_id = get_subject_id(request)
+    preset = (
+        db.query(ScanConfigurationPreset)
+        .filter(
+            ScanConfigurationPreset.id == preset_id,
+            ScanConfigurationPreset.subject_id == subject_id,
+        )
+        .first()
+    )
+    if not preset:
+        raise HTTPException(status_code=404, detail="Preset configurazione non trovato.")
+
+    previous_state = preset.lifecycle_state
+    _enforce_scan_config_lifecycle_transition(
+        request,
+        user_role=user_role,
+        current_state=previous_state,
+        next_state=payload.lifecycle_state,
+    )
+    preset.lifecycle_state = payload.lifecycle_state
+    preset.updated_at = datetime.now(timezone.utc)
+    db.add(preset)
+    db.commit()
+    db.refresh(preset)
+    _record_audit(
+        db,
+        request,
+        "scan_config_preset_lifecycle_updated",
+        subject_id=subject_id,
+        preset_id=preset.id,
+        from_state=previous_state,
+        to_state=payload.lifecycle_state,
+    )
+    return _serialize_scan_configuration_preset(preset)
 
 
 @app.delete("/api/v1/scan-config/presets/{preset_id}", status_code=204)
