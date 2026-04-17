@@ -6,6 +6,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 import json
 import logging
+import time
 from typing import Any, Dict, List
 from uuid import uuid4
 
@@ -16,6 +17,7 @@ from config import settings
 from execution_guardrails import should_auto_abort_scan
 from database import SessionLocal, Scan
 from enrichment_engine import enrich_findings
+from performance_budget import evaluate_performance_budget
 from report_generator import generate_report
 from scanner_engine import (
     ScanValidationError,
@@ -48,6 +50,46 @@ def _append_notifications(scan: Scan, notifications: List[Dict[str, Any]]) -> No
 def _scan_error_count(scan: Scan) -> int:
     logs = json.loads(scan.logs_json or "[]")
     return sum(1 for log in logs if "stato error" in str(log.get("message", "")).lower())
+
+
+def _duration_seconds(start: datetime | None, end: datetime | None) -> float:
+    if not start or not end:
+        return 0.0
+    return max((end - start).total_seconds(), 0.0)
+
+
+def _record_performance_budget(
+    scan: Scan,
+    *,
+    report_render_seconds: float | None,
+) -> None:
+    evaluation = evaluate_performance_budget(
+        scan_runtime_seconds=_duration_seconds(scan.created_at, scan.completed_at),
+        report_render_seconds=report_render_seconds,
+        scan_runtime_budget_seconds=settings.scan_runtime_sla_seconds,
+        report_render_budget_seconds=settings.report_render_sla_seconds,
+    )
+    _append_log(
+        scan,
+        (
+            "Performance budget — "
+            f"runtime={evaluation['scan_runtime_seconds']}s "
+            f"(SLA {settings.scan_runtime_sla_seconds}s), "
+            f"report={evaluation['report_render_seconds']}s "
+            f"(SLA {settings.report_render_sla_seconds}s)."
+        ),
+        "info",
+    )
+    for breach in evaluation["breaches"]:
+        _append_log(
+            scan,
+            (
+                "Performance budget superato: "
+                f"{breach['dimension']} {breach['observed_seconds']}s "
+                f"> {breach['budget_seconds']}s."
+            ),
+            "warning",
+        )
 
 
 @celery_app.task(bind=True, autoretry_for=(Exception,), retry_backoff=True, retry_kwargs={"max_retries": 3})
@@ -184,7 +226,9 @@ def finalize_scan(self, results: List[Dict[str, Any]], scan_id: int, target: str
         scan.avg_response_time_ms = stats["avg_response_time_ms"]
         scan.redirect_from = redirect_from or None
 
+        report_render_seconds: float | None = None
         try:
+            report_render_started_at = time.perf_counter()
             report_path = generate_report(
                 scan.id, target, scan_type, findings,
                 start_time=scan.created_at,
@@ -198,6 +242,7 @@ def finalize_scan(self, results: List[Dict[str, Any]], scan_id: int, target: str
                     "average_response_time": scan.avg_response_time_ms,
                 },
             )
+            report_render_seconds = max(time.perf_counter() - report_render_started_at, 0.0)
         except Exception as exc:
             scan.status = "report_failed"
             scan.report_path = None
@@ -205,6 +250,7 @@ def finalize_scan(self, results: List[Dict[str, Any]], scan_id: int, target: str
         else:
             scan.report_path = str(report_path)
             _append_log(scan, "Report PDF generato.")
+        _record_performance_budget(scan, report_render_seconds=report_render_seconds)
 
         db.commit()
     return "completed"
@@ -316,7 +362,9 @@ def run_scan_in_process(scan_id: int, scan_type: str, target: str) -> None:
         scan.http_requests_total = stats["http_requests_total"]
         scan.avg_response_time_ms = stats["avg_response_time_ms"]
         scan.redirect_from = redirect_from or None
+        report_render_seconds: float | None = None
         try:
+            report_render_started_at = time.perf_counter()
             report_path = generate_report(
                 scan.id, target, scan_type, findings,
                 start_time=scan.created_at,
@@ -330,11 +378,13 @@ def run_scan_in_process(scan_id: int, scan_type: str, target: str) -> None:
                     "average_response_time": scan.avg_response_time_ms,
                 },
             )
+            report_render_seconds = max(time.perf_counter() - report_render_started_at, 0.0)
             scan.report_path = str(report_path)
             _append_log(scan, "Report PDF generato.")
         except Exception as exc:
             scan.status = "report_failed"
             scan.report_path = None
             _append_log(scan, f"Errore report PDF: {exc}", "error")
+        _record_performance_budget(scan, report_render_seconds=report_render_seconds)
         db.commit()
     _log.info("run_scan_in_process: scan %d completed (sync)", scan_id)

@@ -72,6 +72,13 @@ python -m alembic revision -m "descrizione_migrazione"
 | `VAP_MAX_FINDINGS` | `200` | Massimo findings per scan. |
 | `VAP_MAX_CONCURRENT_SCANNERS` | `5` | Concorrenza tool scanner. |
 
+## Performance budget (SLA operativi)
+
+| Variabile | Default | Descrizione |
+| --- | --- | --- |
+| `VAP_SCAN_RUNTIME_SLA_SECONDS` | `900` | Soglia SLA massima per la durata end-to-end della scansione (queue/running/finalize). Se superata, viene emesso warning nei log della scansione. |
+| `VAP_REPORT_RENDER_SLA_SECONDS` | `20` | Soglia SLA massima per il tempo di rendering PDF. Se superata, viene emesso warning nei log della scansione. |
+
 ## Autenticazione & API security
 
 | Variabile | Default | Descrizione |
