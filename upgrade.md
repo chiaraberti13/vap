@@ -119,9 +119,9 @@ Creare un piano operativo **didattico e incrementale** per trasformare VAP in un
 - [x] **D1. Nuovo template PDF minimal/professional**
   - Copertina pulita, sommario executive 1 pagina, severity heatmap, remediation roadmap by priority.
 
-- [ ] **D2. Report didattico dual-layer**
-  - Layer 1: executive (manageriale).
-  - Layer 2: tecnico con evidenze complete e passi di validazione.
+- [x] **D2. Report didattico dual-layer**
+  - [x] Layer 1: executive (manageriale) con sezione dedicata esplicita nel PDF.
+  - [x] Layer 2: tecnico con evidenze complete e passi di validazione (checklist + validation steps per finding).
 
 - [ ] **D3. Design tokens condivisi UI/PDF**
   - Palette, tipografia, spacing coerenti in tutta la piattaforma.
@@ -158,6 +158,6 @@ Un task è completato solo se:
 ---
 
 ## 6) Primo task consigliato (prossimo ciclo)
-**D2 — Report didattico dual-layer (executive + tecnico)**.
+**D3 — Design tokens condivisi UI/PDF**.
 
-Motivo: dopo l'introduzione del template minimal/professional in D1, il passo successivo naturale è separare in modo esplicito il layer manageriale dal layer tecnico con evidenze e validazione operativa.
+Motivo: con D2 completato, il passo successivo naturale è uniformare palette, tipografia e spacing tra interfaccia web e report PDF per coerenza visuale e riduzione debito di design.

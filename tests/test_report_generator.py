@@ -11,6 +11,7 @@ from report_generator import (
     _scan_type_label,
     _technology_category_icon,
     _sorted_scan_coverage,
+    _validation_steps_for_finding,
 )
 
 
@@ -50,6 +51,36 @@ def test_is_technology_finding_matches_whatweb_tool_or_title():
     assert _is_technology_finding({"title": "Generic issue", "tags": ["technology"]}) is True
     assert _is_technology_finding({"title": "Generic issue", "tool": "nikto"}) is False
 
+
+def test_validation_steps_for_finding_prioritizes_explicit_steps():
+    finding = {
+        "validation_steps": ["Replay request with payload X", "Confirm evidence in logs"],
+        "method": "GET",
+        "url": "https://example.test/path",
+    }
+
+    assert _validation_steps_for_finding(finding) == [
+        "Replay request with payload X",
+        "Confirm evidence in logs",
+    ]
+
+
+def test_validation_steps_for_finding_builds_fallback_steps():
+    finding = {
+        "method": "POST",
+        "url": "https://example.test/login",
+        "parameters": ["username", "password"],
+        "evidence": "SQL syntax error near ...",
+        "recommendation": "Use parameterized queries.",
+    }
+
+    steps = _validation_steps_for_finding(finding)
+
+    assert steps[0] == "Re-run request with method: POST"
+    assert "Verify affected endpoint: https://example.test/login" in steps
+    assert "Confirm affected parameters: username, password" in steps
+    assert "Cross-check scanner evidence and reproduce on staging before remediation." in steps
+    assert "After remediation, execute a focused re-scan to confirm closure." in steps
 
 
 def test_sorted_scan_coverage_orders_ports_and_deduplicates_tests():
