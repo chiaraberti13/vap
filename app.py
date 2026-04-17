@@ -8,7 +8,7 @@ from pathlib import Path
 import re
 import threading
 from time import perf_counter
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Literal, Optional, Set
 from uuid import uuid4
 
 from fastapi import Body, Depends, FastAPI, Form, HTTPException, Request, WebSocket, WebSocketDisconnect
@@ -121,6 +121,29 @@ try:
 except ValueError:
     from prometheus_client import REGISTRY as _REGISTRY
     REQUEST_LATENCY = _REGISTRY._names_to_collectors["vap_http_request_duration_seconds"]
+
+try:
+    SCAN_BUILDER_EVENT_COUNT = Counter(
+        "vap_scan_builder_events_total",
+        "Numero di eventi telemetrici raccolti dal funnel Scan Builder",
+        ["event_type", "step"],
+    )
+except ValueError:
+    from prometheus_client import REGISTRY as _REGISTRY
+    SCAN_BUILDER_EVENT_COUNT = _REGISTRY._names_to_collectors["vap_scan_builder_events_total"]
+
+try:
+    SCAN_BUILDER_STEP_DECISION_TIME = Histogram(
+        "vap_scan_builder_step_decision_time_ms",
+        "Tempo decisionale per step del funnel Scan Builder (millisecondi)",
+        ["step"],
+        buckets=(250, 500, 1000, 2000, 5000, 10000, 20000, 45000, 90000, 180000),
+    )
+except ValueError:
+    from prometheus_client import REGISTRY as _REGISTRY
+    SCAN_BUILDER_STEP_DECISION_TIME = _REGISTRY._names_to_collectors[
+        "vap_scan_builder_step_decision_time_ms"
+    ]
 
 app = FastAPI(
     title=settings.app_name,
@@ -819,6 +842,19 @@ class AuditEventStatus(BaseModel):
     metadata: Dict[str, Any]
 
 
+class ScanBuilderTelemetryEvent(BaseModel):
+    session_id: str = Field(..., min_length=16, max_length=64)
+    step: int = Field(..., ge=1, le=5)
+    event_type: Literal["step_view", "step_advance", "step_back", "validation_error", "submit"]
+    decision_time_ms: Optional[int] = Field(default=None, ge=0, le=600000)
+    validation_errors_count: Optional[int] = Field(default=None, ge=0, le=20)
+    didactic_mode: Optional[Literal["beginner", "analyst", "expert"]] = None
+
+
+class ScanBuilderTelemetryResponse(BaseModel):
+    ok: bool = True
+
+
 class LearningFeedbackCreate(BaseModel):
     scan_type: str = Field(..., max_length=50)
     target_experience_level: str = Field(..., pattern="^(beginner|intermediate|professional)$")
@@ -1385,6 +1421,46 @@ def index(request: Request, db: Session = Depends(get_db)) -> Response:
         samesite="lax",
     )
     return response
+
+
+@app.post("/api/v1/telemetry/scan-builder", response_model=ScanBuilderTelemetryResponse)
+@limiter.limit(settings.rate_limit_create_scan)
+def collect_scan_builder_telemetry(
+    request: Request,
+    payload: ScanBuilderTelemetryEvent,
+    db: Session = Depends(get_db),
+) -> ScanBuilderTelemetryResponse:
+    csrf_token = request.headers.get("x-csrf-token", "")
+    try:
+        enforce_csrf(request, csrf_token)
+    except ValueError as exc:
+        raise HTTPException(status_code=403, detail=str(exc))
+    event_type = payload.event_type.strip().lower()
+    step_value = str(payload.step)
+    metadata: Dict[str, Any] = {
+        "session_id": payload.session_id,
+        "step": payload.step,
+        "event_type": event_type,
+    }
+    if payload.validation_errors_count is not None:
+        metadata["validation_errors_count"] = payload.validation_errors_count
+    if payload.decision_time_ms is not None:
+        metadata["decision_time_ms"] = payload.decision_time_ms
+    if payload.didactic_mode:
+        metadata["didactic_mode"] = payload.didactic_mode
+
+    SCAN_BUILDER_EVENT_COUNT.labels(event_type=event_type, step=step_value).inc()
+    if payload.decision_time_ms is not None and event_type in {"step_advance", "submit"}:
+        SCAN_BUILDER_STEP_DECISION_TIME.labels(step=step_value).observe(payload.decision_time_ms)
+
+    _record_audit(
+        db,
+        request,
+        "scan_builder_telemetry",
+        subject_id=get_subject_id(request),
+        **metadata,
+    )
+    return ScanBuilderTelemetryResponse()
 
 
 @app.get("/privacy-policy", response_class=HTMLResponse)

@@ -1208,6 +1208,59 @@ def test_list_audit_events_include_all_supports_event_filter():
     app.app.dependency_overrides.clear()
 
 
+def test_collect_scan_builder_telemetry_records_audit_event():
+    _clear_scans()
+
+    with TestClient(app.app) as client:
+        homepage = client.get("/")
+        assert homepage.status_code == 200
+        csrf_cookie = client.cookies.get(app.settings.csrf_cookie_name)
+        assert csrf_cookie
+
+        response = client.post(
+            "/api/v1/telemetry/scan-builder",
+            json={
+                "session_id": "session-telemetry-001",
+                "step": 2,
+                "event_type": "step_advance",
+                "decision_time_ms": 3200,
+                "didactic_mode": "analyst",
+            },
+            headers={"x-csrf-token": csrf_cookie},
+        )
+
+    assert response.status_code == 200
+    assert response.json() == {"ok": True}
+
+    with SessionLocal() as session:
+        audit_event = (
+            session.query(AuditEvent)
+            .filter(AuditEvent.event == "scan_builder_telemetry")
+            .order_by(AuditEvent.id.desc())
+            .first()
+        )
+
+    assert audit_event is not None
+    metadata = json.loads(audit_event.metadata_json or "{}")
+    assert metadata["step"] == 2
+    assert metadata["event_type"] == "step_advance"
+    assert metadata["decision_time_ms"] == 3200
+    assert metadata["didactic_mode"] == "analyst"
+
+
+def test_collect_scan_builder_telemetry_requires_valid_csrf():
+    _clear_scans()
+
+    with TestClient(app.app) as client:
+        response = client.post(
+            "/api/v1/telemetry/scan-builder",
+            json={"session_id": "session-telemetry-002", "step": 1, "event_type": "step_view"},
+        )
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Verifica CSRF fallita"
+
+
 def test_guided_scan_form_end_to_end_journey(monkeypatch):
     """Copre il journey guidato: homepage -> submit form -> redirect dettaglio scansione."""
     _clear_scans()
