@@ -144,7 +144,7 @@ Creare un piano operativo **didattico e incrementale** per trasformare VAP in un
 ---
 
 ## 4) Backlog bug/pre-esistenti da monitorare
-- [ ] Possibile overload cognitivo nelle viste principali con molte informazioni contemporanee.
+- [x] Possibile overload cognitivo nelle viste principali con molte informazioni contemporanee: introdotte sezioni progressive/collassabili per KPI secondari, log runtime e learning sidebar così da mantenere in primo piano solo le informazioni operative critiche (completato il 2026-04-18).
 - [x] Uniformato il copywriting tecnico cross-canale su termini chiave di lettura finding/stato (UI dettaglio scansione + PDF report + catalogo didattico già allineato su lessico italiano operativo), riducendo mix IT/EN non necessario (completato il 2026-04-17).
 - [x] Governance esplicita “scan config lifecycle” (draft/review/approved/deprecated) introdotta su preset configurazione con transizioni controllate e approvazione admin obbligatoria per lo stato `approved` (completato il 2026-04-17).
 - [x] Test regressione CSP disallineato (`tests/test_security_headers.py::test_csp_disallows_inline_scripts_by_default`): expectation allineata alla policy CSP corrente con sole sorgenti locali (`'self'`) per `script-src`/`style-src` (completato il 2026-04-18).

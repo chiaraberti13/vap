@@ -71,6 +71,31 @@ body {
     gap: 0.75rem;
 }
 
+.cognitive-panel {
+    background: rgb(15 23 42 / 0.72);
+}
+
+.cognitive-panel-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: rgb(226 232 240);
+}
+
+.cognitive-panel-summary::after {
+    content: "Mostra";
+    font-size: var(--font-size-xs);
+    letter-spacing: 0.04em;
+    color: rgb(148 163 184);
+}
+
+.cognitive-panel[open] .cognitive-panel-summary::after {
+    content: "Nascondi";
+}
+
 @media (min-width: 768px) {
     .content-card {
         padding: 1.25rem;
