@@ -177,4 +177,8 @@ Motivo completamento: estratta in `tests/conftest.py` la utility condivisa per c
 
 Motivo completamento: aggiunte in `tests/conftest.py` le fixture factory `seed_scan` e `seed_audit_event`, poi adottate nei test di integrazione API e accessibilità UI per ridurre setup duplicato su scan detail, report download e KPI didattici mantenendo isolamento e default sicuri.
 
-**Prossimo task consigliato:** estendere il refactor del seeding condiviso ai restanti test API che creano baseline/current scan manualmente (trend summary, regression analytics) e introdurre assert espliciti sui campi default dei factory helper per prevenire regressioni silenziose.
+- [x] **Hardening QA — refactor trend summary API tests su fixture `seed_scan` + assert espliciti default factory** (completato il 2026-04-18).
+
+Motivo completamento: i test di trend summary su dettaglio scansione ora riusano la fixture condivisa `seed_scan` eliminando creazione manuale duplicata di record baseline/current; aggiunto inoltre un test dedicato sui default della factory (`target`, `scan_type`, `status`, `data_classification`, `logs_json`, `findings_json`) per intercettare regressioni silenziose del setup.
+
+**Prossimo task consigliato:** applicare lo stesso approccio di fixture factory ai casi API residui che creano `Scan` via sessione SQLAlchemy diretta nelle sezioni wizard/compliance (preservando solo i casi dove la persistenza diretta è necessaria per verificare query complesse), riducendo ulteriore boilerplate di setup.

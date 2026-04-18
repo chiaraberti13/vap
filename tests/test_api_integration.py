@@ -1072,29 +1072,20 @@ def test_scan_detail_displays_learning_sidebar(seed_scan):
     assert '<script src="/static/js/scan-detail.js"></script>' in response.text
 
 
-def test_scan_detail_displays_trend_summary_with_previous_baseline():
+def test_scan_detail_displays_trend_summary_with_previous_baseline(seed_scan):
     _clear_scans()
-    with SessionLocal() as session:
-        baseline = Scan(
-            target="example.com",
-            scan_type="full",
-            status="completed",
-            data_classification="internal",
-            findings_json='[{"title":"Legacy issue","severity":"high","confidence":0.9},{"title":"Minor","severity":"low","confidence":0.5}]',
-            logs_json="[]",
-        )
-        current = Scan(
-            target="example.com",
-            scan_type="full",
-            status="completed",
-            data_classification="internal",
-            findings_json='[{"title":"Current issue","severity":"critical","confidence":0.95}]',
-            logs_json="[]",
-        )
-        session.add_all([baseline, current])
-        session.commit()
-        session.refresh(current)
-        scan_id = current.id
+    seed_scan(
+        target="example.com",
+        scan_type="full",
+        status="completed",
+        findings_json='[{"title":"Legacy issue","severity":"high","confidence":0.9},{"title":"Minor","severity":"low","confidence":0.5}]',
+    )
+    scan_id = seed_scan(
+        target="example.com",
+        scan_type="full",
+        status="completed",
+        findings_json='[{"title":"Current issue","severity":"critical","confidence":0.95}]',
+    ).id
 
     with TestClient(app.app) as client:
         response = client.get(f"/scans/{scan_id}")
@@ -1106,21 +1097,14 @@ def test_scan_detail_displays_trend_summary_with_previous_baseline():
     assert "Nessuna baseline precedente disponibile" not in response.text
 
 
-def test_scan_detail_trend_summary_handles_missing_baseline_gracefully():
+def test_scan_detail_trend_summary_handles_missing_baseline_gracefully(seed_scan):
     _clear_scans()
-    with SessionLocal() as session:
-        current = Scan(
-            target="new-target.example",
-            scan_type="light",
-            status="completed",
-            data_classification="internal",
-            findings_json='[{"title":"Only finding","severity":"medium","confidence":0.7}]',
-            logs_json="[]",
-        )
-        session.add(current)
-        session.commit()
-        session.refresh(current)
-        scan_id = current.id
+    scan_id = seed_scan(
+        target="new-target.example",
+        scan_type="light",
+        status="completed",
+        findings_json='[{"title":"Only finding","severity":"medium","confidence":0.7}]',
+    ).id
 
     with TestClient(app.app) as client:
         response = client.get(f"/scans/{scan_id}")
@@ -1128,6 +1112,18 @@ def test_scan_detail_trend_summary_handles_missing_baseline_gracefully():
     assert response.status_code == 200
     assert "Trend report (target)" in response.text
     assert "Nessuna baseline precedente disponibile" in response.text
+
+
+def test_seed_scan_factory_applies_expected_defaults(seed_scan):
+    _clear_scans()
+    seeded = seed_scan()
+
+    assert seeded.target == "example.com"
+    assert seeded.scan_type == "full"
+    assert seeded.status == "completed"
+    assert seeded.data_classification == "internal"
+    assert seeded.logs_json == "[]"
+    assert seeded.findings_json == "[]"
 
 
 def test_homepage_uses_legacy_form_when_guided_explorer_flag_is_disabled(monkeypatch):
