@@ -5,7 +5,6 @@ from fastapi.testclient import TestClient
 
 import app
 from conftest import clear_persistent_state
-from database import Scan, SessionLocal
 
 SCAN_CATALOG_JS = Path(__file__).resolve().parents[1] / "static/js/scan-catalog.js"
 
@@ -252,21 +251,9 @@ def test_scan_catalog_js_supports_keyboard_navigation_and_focus_management():
     assert 'button.addEventListener("focus", () => showGlossaryTerm(term));' in content
 
 
-def test_scan_detail_has_live_regions_and_single_main_landmark():
+def test_scan_detail_has_live_regions_and_single_main_landmark(seed_scan):
     _clear_scans()
-    with SessionLocal() as session:
-        scan = Scan(
-            target="example.com",
-            scan_type="full",
-            status="running",
-            data_classification="internal",
-            logs_json="[]",
-            findings_json="[]",
-        )
-        session.add(scan)
-        session.commit()
-        session.refresh(scan)
-        scan_id = scan.id
+    scan_id = seed_scan(status="running").id
 
     with TestClient(app.app) as client:
         response = client.get(f"/scans/{scan_id}")
