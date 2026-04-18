@@ -163,6 +163,8 @@ Un task è completato solo se:
 ---
 
 ## 6) Primo task consigliato (prossimo ciclo)
-**Hardening QA — aggiungere fixture pytest `reset_runtime_state` per centralizzare reset rate limiter/dependency overrides nei test API.**
+- [x] **Hardening QA — fixture pytest `reset_runtime_state` introdotta per centralizzare reset rate limiter/dependency overrides nei test API** (completato il 2026-04-18).
 
-Motivo: dopo la chiusura del bug flakey high-risk approval, conviene consolidare il pattern in fixture riusabile per ridurre duplicazioni nei test e prevenire regressioni simili future.
+Motivo completamento: consolidato il reset runtime in `tests/conftest.py` con fixture autouse (setup/teardown), eliminando reset duplicati espliciti nei test API più sensibili a flaky behavior.
+
+**Prossimo task consigliato:** estendere il refactor ai test non-API con helper condiviso per cleanup stato persistente (`_clear_scans`) così da ridurre ulteriormente duplicazioni e rischio incoerenze tra suite.

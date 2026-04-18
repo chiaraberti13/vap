@@ -26,10 +26,6 @@ def _clear_scans() -> None:
         session.query(LearningPathProgress).delete()
         session.query(ScanConfigurationPreset).delete()
         session.commit()
-    limiter_storage = getattr(app.limiter, "_storage", None)
-    if limiter_storage is not None:
-        limiter_storage.reset()
-
 
 
 
@@ -861,7 +857,6 @@ def test_create_scan_non_admin_high_risk_requires_admin_approval_reference(monke
 
 def test_create_scan_rejects_policy_override_without_capability(monkeypatch):
     _clear_scans()
-    app.limiter._storage.reset()
     app.app.dependency_overrides[app.enforce_api_key] = lambda: None
     app.app.dependency_overrides[app.enforce_operator_role] = lambda: "operator"
 
@@ -896,7 +891,6 @@ def test_create_scan_rejects_policy_override_without_capability(monkeypatch):
 
 def test_create_scan_allows_policy_override_for_admin(monkeypatch):
     _clear_scans()
-    app.limiter._storage.reset()
     app.app.dependency_overrides[app.enforce_api_key] = lambda: None
     app.app.dependency_overrides[app.enforce_operator_role] = lambda: "admin"
 
@@ -930,7 +924,6 @@ def test_create_scan_allows_policy_override_for_admin(monkeypatch):
 
 def test_create_scan_policy_override_cannot_be_privilege_escalated_via_headers(monkeypatch):
     _clear_scans()
-    app.limiter._storage.reset()
     app.app.dependency_overrides.clear()
     original_jwt_required = app.settings.jwt_required
     original_jwt_secret = app.settings.jwt_secret
@@ -978,7 +971,6 @@ def test_create_scan_policy_override_cannot_be_privilege_escalated_via_headers(m
 
 def test_create_scan_high_risk_cannot_be_privilege_escalated_via_headers(monkeypatch):
     _clear_scans()
-    app.limiter._storage.reset()
     app.app.dependency_overrides.clear()
     original_jwt_required = app.settings.jwt_required
     original_jwt_secret = app.settings.jwt_secret
@@ -1027,7 +1019,6 @@ def test_create_scan_high_risk_cannot_be_privilege_escalated_via_headers(monkeyp
 
 def test_create_scan_rejects_tool_not_compatible_with_scan_type(monkeypatch):
     _clear_scans()
-    app.limiter._storage.reset()
     app.app.dependency_overrides[app.enforce_api_key] = lambda: None
     app.app.dependency_overrides[app.enforce_operator_role] = lambda: "admin"
 
@@ -2068,7 +2059,6 @@ def test_auth_token_endpoint_enforces_rate_limit(monkeypatch):
     e verifica che il rate-limit applicativo risponda con HTTP 429.
     """
     _clear_scans()
-    app.limiter._storage.reset()
     original_settings = app.settings
     monkeypatch.setattr(
         app,
