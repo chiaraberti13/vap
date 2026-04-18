@@ -74,7 +74,7 @@ Creare un piano operativo **didattico e incrementale** per trasformare VAP in un
   - [x] Versioning + checksum config per reproducibility (snapshot configurazione salvato per ogni scansione con endpoint dedicato di retrieval + verifica checksum server-side su snapshot/preset per intercettare tampering).
 
 ## Fase B — UX didattica e configurazione guidata (P0/P1)
-- [ ] **B1. Nuovo “Scan Builder” multi-step**
+- [x] **B1. Nuovo “Scan Builder” multi-step**
   - [x] Step 1 Scope legale/target.
   - [x] Step 2 Selezione moduli scanner.
   - [x] Step 3 Parametri avanzati per modulo.
@@ -163,6 +163,6 @@ Un task è completato solo se:
 ---
 
 ## 6) Primo task consigliato (prossimo ciclo)
-**Backlog — Uniformare ulteriormente copywriting tecnico tra UI, catalogo e PDF**.
+**Backlog — Ridurre overload cognitivo nelle viste principali (dashboard + dettaglio scansione)**.
 
-Motivo: dopo l’introduzione del lifecycle configurazioni, resta il gap di consistenza terminologica cross-canale che impatta UX didattica e riduce chiarezza operativa.
+Motivo: rimane l'ultimo gap aperto nel backlog pre-esistente; impatta direttamente usabilità, comprensione didattica e velocità decisionale.
