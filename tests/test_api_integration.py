@@ -1202,19 +1202,13 @@ def test_create_scan_forbidden_for_viewer_role():
     app.app.dependency_overrides.clear()
 
 
-def test_list_audit_events_returns_sensitive_actions_only_by_default():
+def test_list_audit_events_returns_sensitive_actions_only_by_default(seed_audit_event):
     _clear_scans()
     app.app.dependency_overrides[app.enforce_api_key] = lambda: None
     app.app.dependency_overrides[app.enforce_admin_role] = lambda: "admin"
 
-    with SessionLocal() as session:
-        session.add_all(
-            [
-                AuditEvent(event="gdpr_export", subject_id="subject-1", actor="jwt:admin"),
-                AuditEvent(event="scan_canceled", subject_id="subject-1", actor="jwt:admin"),
-            ]
-        )
-        session.commit()
+    seed_audit_event(event="gdpr_export", subject_id="subject-1", actor="jwt:admin")
+    seed_audit_event(event="scan_canceled", subject_id="subject-1", actor="jwt:admin")
 
     with TestClient(app.app) as client:
         response = client.get("/api/v1/audit/events")
@@ -1226,19 +1220,13 @@ def test_list_audit_events_returns_sensitive_actions_only_by_default():
     app.app.dependency_overrides.clear()
 
 
-def test_list_audit_events_include_all_supports_event_filter():
+def test_list_audit_events_include_all_supports_event_filter(seed_audit_event):
     _clear_scans()
     app.app.dependency_overrides[app.enforce_api_key] = lambda: None
     app.app.dependency_overrides[app.enforce_admin_role] = lambda: "admin"
 
-    with SessionLocal() as session:
-        session.add_all(
-            [
-                AuditEvent(event="gdpr_export", subject_id="subject-1", actor="jwt:admin"),
-                AuditEvent(event="scan_canceled", subject_id="subject-2", actor="jwt:admin"),
-            ]
-        )
-        session.commit()
+    seed_audit_event(event="gdpr_export", subject_id="subject-1", actor="jwt:admin")
+    seed_audit_event(event="scan_canceled", subject_id="subject-2", actor="jwt:admin")
 
     with TestClient(app.app) as client:
         response = client.get("/api/v1/audit/events?include_all_events=true&event=scan_canceled")

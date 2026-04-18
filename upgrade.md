@@ -181,4 +181,8 @@ Motivo completamento: aggiunte in `tests/conftest.py` le fixture factory `seed_s
 
 Motivo completamento: i test di trend summary su dettaglio scansione ora riusano la fixture condivisa `seed_scan` eliminando creazione manuale duplicata di record baseline/current; aggiunto inoltre un test dedicato sui default della factory (`target`, `scan_type`, `status`, `data_classification`, `logs_json`, `findings_json`) per intercettare regressioni silenziose del setup.
 
-**Prossimo task consigliato:** applicare lo stesso approccio di fixture factory ai casi API residui che creano `Scan` via sessione SQLAlchemy diretta nelle sezioni wizard/compliance (preservando solo i casi dove la persistenza diretta è necessaria per verificare query complesse), riducendo ulteriore boilerplate di setup.
+- [x] **Hardening QA — refactor test audit API su fixture `seed_audit_event`** (completato il 2026-04-18).
+
+Motivo completamento: i test di listing audit (`/api/v1/audit/events`) ora usano la factory condivisa `seed_audit_event` al posto di `session.add_all(...)`, riducendo boilerplate SQLAlchemy diretto e mantenendo setup più leggibile/coerente con l’approccio fixture-first adottato in suite.
+
+**Prossimo task consigliato:** introdurre un helper pytest dedicato per il bootstrap del client form-guided (homepage + estrazione cookie CSRF + override API key form) così da ridurre duplicazioni nei test journey wizard/compliance e diminuire il rischio di divergenze tra scenari positivi/negativi.
