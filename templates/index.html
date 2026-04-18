@@ -105,16 +105,22 @@
             <p class="text-xs text-slate-500 mt-2">Aggregati da scansioni concluse.</p>
           </div>
         </div>
-        <div class="grid gap-3 sm:grid-cols-2">
-          <div class="content-card">
-            <p class="text-sm text-slate-400">Tempo medio di completamento</p>
-            <p class="text-2xl font-semibold mt-1">{{ kpi_metrics.avg_duration_minutes }} min</p>
+        <details class="content-card cognitive-panel">
+          <summary class="cognitive-panel-summary">
+            Mostra KPI secondari (performance e failure)
+          </summary>
+          <p class="home-microcopy mt-3 text-slate-400">Apri questa sezione solo quando devi analizzare trend operativi avanzati o anomalie di stabilità.</p>
+          <div class="mt-4 grid gap-3 sm:grid-cols-2">
+            <div class="rounded-xl border border-slate-700/80 bg-slate-950/60 p-4">
+              <p class="text-sm text-slate-400">Tempo medio di completamento</p>
+              <p class="text-2xl font-semibold mt-1">{{ kpi_metrics.avg_duration_minutes }} min</p>
+            </div>
+            <div class="rounded-xl border border-slate-700/80 bg-slate-950/60 p-4">
+              <p class="text-sm text-slate-400">Report falliti</p>
+              <p class="text-2xl font-semibold mt-1">{{ kpi_metrics.failed_scans }}</p>
+            </div>
           </div>
-          <div class="content-card">
-            <p class="text-sm text-slate-400">Report falliti</p>
-            <p class="text-2xl font-semibold mt-1">{{ kpi_metrics.failed_scans }}</p>
-          </div>
-        </div>
+        </details>
       </div>
     </section>
 
