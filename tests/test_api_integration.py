@@ -13,19 +13,12 @@ from database import (
     Scan,
     ScanConfigurationPreset,
     SessionLocal,
-    init_db,
 )
+from conftest import clear_persistent_state
 
 
 def _clear_scans() -> None:
-    init_db()
-    with SessionLocal() as session:
-        session.query(Scan).delete()
-        session.query(AuditEvent).delete()
-        session.query(LearningFeedback).delete()
-        session.query(LearningPathProgress).delete()
-        session.query(ScanConfigurationPreset).delete()
-        session.commit()
+    clear_persistent_state()
 
 
 

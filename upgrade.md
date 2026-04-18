@@ -167,4 +167,8 @@ Un task è completato solo se:
 
 Motivo completamento: consolidato il reset runtime in `tests/conftest.py` con fixture autouse (setup/teardown), eliminando reset duplicati espliciti nei test API più sensibili a flaky behavior.
 
-**Prossimo task consigliato:** estendere il refactor ai test non-API con helper condiviso per cleanup stato persistente (`_clear_scans`) così da ridurre ulteriormente duplicazioni e rischio incoerenze tra suite.
+- [x] **Hardening QA — helper condiviso `clear_persistent_state` riusato anche nei test non-API** (completato il 2026-04-18).
+
+Motivo completamento: estratta in `tests/conftest.py` la utility condivisa per cleanup stato persistente e riutilizzata in `tests/test_api_integration.py` e `tests/test_accessibility_checks.py`, mantenendo cleanup differenziato via flag `include_learning_artifacts`.
+
+**Prossimo task consigliato:** introdurre fixture pytest dedicata al seeding di scansioni/access audit per i test UI/API, così da ridurre boilerplate di setup nei casi di dettaglio scansione/report download e migliorare leggibilità/manutenibilità della suite.
