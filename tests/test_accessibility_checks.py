@@ -4,7 +4,8 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 
 import app
-from database import AuditEvent, Scan, SessionLocal, init_db
+from conftest import clear_persistent_state
+from database import Scan, SessionLocal
 
 SCAN_CATALOG_JS = Path(__file__).resolve().parents[1] / "static/js/scan-catalog.js"
 
@@ -49,11 +50,7 @@ class LandmarkParser(HTMLParser):
 
 
 def _clear_scans() -> None:
-    init_db()
-    with SessionLocal() as session:
-        session.query(Scan).delete()
-        session.query(AuditEvent).delete()
-        session.commit()
+    clear_persistent_state(include_learning_artifacts=False)
 
 
 def _parse_html(response_text: str) -> LandmarkParser:
