@@ -29,8 +29,8 @@ def test_csp_disallows_inline_scripts_by_default():
     upgrade_insecure_requests = "upgrade-insecure-requests" in directives
     assert "'unsafe-inline'" not in script_src
     assert "'unsafe-inline'" not in style_src
-    assert script_src == "'self' https://cdn.tailwindcss.com"
-    assert style_src == "'self' https://cdn.tailwindcss.com"
+    assert script_src == "'self'"
+    assert style_src == "'self'"
     assert object_src == "'none'"
     assert frame_src == "'none'"
     assert base_uri == "'self'"
