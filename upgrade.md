@@ -148,7 +148,7 @@ Creare un piano operativo **didattico e incrementale** per trasformare VAP in un
 - [x] Uniformato il copywriting tecnico cross-canale su termini chiave di lettura finding/stato (UI dettaglio scansione + PDF report + catalogo didattico già allineato su lessico italiano operativo), riducendo mix IT/EN non necessario (completato il 2026-04-17).
 - [x] Governance esplicita “scan config lifecycle” (draft/review/approved/deprecated) introdotta su preset configurazione con transizioni controllate e approvazione admin obbligatoria per lo stato `approved` (completato il 2026-04-17).
 - [x] Test regressione CSP disallineato (`tests/test_security_headers.py::test_csp_disallows_inline_scripts_by_default`): expectation allineata alla policy CSP corrente con sole sorgenti locali (`'self'`) per `script-src`/`style-src` (completato il 2026-04-18).
-- [ ] Test integrazione flakey su approval high-risk (`tests/test_api_integration.py::test_create_scan_non_admin_high_risk_requires_admin_approval_reference`): il secondo POST nello stesso test può ricevere `429 Too Many Requests` per interferenza del rate limiter condiviso (rilevato nel run completo del 2026-04-12).
+- [x] Test integrazione flakey su approval high-risk (`tests/test_api_integration.py::test_create_scan_non_admin_high_risk_requires_admin_approval_reference`): isolamento dei test ripristinato centralizzando il reset dello storage del rate limiter dentro `_clear_scans()`, eliminando interferenze tra POST consecutivi e tra test che condividono lo stesso client IP (completato il 2026-04-18).
 
 ---
 
@@ -163,6 +163,6 @@ Un task è completato solo se:
 ---
 
 ## 6) Primo task consigliato (prossimo ciclo)
-**Backlog — Ridurre overload cognitivo nelle viste principali (dashboard + dettaglio scansione)**.
+**Hardening QA — aggiungere fixture pytest `reset_runtime_state` per centralizzare reset rate limiter/dependency overrides nei test API.**
 
-Motivo: rimane l'ultimo gap aperto nel backlog pre-esistente; impatta direttamente usabilità, comprensione didattica e velocità decisionale.
+Motivo: dopo la chiusura del bug flakey high-risk approval, conviene consolidare il pattern in fixture riusabile per ridurre duplicazioni nei test e prevenire regressioni simili future.

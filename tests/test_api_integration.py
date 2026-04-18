@@ -26,6 +26,9 @@ def _clear_scans() -> None:
         session.query(LearningPathProgress).delete()
         session.query(ScanConfigurationPreset).delete()
         session.commit()
+    limiter_storage = getattr(app.limiter, "_storage", None)
+    if limiter_storage is not None:
+        limiter_storage.reset()
 
 
 
