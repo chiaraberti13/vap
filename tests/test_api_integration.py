@@ -22,23 +22,11 @@ def _clear_scans() -> None:
 
 
 
-def test_download_report_endpoint_preserves_pdf_delivery_and_audit(tmp_path):
+def test_download_report_endpoint_preserves_pdf_delivery_and_audit(tmp_path, seed_scan):
     _clear_scans()
     report_file = tmp_path / "scan-report.pdf"
     report_file.write_bytes(b"%PDF-1.4\n% regression fixture\n")
-
-    with SessionLocal() as session:
-        scan = Scan(
-            target="example.com",
-            scan_type="full",
-            status="completed",
-            report_path=str(report_file),
-            data_classification="internal",
-        )
-        session.add(scan)
-        session.commit()
-        session.refresh(scan)
-        scan_id = scan.id
+    scan_id = seed_scan(report_path=str(report_file)).id
 
     app.app.dependency_overrides[app.enforce_api_key] = lambda: None
     app.app.dependency_overrides[app.enforce_viewer_role] = lambda: "viewer"
@@ -59,23 +47,14 @@ def test_download_report_endpoint_preserves_pdf_delivery_and_audit(tmp_path):
     app.app.dependency_overrides.clear()
 
 
-def test_download_report_endpoint_blocks_sensitive_report_for_viewer(tmp_path):
+def test_download_report_endpoint_blocks_sensitive_report_for_viewer(tmp_path, seed_scan):
     _clear_scans()
     report_file = tmp_path / "scan-report-sensitive.pdf"
     report_file.write_bytes(b"%PDF-1.4\n% sensitive fixture\n")
-
-    with SessionLocal() as session:
-        scan = Scan(
-            target="example.com",
-            scan_type="full",
-            status="completed",
-            report_path=str(report_file),
-            data_classification="restricted",
-        )
-        session.add(scan)
-        session.commit()
-        session.refresh(scan)
-        scan_id = scan.id
+    scan_id = seed_scan(
+        report_path=str(report_file),
+        data_classification="restricted",
+    ).id
 
     app.app.dependency_overrides[app.enforce_api_key] = lambda: None
     app.app.dependency_overrides[app.enforce_viewer_role] = lambda: "viewer"
@@ -88,24 +67,14 @@ def test_download_report_endpoint_blocks_sensitive_report_for_viewer(tmp_path):
     app.app.dependency_overrides.clear()
 
 
-def test_download_report_endpoint_blocks_cross_subject_access(tmp_path):
+def test_download_report_endpoint_blocks_cross_subject_access(tmp_path, seed_scan):
     _clear_scans()
     report_file = tmp_path / "scan-report-cross-subject.pdf"
     report_file.write_bytes(b"%PDF-1.4\n% cross-subject fixture\n")
-
-    with SessionLocal() as session:
-        scan = Scan(
-            target="example.com",
-            scan_type="full",
-            status="completed",
-            report_path=str(report_file),
-            data_subject_id="subject-owner",
-            data_classification="internal",
-        )
-        session.add(scan)
-        session.commit()
-        session.refresh(scan)
-        scan_id = scan.id
+    scan_id = seed_scan(
+        report_path=str(report_file),
+        data_subject_id="subject-owner",
+    ).id
 
     app.app.dependency_overrides[app.enforce_api_key] = lambda: None
     app.app.dependency_overrides[app.enforce_viewer_role] = lambda: "viewer"
@@ -1089,21 +1058,9 @@ def test_issue_token_returns_503_if_demo_credentials_not_configured(monkeypatch)
     app.app.dependency_overrides.clear()
 
 
-def test_scan_detail_displays_learning_sidebar():
+def test_scan_detail_displays_learning_sidebar(seed_scan):
     _clear_scans()
-    with SessionLocal() as session:
-        scan = Scan(
-            target="example.com",
-            scan_type="full",
-            status="running",
-            data_classification="internal",
-            logs_json="[]",
-            findings_json="[]",
-        )
-        session.add(scan)
-        session.commit()
-        session.refresh(scan)
-        scan_id = scan.id
+    scan_id = seed_scan(status="running").id
 
     with TestClient(app.app) as client:
         response = client.get(f"/scans/{scan_id}")
@@ -1983,52 +1940,45 @@ def test_submit_learning_quiz_attempt_records_audit_event():
     app.app.dependency_overrides.clear()
 
 
-def test_learning_kpis_returns_quiz_and_remediation_metrics():
+def test_learning_kpis_returns_quiz_and_remediation_metrics(seed_scan, seed_audit_event):
     _clear_scans()
     app.app.dependency_overrides[app.enforce_api_key] = lambda: None
     app.app.dependency_overrides[app.enforce_viewer_role] = lambda: "viewer"
 
     now = datetime.now(timezone.utc)
-    with SessionLocal() as session:
-        early_scan = Scan(
-            target="https://kpi.example",
-            scan_type="light",
-            status="completed",
-            data_subject_id="learner-kpi-002",
-            created_at=now - timedelta(hours=10),
-            completed_at=now - timedelta(hours=8),
-            findings_json=json.dumps(
-                [
-                    {"title": "A", "severity": "high", "confirmed": False, "false_positive_label": "alto"},
-                    {"title": "B", "severity": "medium", "confirmed": True},
-                ]
-            ),
-        )
-        recent_scan = Scan(
-            target="https://kpi.example",
-            scan_type="light",
-            status="completed",
-            data_subject_id="learner-kpi-002",
-            created_at=now - timedelta(hours=4),
-            completed_at=now - timedelta(hours=3),
-            findings_json=json.dumps(
-                [
-                    {"title": "C", "severity": "medium", "confirmed": True},
-                    {"title": "D", "severity": "low", "confirmed": True},
-                ]
-            ),
-        )
-        session.add_all([early_scan, recent_scan])
-        session.add(
-            AuditEvent(
-                event="learning_quiz_submitted",
-                subject_id="learner-kpi-002",
-                actor="session:learner-kpi-002",
-                created_at=now,
-                metadata_json=json.dumps({"total_questions": 5, "correct_answers": 4}),
-            )
-        )
-        session.commit()
+    seed_scan(
+        target="https://kpi.example",
+        scan_type="light",
+        data_subject_id="learner-kpi-002",
+        created_at=now - timedelta(hours=10),
+        completed_at=now - timedelta(hours=8),
+        findings_json=json.dumps(
+            [
+                {"title": "A", "severity": "high", "confirmed": False, "false_positive_label": "alto"},
+                {"title": "B", "severity": "medium", "confirmed": True},
+            ]
+        ),
+    )
+    seed_scan(
+        target="https://kpi.example",
+        scan_type="light",
+        data_subject_id="learner-kpi-002",
+        created_at=now - timedelta(hours=4),
+        completed_at=now - timedelta(hours=3),
+        findings_json=json.dumps(
+            [
+                {"title": "C", "severity": "medium", "confirmed": True},
+                {"title": "D", "severity": "low", "confirmed": True},
+            ]
+        ),
+    )
+    seed_audit_event(
+        event="learning_quiz_submitted",
+        subject_id="learner-kpi-002",
+        actor="session:learner-kpi-002",
+        created_at=now,
+        metadata_json=json.dumps({"total_questions": 5, "correct_answers": 4}),
+    )
 
     with TestClient(app.app) as client:
         response = client.get(

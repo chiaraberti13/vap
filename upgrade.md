@@ -172,3 +172,9 @@ Motivo completamento: consolidato il reset runtime in `tests/conftest.py` con fi
 Motivo completamento: estratta in `tests/conftest.py` la utility condivisa per cleanup stato persistente e riutilizzata in `tests/test_api_integration.py` e `tests/test_accessibility_checks.py`, mantenendo cleanup differenziato via flag `include_learning_artifacts`.
 
 **Prossimo task consigliato:** introdurre fixture pytest dedicata al seeding di scansioni/access audit per i test UI/API, così da ridurre boilerplate di setup nei casi di dettaglio scansione/report download e migliorare leggibilità/manutenibilità della suite.
+
+- [x] **Hardening QA — fixture pytest dedicate al seeding Scan/Audit per test UI/API** (completato il 2026-04-18).
+
+Motivo completamento: aggiunte in `tests/conftest.py` le fixture factory `seed_scan` e `seed_audit_event`, poi adottate nei test di integrazione API e accessibilità UI per ridurre setup duplicato su scan detail, report download e KPI didattici mantenendo isolamento e default sicuri.
+
+**Prossimo task consigliato:** estendere il refactor del seeding condiviso ai restanti test API che creano baseline/current scan manualmente (trend summary, regression analytics) e introdurre assert espliciti sui campi default dei factory helper per prevenire regressioni silenziose.
