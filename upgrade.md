@@ -231,4 +231,8 @@ Motivo completamento: aggiunta nel workflow `.github/workflows/quality-gate.yml`
 
 Motivo completamento: esteso `.github/workflows/quality-gate.yml` con la job `frontend-security-guards` (Python 3.11 + pip cache) che esegue `tests/test_scan_catalog_frontend_security.py`, introducendo un controllo CI mirato contro regressioni XSS/template-injection lato UI prima del merge.
 
-**Prossimo task consigliato:** introdurre nel quality gate CI una job dedicata ai test scanner runtime guardrails (`tests/test_scanner_engine_runtime.py`) per intercettare regressioni sui limiti operativi e timeout centralizzati.
+- [x] **Hardening QA — quality gate CI dedicato ai test scanner runtime guardrails** (completato il 2026-04-19).
+
+Motivo completamento: esteso `.github/workflows/quality-gate.yml` con la job `scanner-runtime-guards` (Python 3.11 + pip cache) che esegue `tests/test_scanner_engine_runtime.py`, aggiungendo un controllo automatico su timeout centralizzati e limiti operativi dello scanner engine in push/PR.
+
+**Prossimo task consigliato:** introdurre una job CI separata per i test di resilienza del report generator (`tests/test_report_generation.py`) così da intercettare regressioni PDF/layout senza appesantire la suite API.
