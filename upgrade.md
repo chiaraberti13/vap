@@ -219,5 +219,8 @@ Motivo completamento: il lint `tests/test_subject_header_lint.py` supporta ora u
 
 Motivo completamento: il workflow `.github/workflows/quality-gate.yml` ora mantiene un gate rapido dedicato a security/style e aggiunge una job separata `api-integration-matrix` con `fail-fast: false` su Python 3.10 e 3.11 per intercettare regressioni cross-versione senza rallentare eccessivamente il controllo minimo.
 
-**Prossimo task consigliato:** introdurre caching pip nei job CI (`actions/setup-python` cache pip) per ridurre tempi medi del quality gate mantenendo isolamento e ripetibilità.
+- [x] **Hardening QA — caching pip nei job CI del quality gate** (completato il 2026-04-19).
 
+Motivo completamento: aggiunto `cache: 'pip'` con `cache-dependency-path: requirements.txt` in entrambi i job del workflow `.github/workflows/quality-gate.yml` (`security-and-style-guards` e `api-integration-matrix`), riducendo i tempi medi di installazione dipendenze senza modificare isolamento né ripetibilità della pipeline.
+
+**Prossimo task consigliato:** aggiungere un quality gate CI dedicato ai test di accessibilità (`tests/test_accessibility_checks.py`) per intercettare regressioni UX/WCAG nelle PR senza attendere la suite completa.
