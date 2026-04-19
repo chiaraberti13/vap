@@ -207,4 +207,8 @@ Motivo completamento: introdotta in `tests/conftest.py` la fixture factory `subj
 
 Motivo completamento: i test read-only rimasti con header `x-data-subject` hardcoded ora riusano la fixture factory `subject_headers(...)` nei casi di download report cross-subject e listing preset configurazione, riducendo duplicazioni e mantenendo coerenza fixture-first nei GET con subject routing.
 
-**Prossimo task consigliato:** aggiungere un lint test pytest che intercetti nuovi header `x-data-subject` hardcoded fuori dai helper condivisi (`subject_headers` / `bootstrap_csrf_json_client`), per prevenire regressioni di stile nella suite.
+- [x] **Hardening QA — lint test pytest contro header `x-data-subject` hardcoded fuori dai helper condivisi** (completato il 2026-04-19).
+
+Motivo completamento: aggiunto il test `tests/test_subject_header_lint.py` che scansiona i file `tests/test_*.py` e fallisce se trova uso letterale di `"x-data-subject"` non mediato da `subject_headers(...)` o `bootstrap_csrf_json_client(...)`, prevenendo regressioni di stile/consistenza nei test.
+
+**Prossimo task consigliato:** estendere il lint con una allowlist per casi eccezionali documentati (se necessari) e integrare la stessa regola in CI quality gate insieme ai test di security headers.
