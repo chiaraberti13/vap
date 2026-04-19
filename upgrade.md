@@ -215,4 +215,9 @@ Motivo completamento: aggiunto il test `tests/test_subject_header_lint.py` che s
 
 Motivo completamento: il lint `tests/test_subject_header_lint.py` supporta ora una allowlist esplicita file/linea con motivazione per casi eccezionali documentati; aggiunto workflow GitHub Actions `.github/workflows/quality-gate.yml` che esegue in CI `tests/test_security_headers.py` e `tests/test_subject_header_lint.py` come quality gate minimo su push/PR.
 
-**Prossimo task consigliato:** estendere il quality gate CI includendo anche `tests/test_api_integration.py` in una job separata con matrice Python per intercettare regressioni cross-versione senza rallentare eccessivamente il gate rapido.
+- [x] **Hardening QA — quality gate CI esteso con `tests/test_api_integration.py` in job separata a matrice Python** (completato il 2026-04-19).
+
+Motivo completamento: il workflow `.github/workflows/quality-gate.yml` ora mantiene un gate rapido dedicato a security/style e aggiunge una job separata `api-integration-matrix` con `fail-fast: false` su Python 3.10 e 3.11 per intercettare regressioni cross-versione senza rallentare eccessivamente il controllo minimo.
+
+**Prossimo task consigliato:** introdurre caching pip nei job CI (`actions/setup-python` cache pip) per ridurre tempi medi del quality gate mantenendo isolamento e ripetibilità.
+
