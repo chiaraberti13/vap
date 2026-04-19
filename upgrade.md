@@ -239,4 +239,8 @@ Motivo completamento: esteso `.github/workflows/quality-gate.yml` con la job `sc
 
 Motivo completamento: esteso `.github/workflows/quality-gate.yml` con la job `report-generator-guards` (Python 3.11 + pip cache) che esegue `tests/test_report_generator.py`, intercettando regressioni su rendering PDF/layout in una pipeline isolata rispetto ai test API.
 
-**Prossimo task consigliato:** introdurre una job CI separata per i test di security hardening template inline (`tests/test_template_inline_hardening.py`) per rilevare subito regressioni XSS/CSP lato rendering HTML/PDF.
+- [x] **Hardening QA — quality gate CI dedicato ai test di security hardening template inline** (completato il 2026-04-19).
+
+Motivo completamento: esteso `.github/workflows/quality-gate.yml` con la job `template-inline-hardening-guards` (Python 3.11 + pip cache) che esegue `tests/test_template_inline_hardening.py`, così da intercettare in push/PR regressioni su protezioni XSS/CSP nel rendering template HTML/PDF.
+
+**Prossimo task consigliato:** introdurre una job CI separata per i test dei guardrail del catalogo scanner (`tests/test_scan_catalog.py`) per rilevare rapidamente regressioni su coerenza metadata/routing dei moduli di scansione.
