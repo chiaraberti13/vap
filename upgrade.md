@@ -235,4 +235,8 @@ Motivo completamento: esteso `.github/workflows/quality-gate.yml` con la job `fr
 
 Motivo completamento: esteso `.github/workflows/quality-gate.yml` con la job `scanner-runtime-guards` (Python 3.11 + pip cache) che esegue `tests/test_scanner_engine_runtime.py`, aggiungendo un controllo automatico su timeout centralizzati e limiti operativi dello scanner engine in push/PR.
 
-**Prossimo task consigliato:** introdurre una job CI separata per i test di resilienza del report generator (`tests/test_report_generation.py`) così da intercettare regressioni PDF/layout senza appesantire la suite API.
+- [x] **Hardening QA — quality gate CI dedicato ai test di resilienza report generator** (completato il 2026-04-19).
+
+Motivo completamento: esteso `.github/workflows/quality-gate.yml` con la job `report-generator-guards` (Python 3.11 + pip cache) che esegue `tests/test_report_generator.py`, intercettando regressioni su rendering PDF/layout in una pipeline isolata rispetto ai test API.
+
+**Prossimo task consigliato:** introdurre una job CI separata per i test di security hardening template inline (`tests/test_template_inline_hardening.py`) per rilevare subito regressioni XSS/CSP lato rendering HTML/PDF.
