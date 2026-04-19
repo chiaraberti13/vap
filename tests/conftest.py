@@ -127,3 +127,29 @@ def bootstrap_guided_form_client() -> Callable[[], Iterator[tuple[TestClient, st
             app.app.dependency_overrides.pop(app.enforce_api_key_form_dependency, None)
 
     return _bootstrap
+
+
+@pytest.fixture
+def bootstrap_csrf_json_client() -> Callable[..., Iterator[tuple[TestClient, dict[str, str]]]]:
+    """
+    Bootstrap condiviso per endpoint JSON protetti da CSRF.
+
+    Esegue:
+    1) homepage GET per inizializzare cookie CSRF;
+    2) costruzione header base con x-csrf-token;
+    3) merge opzionale con header custom (es. x-data-subject).
+    """
+
+    @contextmanager
+    def _bootstrap(extra_headers: dict[str, str] | None = None) -> Iterator[tuple[TestClient, dict[str, str]]]:
+        with TestClient(app.app) as client:
+            homepage = client.get("/")
+            assert homepage.status_code == 200
+            csrf_cookie = client.cookies.get(app.settings.csrf_cookie_name)
+            assert csrf_cookie
+            headers = {"x-csrf-token": csrf_cookie}
+            if extra_headers:
+                headers.update(extra_headers)
+            yield client, headers
+
+    return _bootstrap

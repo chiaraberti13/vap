@@ -190,3 +190,9 @@ Motivo completamento: i test di listing audit (`/api/v1/audit/events`) ora usano
 Motivo completamento: introdotta in `tests/conftest.py` una fixture context-manager che centralizza bootstrap homepage, estrazione cookie CSRF e override API key del form guidato; i test journey/compliance in `tests/test_api_integration.py` ora riusano il helper riducendo boilerplate e divergence risk tra scenari positivi/negativi.
 
 **Prossimo task consigliato:** estendere lo stesso pattern fixture-first ai test telemetry CSRF (`/api/v1/telemetry/scan-builder`) introducendo un helper dedicato ai POST CSRF-protected, così da uniformare ulteriormente i setup tra endpoint API JSON e submit form.
+
+- [x] **Hardening QA — helper pytest `bootstrap_csrf_json_client` per endpoint JSON con CSRF** (completato il 2026-04-19).
+
+Motivo completamento: introdotta in `tests/conftest.py` una fixture context-manager che inizializza cookie CSRF e compone header riusabili (`x-csrf-token` + eventuali header custom); i test telemetry su `/api/v1/telemetry/scan-builder` in `tests/test_api_integration.py` ora la riusano sia per il percorso valido sia per quello di rifiuto CSRF, riducendo boilerplate e mismatch di setup tra test.
+
+**Prossimo task consigliato:** applicare `bootstrap_csrf_json_client` anche ai test API CSRF-protected con `x-data-subject` (trend KPI/lifecycle preset) per uniformare ulteriormente i setup header/cookie e diminuire regressioni da copia-incolla.

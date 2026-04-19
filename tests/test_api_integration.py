@@ -1239,15 +1239,10 @@ def test_list_audit_events_include_all_supports_event_filter(seed_audit_event):
     app.app.dependency_overrides.clear()
 
 
-def test_collect_scan_builder_telemetry_records_audit_event():
+def test_collect_scan_builder_telemetry_records_audit_event(bootstrap_csrf_json_client):
     _clear_scans()
 
-    with TestClient(app.app) as client:
-        homepage = client.get("/")
-        assert homepage.status_code == 200
-        csrf_cookie = client.cookies.get(app.settings.csrf_cookie_name)
-        assert csrf_cookie
-
+    with bootstrap_csrf_json_client() as (client, csrf_headers):
         response = client.post(
             "/api/v1/telemetry/scan-builder",
             json={
@@ -1257,7 +1252,7 @@ def test_collect_scan_builder_telemetry_records_audit_event():
                 "decision_time_ms": 3200,
                 "didactic_mode": "analyst",
             },
-            headers={"x-csrf-token": csrf_cookie},
+            headers=csrf_headers,
         )
 
     assert response.status_code == 200
@@ -1279,13 +1274,15 @@ def test_collect_scan_builder_telemetry_records_audit_event():
     assert metadata["didactic_mode"] == "analyst"
 
 
-def test_collect_scan_builder_telemetry_requires_valid_csrf():
+def test_collect_scan_builder_telemetry_requires_valid_csrf(bootstrap_csrf_json_client):
     _clear_scans()
 
-    with TestClient(app.app) as client:
+    with bootstrap_csrf_json_client() as (client, csrf_headers):
+        csrf_headers["x-csrf-token"] = "invalid-csrf-token"
         response = client.post(
             "/api/v1/telemetry/scan-builder",
             json={"session_id": "session-telemetry-002", "step": 1, "event_type": "step_view"},
+            headers=csrf_headers,
         )
 
     assert response.status_code == 403
