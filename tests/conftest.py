@@ -1,10 +1,12 @@
+from contextlib import contextmanager
 from pathlib import Path
 import sys
-from typing import Any, Callable
+from typing import Any, Callable, Iterator
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import pytest
+from fastapi.testclient import TestClient
 
 import app
 from database import (
@@ -98,3 +100,30 @@ def seed_audit_event() -> Callable[..., AuditEvent]:
             return event
 
     return _seed_audit_event
+
+
+@pytest.fixture
+def bootstrap_guided_form_client() -> Callable[[], Iterator[tuple[TestClient, str]]]:
+    """
+    Bootstrap condiviso per i test journey/compliance del form guidato.
+
+    Esegue:
+    1) override API key form-only;
+    2) homepage GET per inizializzare cookie CSRF;
+    3) esposizione di (client, csrf_token) pronto all'uso.
+    """
+
+    @contextmanager
+    def _bootstrap() -> Iterator[tuple[TestClient, str]]:
+        app.app.dependency_overrides[app.enforce_api_key_form_dependency] = lambda: None
+        try:
+            with TestClient(app.app) as client:
+                homepage = client.get("/")
+                assert homepage.status_code == 200
+                csrf_cookie = client.cookies.get(app.settings.csrf_cookie_name)
+                assert csrf_cookie
+                yield client, csrf_cookie
+        finally:
+            app.app.dependency_overrides.pop(app.enforce_api_key_form_dependency, None)
+
+    return _bootstrap

@@ -1292,11 +1292,9 @@ def test_collect_scan_builder_telemetry_requires_valid_csrf():
     assert response.json()["detail"] == "Verifica CSRF fallita"
 
 
-def test_guided_scan_form_end_to_end_journey(monkeypatch):
+def test_guided_scan_form_end_to_end_journey(monkeypatch, bootstrap_guided_form_client):
     """Copre il journey guidato: homepage -> submit form -> redirect dettaglio scansione."""
     _clear_scans()
-    app.app.dependency_overrides[app.enforce_api_key_form_dependency] = lambda: None
-
     class DummyResult:
         id = "dummy-task-e2e"
 
@@ -1305,13 +1303,7 @@ def test_guided_scan_form_end_to_end_journey(monkeypatch):
 
     monkeypatch.setattr(app.orchestrate_scan, "apply_async", fake_apply_async)
 
-    with TestClient(app.app) as client:
-        homepage = client.get("/")
-        assert homepage.status_code == 200
-
-        csrf_cookie = client.cookies.get(app.settings.csrf_cookie_name)
-        assert csrf_cookie
-
+    with bootstrap_guided_form_client() as (client, csrf_cookie):
         create_response = client.post(
             "/scans",
             data={
@@ -1348,11 +1340,9 @@ def test_guided_scan_form_end_to_end_journey(monkeypatch):
     app.app.dependency_overrides.clear()
 
 
-def test_guided_scan_form_blocks_submission_without_required_consents(monkeypatch):
+def test_guided_scan_form_blocks_submission_without_required_consents(monkeypatch, bootstrap_guided_form_client):
     """Journey negativo: il form guidato deve bloccare run senza consensi obbligatori."""
     _clear_scans()
-    app.app.dependency_overrides[app.enforce_api_key_form_dependency] = lambda: None
-
     class DummyResult:
         id = "dummy-task-should-not-run"
 
@@ -1361,12 +1351,7 @@ def test_guided_scan_form_blocks_submission_without_required_consents(monkeypatc
 
     monkeypatch.setattr(app.orchestrate_scan, "apply_async", fake_apply_async)
 
-    with TestClient(app.app) as client:
-        homepage = client.get("/")
-        assert homepage.status_code == 200
-        csrf_cookie = client.cookies.get(app.settings.csrf_cookie_name)
-        assert csrf_cookie
-
+    with bootstrap_guided_form_client() as (client, csrf_cookie):
         create_response = client.post(
             "/scans",
             data={
@@ -1393,11 +1378,9 @@ def test_guided_scan_form_blocks_submission_without_required_consents(monkeypatc
     app.app.dependency_overrides.clear()
 
 
-def test_guided_scan_form_blocks_submission_without_scope_acknowledgement(monkeypatch):
+def test_guided_scan_form_blocks_submission_without_scope_acknowledgement(monkeypatch, bootstrap_guided_form_client):
     """Step 1 negativo: senza conferma scope legale il server deve bloccare la creazione scan."""
     _clear_scans()
-    app.app.dependency_overrides[app.enforce_api_key_form_dependency] = lambda: None
-
     class DummyResult:
         id = "dummy-task-should-not-run"
 
@@ -1406,12 +1389,7 @@ def test_guided_scan_form_blocks_submission_without_scope_acknowledgement(monkey
 
     monkeypatch.setattr(app.orchestrate_scan, "apply_async", fake_apply_async)
 
-    with TestClient(app.app) as client:
-        homepage = client.get("/")
-        assert homepage.status_code == 200
-        csrf_cookie = client.cookies.get(app.settings.csrf_cookie_name)
-        assert csrf_cookie
-
+    with bootstrap_guided_form_client() as (client, csrf_cookie):
         create_response = client.post(
             "/scans",
             data={
@@ -1436,11 +1414,9 @@ def test_guided_scan_form_blocks_submission_without_scope_acknowledgement(monkey
     app.app.dependency_overrides.clear()
 
 
-def test_guided_scan_form_blocks_incompatible_module_selection(monkeypatch):
+def test_guided_scan_form_blocks_incompatible_module_selection(monkeypatch, bootstrap_guided_form_client):
     """Step 2 negativo: il server deve bloccare moduli non compatibili con scan_type scelto."""
     _clear_scans()
-    app.app.dependency_overrides[app.enforce_api_key_form_dependency] = lambda: None
-
     class DummyResult:
         id = "dummy-task-should-not-run"
 
@@ -1449,12 +1425,7 @@ def test_guided_scan_form_blocks_incompatible_module_selection(monkeypatch):
 
     monkeypatch.setattr(app.orchestrate_scan, "apply_async", fake_apply_async)
 
-    with TestClient(app.app) as client:
-        homepage = client.get("/")
-        assert homepage.status_code == 200
-        csrf_cookie = client.cookies.get(app.settings.csrf_cookie_name)
-        assert csrf_cookie
-
+    with bootstrap_guided_form_client() as (client, csrf_cookie):
         create_response = client.post(
             "/scans",
             data={
@@ -1480,11 +1451,9 @@ def test_guided_scan_form_blocks_incompatible_module_selection(monkeypatch):
     app.app.dependency_overrides.clear()
 
 
-def test_guided_scan_form_blocks_submission_without_compliance_confirmation(monkeypatch):
+def test_guided_scan_form_blocks_submission_without_compliance_confirmation(monkeypatch, bootstrap_guided_form_client):
     """Step 5 negativo: senza conferma checklist compliance il server deve bloccare la run."""
     _clear_scans()
-    app.app.dependency_overrides[app.enforce_api_key_form_dependency] = lambda: None
-
     class DummyResult:
         id = "dummy-task-should-not-run"
 
@@ -1493,12 +1462,7 @@ def test_guided_scan_form_blocks_submission_without_compliance_confirmation(monk
 
     monkeypatch.setattr(app.orchestrate_scan, "apply_async", fake_apply_async)
 
-    with TestClient(app.app) as client:
-        homepage = client.get("/")
-        assert homepage.status_code == 200
-        csrf_cookie = client.cookies.get(app.settings.csrf_cookie_name)
-        assert csrf_cookie
-
+    with bootstrap_guided_form_client() as (client, csrf_cookie):
         create_response = client.post(
             "/scans",
             data={
@@ -1523,10 +1487,8 @@ def test_guided_scan_form_blocks_submission_without_compliance_confirmation(monk
     app.app.dependency_overrides.clear()
 
 
-def test_guided_scan_form_persists_advanced_module_configuration(monkeypatch):
+def test_guided_scan_form_persists_advanced_module_configuration(monkeypatch, bootstrap_guided_form_client):
     _clear_scans()
-    app.app.dependency_overrides[app.enforce_api_key_form_dependency] = lambda: None
-
     class DummyResult:
         id = "dummy-task-advanced-module-config"
 
@@ -1535,12 +1497,7 @@ def test_guided_scan_form_persists_advanced_module_configuration(monkeypatch):
 
     monkeypatch.setattr(app.orchestrate_scan, "apply_async", fake_apply_async)
 
-    with TestClient(app.app) as client:
-        homepage = client.get("/")
-        assert homepage.status_code == 200
-        csrf_cookie = client.cookies.get(app.settings.csrf_cookie_name)
-        assert csrf_cookie
-
+    with bootstrap_guided_form_client() as (client, csrf_cookie):
         create_response = client.post(
             "/scans",
             data={
@@ -1578,10 +1535,8 @@ def test_guided_scan_form_persists_advanced_module_configuration(monkeypatch):
     app.app.dependency_overrides.clear()
 
 
-def test_guided_scan_form_blocks_advanced_params_for_unselected_modules(monkeypatch):
+def test_guided_scan_form_blocks_advanced_params_for_unselected_modules(monkeypatch, bootstrap_guided_form_client):
     _clear_scans()
-    app.app.dependency_overrides[app.enforce_api_key_form_dependency] = lambda: None
-
     class DummyResult:
         id = "dummy-task-should-not-run"
 
@@ -1590,12 +1545,7 @@ def test_guided_scan_form_blocks_advanced_params_for_unselected_modules(monkeypa
 
     monkeypatch.setattr(app.orchestrate_scan, "apply_async", fake_apply_async)
 
-    with TestClient(app.app) as client:
-        homepage = client.get("/")
-        assert homepage.status_code == 200
-        csrf_cookie = client.cookies.get(app.settings.csrf_cookie_name)
-        assert csrf_cookie
-
+    with bootstrap_guided_form_client() as (client, csrf_cookie):
         create_response = client.post(
             "/scans",
             data={
@@ -1629,10 +1579,8 @@ def test_guided_scan_form_blocks_advanced_params_for_unselected_modules(monkeypa
     app.app.dependency_overrides.clear()
 
 
-def test_guided_scan_form_beginner_mode_blocks_high_risk_modules(monkeypatch):
+def test_guided_scan_form_beginner_mode_blocks_high_risk_modules(monkeypatch, bootstrap_guided_form_client):
     _clear_scans()
-    app.app.dependency_overrides[app.enforce_api_key_form_dependency] = lambda: None
-
     class DummyResult:
         id = "dummy-task-should-not-run"
 
@@ -1641,12 +1589,7 @@ def test_guided_scan_form_beginner_mode_blocks_high_risk_modules(monkeypatch):
 
     monkeypatch.setattr(app.orchestrate_scan, "apply_async", fake_apply_async)
 
-    with TestClient(app.app) as client:
-        homepage = client.get("/")
-        assert homepage.status_code == 200
-        csrf_cookie = client.cookies.get(app.settings.csrf_cookie_name)
-        assert csrf_cookie
-
+    with bootstrap_guided_form_client() as (client, csrf_cookie):
         create_response = client.post(
             "/scans",
             data={
@@ -1674,10 +1617,8 @@ def test_guided_scan_form_beginner_mode_blocks_high_risk_modules(monkeypatch):
     app.app.dependency_overrides.clear()
 
 
-def test_guided_scan_form_analyst_mode_caps_advanced_parameters(monkeypatch):
+def test_guided_scan_form_analyst_mode_caps_advanced_parameters(monkeypatch, bootstrap_guided_form_client):
     _clear_scans()
-    app.app.dependency_overrides[app.enforce_api_key_form_dependency] = lambda: None
-
     class DummyResult:
         id = "dummy-task-analyst-caps"
 
@@ -1686,12 +1627,7 @@ def test_guided_scan_form_analyst_mode_caps_advanced_parameters(monkeypatch):
 
     monkeypatch.setattr(app.orchestrate_scan, "apply_async", fake_apply_async)
 
-    with TestClient(app.app) as client:
-        homepage = client.get("/")
-        assert homepage.status_code == 200
-        csrf_cookie = client.cookies.get(app.settings.csrf_cookie_name)
-        assert csrf_cookie
-
+    with bootstrap_guided_form_client() as (client, csrf_cookie):
         create_response = client.post(
             "/scans",
             data={
