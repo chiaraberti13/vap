@@ -203,4 +203,8 @@ Motivo completamento: i test API su CRUD preset e transizioni lifecycle (`/api/v
 
 Motivo completamento: introdotta in `tests/conftest.py` la fixture factory `subject_headers(subject_id, extra_headers=None)` per comporre header read-only coerenti; adottata nei test API di retrieval trend/config snapshot, filtri lifecycle preset e KPI didattici, eliminando header inline duplicati nei GET con subject routing.
 
-**Prossimo task consigliato:** applicare `subject_headers` anche ai test read-only residui (es. download report cross-subject) e valutare un lint test che segnali header `x-data-subject` hardcoded fuori helper condivisi.
+- [x] **Hardening QA — adozione `subject_headers` nei test read-only residui (download report cross-subject + preset list)** (completato il 2026-04-19).
+
+Motivo completamento: i test read-only rimasti con header `x-data-subject` hardcoded ora riusano la fixture factory `subject_headers(...)` nei casi di download report cross-subject e listing preset configurazione, riducendo duplicazioni e mantenendo coerenza fixture-first nei GET con subject routing.
+
+**Prossimo task consigliato:** aggiungere un lint test pytest che intercetti nuovi header `x-data-subject` hardcoded fuori dai helper condivisi (`subject_headers` / `bootstrap_csrf_json_client`), per prevenire regressioni di stile nella suite.
