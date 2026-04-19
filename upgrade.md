@@ -251,4 +251,8 @@ Motivo completamento: esteso `.github/workflows/quality-gate.yml` con la job `sc
 
 Motivo completamento: esteso `.github/workflows/quality-gate.yml` con la job `scanner-validation-guards` (Python 3.11 + pip cache) che esegue `tests/test_scanner_validation.py`, aggiungendo un controllo CI isolato su vincoli fail-closed e compatibilità opzioni del builder/scanner prima del merge.
 
-**Prossimo task consigliato:** introdurre una job CI separata per i test `tests/test_execution_guardrails.py`, così da coprire anche in pipeline dedicata i blocchi runtime/safe-mode/kill-switch del policy enforcement operativo.
+- [x] **Hardening QA — quality gate CI dedicato ai test execution guardrails operativi** (completato il 2026-04-19).
+
+Motivo completamento: esteso `.github/workflows/quality-gate.yml` con la job `execution-guardrails-guards` (Python 3.11 + pip cache) che esegue `tests/test_execution_guardrails.py`, coprendo in pipeline dedicata i blocchi runtime/safe-mode/kill-switch del policy enforcement operativo.
+
+**Prossimo task consigliato:** introdurre una job CI separata per i test `tests/test_performance_budget.py`, così da presidiare in modo isolato anche i regression check su SLA runtime/report e warning automatici del performance budget.
