@@ -67,7 +67,7 @@ def test_download_report_endpoint_blocks_sensitive_report_for_viewer(tmp_path, s
     app.app.dependency_overrides.clear()
 
 
-def test_download_report_endpoint_blocks_cross_subject_access(tmp_path, seed_scan):
+def test_download_report_endpoint_blocks_cross_subject_access(tmp_path, seed_scan, subject_headers):
     _clear_scans()
     report_file = tmp_path / "scan-report-cross-subject.pdf"
     report_file.write_bytes(b"%PDF-1.4\n% cross-subject fixture\n")
@@ -82,7 +82,7 @@ def test_download_report_endpoint_blocks_cross_subject_access(tmp_path, seed_sca
     with TestClient(app.app) as client:
         response = client.get(
             f"/api/v1/scans/{scan_id}/report/download",
-            headers={"x-data-subject": "subject-attacker"},
+            headers=subject_headers("subject-attacker"),
         )
 
     assert response.status_code == 404
@@ -404,7 +404,7 @@ def test_get_scan_config_schema_endpoint():
     assert "runtime" in payload["properties"]
     app.app.dependency_overrides.clear()
 
-def test_scan_configuration_preset_crud_and_subject_isolation(bootstrap_csrf_json_client):
+def test_scan_configuration_preset_crud_and_subject_isolation(bootstrap_csrf_json_client, subject_headers):
     _clear_scans()
     app.app.dependency_overrides[app.enforce_api_key] = lambda: None
     app.app.dependency_overrides[app.enforce_operator_role] = lambda: "operator"
@@ -435,7 +435,7 @@ def test_scan_configuration_preset_crud_and_subject_isolation(bootstrap_csrf_jso
 
         list_response = client.get(
             "/api/v1/scan-config/presets",
-            headers={"x-data-subject": "student-alpha"},
+            headers=subject_headers("student-alpha"),
         )
         assert list_response.status_code == 200
         listed = list_response.json()
@@ -468,7 +468,7 @@ def test_scan_configuration_preset_crud_and_subject_isolation(bootstrap_csrf_jso
     app.app.dependency_overrides.clear()
 
 
-def test_scan_configuration_preset_list_rejects_checksum_tampering(bootstrap_csrf_json_client):
+def test_scan_configuration_preset_list_rejects_checksum_tampering(bootstrap_csrf_json_client, subject_headers):
     _clear_scans()
     app.app.dependency_overrides[app.enforce_api_key] = lambda: None
     app.app.dependency_overrides[app.enforce_operator_role] = lambda: "operator"
@@ -498,7 +498,7 @@ def test_scan_configuration_preset_list_rejects_checksum_tampering(bootstrap_csr
     with TestClient(app.app) as client:
         list_response = client.get(
             "/api/v1/scan-config/presets",
-            headers={"x-data-subject": "student-alpha"},
+            headers=subject_headers("student-alpha"),
         )
 
     assert list_response.status_code == 500
