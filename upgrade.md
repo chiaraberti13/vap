@@ -211,4 +211,8 @@ Motivo completamento: i test read-only rimasti con header `x-data-subject` hardc
 
 Motivo completamento: aggiunto il test `tests/test_subject_header_lint.py` che scansiona i file `tests/test_*.py` e fallisce se trova uso letterale di `"x-data-subject"` non mediato da `subject_headers(...)` o `bootstrap_csrf_json_client(...)`, prevenendo regressioni di stile/consistenza nei test.
 
-**Prossimo task consigliato:** estendere il lint con una allowlist per casi eccezionali documentati (se necessari) e integrare la stessa regola in CI quality gate insieme ai test di security headers.
+- [x] **Hardening QA — allowlist documentata nel lint `x-data-subject` + quality gate CI con security headers** (completato il 2026-04-19).
+
+Motivo completamento: il lint `tests/test_subject_header_lint.py` supporta ora una allowlist esplicita file/linea con motivazione per casi eccezionali documentati; aggiunto workflow GitHub Actions `.github/workflows/quality-gate.yml` che esegue in CI `tests/test_security_headers.py` e `tests/test_subject_header_lint.py` come quality gate minimo su push/PR.
+
+**Prossimo task consigliato:** estendere il quality gate CI includendo anche `tests/test_api_integration.py` in una job separata con matrice Python per intercettare regressioni cross-versione senza rallentare eccessivamente il gate rapido.

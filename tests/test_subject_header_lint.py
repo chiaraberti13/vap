@@ -4,6 +4,10 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 TESTS_ROOT = REPO_ROOT / "tests"
 ALLOWED_HELPERS = ("subject_headers(", "bootstrap_csrf_json_client(")
+ALLOWLISTED_OCCURRENCES: dict[str, dict[int, str]] = {
+    # Formato: "percorso/relativo.py": {linea: "motivazione"}
+    # Usare con parsimonia: prima preferire sempre i helper condivisi.
+}
 
 
 def test_no_hardcoded_x_data_subject_headers_outside_shared_helpers():
@@ -21,10 +25,13 @@ def test_no_hardcoded_x_data_subject_headers_outside_shared_helpers():
                 continue
             if any(helper in line for helper in ALLOWED_HELPERS):
                 continue
+            relative_path = str(file_path.relative_to(REPO_ROOT))
+            if line_number in ALLOWLISTED_OCCURRENCES.get(relative_path, {}):
+                continue
             violations.append(f"{file_path.relative_to(REPO_ROOT)}:{line_number}")
 
     assert not violations, (
         "Trovati header x-data-subject hardcoded fuori dai helper condivisi "
-        "subject_headers()/bootstrap_csrf_json_client():\n- "
+        "subject_headers()/bootstrap_csrf_json_client() e non presenti nella allowlist documentata:\n- "
         + "\n- ".join(violations)
     )
