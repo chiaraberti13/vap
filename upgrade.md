@@ -199,4 +199,8 @@ Motivo completamento: introdotta in `tests/conftest.py` una fixture context-mana
 
 Motivo completamento: i test API su CRUD preset e transizioni lifecycle (`/api/v1/scan-config/presets` + `/lifecycle`) ora usano il bootstrap condiviso CSRF JSON al posto di cookie/header hardcoded per ogni chiamata, riducendo boilerplate, mismatch nei setup e rischio regressioni da copia-incolla.
 
-**Prossimo task consigliato:** estendere il pattern fixture-first anche ai test che leggono KPI/trend con `x-data-subject` introducendo un helper unico per subject headers read-only, così da uniformare ulteriormente i setup GET e migliorare coerenza semantica tra test write/read.
+- [x] **Hardening QA — helper pytest `subject_headers` per endpoint read-only con `x-data-subject` (KPI/trend/preset filters)** (completato il 2026-04-19).
+
+Motivo completamento: introdotta in `tests/conftest.py` la fixture factory `subject_headers(subject_id, extra_headers=None)` per comporre header read-only coerenti; adottata nei test API di retrieval trend/config snapshot, filtri lifecycle preset e KPI didattici, eliminando header inline duplicati nei GET con subject routing.
+
+**Prossimo task consigliato:** applicare `subject_headers` anche ai test read-only residui (es. download report cross-subject) e valutare un lint test che segnali header `x-data-subject` hardcoded fuori helper condivisi.
