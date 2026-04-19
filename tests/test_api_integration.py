@@ -130,7 +130,7 @@ def test_create_scan(monkeypatch):
     app.app.dependency_overrides.clear()
 
 
-def test_scan_configuration_snapshot_is_persisted_and_retrievable(monkeypatch):
+def test_scan_configuration_snapshot_is_persisted_and_retrievable(monkeypatch, subject_headers):
     _clear_scans()
     app.app.dependency_overrides[app.enforce_api_key] = lambda: None
     app.app.dependency_overrides[app.enforce_operator_role] = lambda: "operator"
@@ -147,7 +147,7 @@ def test_scan_configuration_snapshot_is_persisted_and_retrievable(monkeypatch):
     with TestClient(app.app) as client:
         create_response = client.post(
             "/api/v1/scans",
-            headers={"x-data-subject": "student-alpha"},
+            headers=subject_headers("student-alpha"),
             json={
                 "target": "example.com",
                 "scan_type": "full",
@@ -166,7 +166,7 @@ def test_scan_configuration_snapshot_is_persisted_and_retrievable(monkeypatch):
 
         snapshot_response = client.get(
             f"/api/v1/scans/{scan_id}/configuration",
-            headers={"x-data-subject": "student-alpha"},
+            headers=subject_headers("student-alpha"),
         )
 
     assert snapshot_response.status_code == 200
@@ -179,7 +179,7 @@ def test_scan_configuration_snapshot_is_persisted_and_retrievable(monkeypatch):
     app.app.dependency_overrides.clear()
 
 
-def test_scan_configuration_snapshot_rejects_checksum_tampering(monkeypatch):
+def test_scan_configuration_snapshot_rejects_checksum_tampering(monkeypatch, subject_headers):
     _clear_scans()
     app.app.dependency_overrides[app.enforce_api_key] = lambda: None
     app.app.dependency_overrides[app.enforce_operator_role] = lambda: "operator"
@@ -196,7 +196,7 @@ def test_scan_configuration_snapshot_rejects_checksum_tampering(monkeypatch):
     with TestClient(app.app) as client:
         create_response = client.post(
             "/api/v1/scans",
-            headers={"x-data-subject": "student-alpha"},
+            headers=subject_headers("student-alpha"),
             json={
                 "target": "example.com",
                 "scan_type": "full",
@@ -220,7 +220,7 @@ def test_scan_configuration_snapshot_rejects_checksum_tampering(monkeypatch):
     with TestClient(app.app) as client:
         snapshot_response = client.get(
             f"/api/v1/scans/{scan_id}/configuration",
-            headers={"x-data-subject": "student-alpha"},
+            headers=subject_headers("student-alpha"),
         )
 
     assert snapshot_response.status_code == 500
@@ -228,7 +228,7 @@ def test_scan_configuration_snapshot_rejects_checksum_tampering(monkeypatch):
     app.app.dependency_overrides.clear()
 
 
-def test_scan_configuration_snapshot_blocks_cross_subject_access(monkeypatch):
+def test_scan_configuration_snapshot_blocks_cross_subject_access(monkeypatch, subject_headers):
     _clear_scans()
     app.app.dependency_overrides[app.enforce_api_key] = lambda: None
     app.app.dependency_overrides[app.enforce_operator_role] = lambda: "operator"
@@ -245,7 +245,7 @@ def test_scan_configuration_snapshot_blocks_cross_subject_access(monkeypatch):
     with TestClient(app.app) as client:
         create_response = client.post(
             "/api/v1/scans",
-            headers={"x-data-subject": "subject-owner"},
+            headers=subject_headers("subject-owner"),
             json={
                 "target": "example.com",
                 "scan_type": "full",
@@ -263,7 +263,7 @@ def test_scan_configuration_snapshot_blocks_cross_subject_access(monkeypatch):
 
         snapshot_response = client.get(
             f"/api/v1/scans/{scan_id}/configuration",
-            headers={"x-data-subject": "subject-attacker"},
+            headers=subject_headers("subject-attacker"),
         )
 
     assert snapshot_response.status_code == 404
@@ -552,7 +552,7 @@ def test_scan_configuration_preset_lifecycle_requires_admin_for_approval(bootstr
     app.app.dependency_overrides.clear()
 
 
-def test_scan_configuration_preset_lifecycle_filters_and_transition_flow_for_admin(bootstrap_csrf_json_client):
+def test_scan_configuration_preset_lifecycle_filters_and_transition_flow_for_admin(bootstrap_csrf_json_client, subject_headers):
     _clear_scans()
     app.app.dependency_overrides[app.enforce_api_key] = lambda: None
     app.app.dependency_overrides[app.enforce_operator_role] = lambda: "admin"
@@ -598,14 +598,14 @@ def test_scan_configuration_preset_lifecycle_filters_and_transition_flow_for_adm
 
         approved_filter = client.get(
             "/api/v1/scan-config/presets?lifecycle_state=approved",
-            headers={"x-data-subject": "team-admin"},
+            headers=subject_headers("team-admin"),
         )
         assert approved_filter.status_code == 200
         assert approved_filter.json() == []
 
         deprecated_filter = client.get(
             "/api/v1/scan-config/presets?lifecycle_state=deprecated",
-            headers={"x-data-subject": "team-admin"},
+            headers=subject_headers("team-admin"),
         )
         assert deprecated_filter.status_code == 200
         deprecated_payload = deprecated_filter.json()
@@ -1870,7 +1870,7 @@ def test_submit_learning_quiz_attempt_records_audit_event():
     app.app.dependency_overrides.clear()
 
 
-def test_learning_kpis_returns_quiz_and_remediation_metrics(seed_scan, seed_audit_event):
+def test_learning_kpis_returns_quiz_and_remediation_metrics(seed_scan, seed_audit_event, subject_headers):
     _clear_scans()
     app.app.dependency_overrides[app.enforce_api_key] = lambda: None
     app.app.dependency_overrides[app.enforce_viewer_role] = lambda: "viewer"
@@ -1913,7 +1913,7 @@ def test_learning_kpis_returns_quiz_and_remediation_metrics(seed_scan, seed_audi
     with TestClient(app.app) as client:
         response = client.get(
             "/api/v1/learning-kpis",
-            headers={"x-data-subject": "learner-kpi-002"},
+            headers=subject_headers("learner-kpi-002"),
         )
 
     assert response.status_code == 200

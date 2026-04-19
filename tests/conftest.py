@@ -153,3 +153,20 @@ def bootstrap_csrf_json_client() -> Callable[..., Iterator[tuple[TestClient, dic
             yield client, headers
 
     return _bootstrap
+
+
+@pytest.fixture
+def subject_headers() -> Callable[..., dict[str, str]]:
+    """
+    Helper read-only per header di subject routing negli endpoint GET.
+
+    Riduce boilerplate e mantiene semantica coerente tra test KPI/trend/read API.
+    """
+
+    def _subject_headers(subject_id: str, extra_headers: dict[str, str] | None = None) -> dict[str, str]:
+        headers = {"x-data-subject": subject_id}
+        if extra_headers:
+            headers.update(extra_headers)
+        return headers
+
+    return _subject_headers
