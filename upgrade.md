@@ -223,4 +223,8 @@ Motivo completamento: il workflow `.github/workflows/quality-gate.yml` ora manti
 
 Motivo completamento: aggiunto `cache: 'pip'` con `cache-dependency-path: requirements.txt` in entrambi i job del workflow `.github/workflows/quality-gate.yml` (`security-and-style-guards` e `api-integration-matrix`), riducendo i tempi medi di installazione dipendenze senza modificare isolamento né ripetibilità della pipeline.
 
-**Prossimo task consigliato:** aggiungere un quality gate CI dedicato ai test di accessibilità (`tests/test_accessibility_checks.py`) per intercettare regressioni UX/WCAG nelle PR senza attendere la suite completa.
+- [x] **Hardening QA — quality gate CI dedicato ai test di accessibilità WCAG** (completato il 2026-04-19).
+
+Motivo completamento: aggiunta nel workflow `.github/workflows/quality-gate.yml` la job `accessibility-guards` con caching pip e run mirata di `tests/test_accessibility_checks.py`, così da intercettare regressioni UX/accessibilità direttamente su push/PR con un controllo rapido e isolato.
+
+**Prossimo task consigliato:** introdurre nel quality gate CI una job dedicata ai test frontend di sicurezza del catalogo scansioni (`tests/test_scan_catalog_frontend_security.py`) per rilevare in anticipo regressioni XSS/template injection lato UI.
