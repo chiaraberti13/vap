@@ -247,4 +247,8 @@ Motivo completamento: esteso `.github/workflows/quality-gate.yml` con la job `te
 
 Motivo completamento: esteso `.github/workflows/quality-gate.yml` con la job `scan-catalog-guards` (Python 3.11 + pip cache) che esegue `tests/test_scan_catalog.py`, introducendo un controllo CI isolato su coerenza metadata/routing del catalogo moduli di scansione prima del merge.
 
-**Prossimo task consigliato:** introdurre una job CI separata per i test del validation/policy engine configurazioni (`tests/test_scanner_validation.py`) per intercettare tempestivamente regressioni su vincoli fail-closed e compatibilità opzioni scanner.
+- [x] **Hardening QA — quality gate CI dedicato ai test validation/policy engine configurazioni** (completato il 2026-04-19).
+
+Motivo completamento: esteso `.github/workflows/quality-gate.yml` con la job `scanner-validation-guards` (Python 3.11 + pip cache) che esegue `tests/test_scanner_validation.py`, aggiungendo un controllo CI isolato su vincoli fail-closed e compatibilità opzioni del builder/scanner prima del merge.
+
+**Prossimo task consigliato:** introdurre una job CI separata per i test `tests/test_execution_guardrails.py`, così da coprire anche in pipeline dedicata i blocchi runtime/safe-mode/kill-switch del policy enforcement operativo.
