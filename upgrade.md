@@ -195,4 +195,8 @@ Motivo completamento: introdotta in `tests/conftest.py` una fixture context-mana
 
 Motivo completamento: introdotta in `tests/conftest.py` una fixture context-manager che inizializza cookie CSRF e compone header riusabili (`x-csrf-token` + eventuali header custom); i test telemetry su `/api/v1/telemetry/scan-builder` in `tests/test_api_integration.py` ora la riusano sia per il percorso valido sia per quello di rifiuto CSRF, riducendo boilerplate e mismatch di setup tra test.
 
-**Prossimo task consigliato:** applicare `bootstrap_csrf_json_client` anche ai test API CSRF-protected con `x-data-subject` (trend KPI/lifecycle preset) per uniformare ulteriormente i setup header/cookie e diminuire regressioni da copia-incolla.
+- [x] **Hardening QA — adozione `bootstrap_csrf_json_client` nei test preset/lifecycle con header `x-data-subject`** (completato il 2026-04-19).
+
+Motivo completamento: i test API su CRUD preset e transizioni lifecycle (`/api/v1/scan-config/presets` + `/lifecycle`) ora usano il bootstrap condiviso CSRF JSON al posto di cookie/header hardcoded per ogni chiamata, riducendo boilerplate, mismatch nei setup e rischio regressioni da copia-incolla.
+
+**Prossimo task consigliato:** estendere il pattern fixture-first anche ai test che leggono KPI/trend con `x-data-subject` introducendo un helper unico per subject headers read-only, così da uniformare ulteriormente i setup GET e migliorare coerenza semantica tra test write/read.
