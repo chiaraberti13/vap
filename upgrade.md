@@ -185,4 +185,8 @@ Motivo completamento: i test di trend summary su dettaglio scansione ora riusano
 
 Motivo completamento: i test di listing audit (`/api/v1/audit/events`) ora usano la factory condivisa `seed_audit_event` al posto di `session.add_all(...)`, riducendo boilerplate SQLAlchemy diretto e mantenendo setup più leggibile/coerente con l’approccio fixture-first adottato in suite.
 
-**Prossimo task consigliato:** introdurre un helper pytest dedicato per il bootstrap del client form-guided (homepage + estrazione cookie CSRF + override API key form) così da ridurre duplicazioni nei test journey wizard/compliance e diminuire il rischio di divergenze tra scenari positivi/negativi.
+- [x] **Hardening QA — helper pytest `bootstrap_guided_form_client` per journey wizard/compliance** (completato il 2026-04-18).
+
+Motivo completamento: introdotta in `tests/conftest.py` una fixture context-manager che centralizza bootstrap homepage, estrazione cookie CSRF e override API key del form guidato; i test journey/compliance in `tests/test_api_integration.py` ora riusano il helper riducendo boilerplate e divergence risk tra scenari positivi/negativi.
+
+**Prossimo task consigliato:** estendere lo stesso pattern fixture-first ai test telemetry CSRF (`/api/v1/telemetry/scan-builder`) introducendo un helper dedicato ai POST CSRF-protected, così da uniformare ulteriormente i setup tra endpoint API JSON e submit form.
