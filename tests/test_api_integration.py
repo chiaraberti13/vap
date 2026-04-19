@@ -1831,7 +1831,7 @@ def test_learning_progress_rejects_invalid_path_id():
     app.app.dependency_overrides.clear()
 
 
-def test_submit_learning_quiz_attempt_records_audit_event():
+def test_submit_learning_quiz_attempt_records_audit_event(subject_headers):
     _clear_scans()
     app.app.dependency_overrides[app.enforce_api_key] = lambda: None
     app.app.dependency_overrides[app.enforce_viewer_role] = lambda: "viewer"
@@ -1839,7 +1839,7 @@ def test_submit_learning_quiz_attempt_records_audit_event():
     with TestClient(app.app) as client:
         response = client.post(
             "/api/v1/learning-quiz-attempts",
-            headers={"x-data-subject": "learner-kpi-001"},
+            headers=subject_headers("learner-kpi-001"),
             json={
                 "module_id": "triage-basics",
                 "total_questions": 10,
