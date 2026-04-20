@@ -267,4 +267,8 @@ Motivo completamento: esteso `.github/workflows/quality-gate.yml` con la job `de
 
 Motivo completamento: esteso `.github/workflows/quality-gate.yml` con la job `remediation-roadmap-guards` (Python 3.11 + pip cache) che esegue `tests/test_remediation_roadmap.py`, aggiungendo un controllo CI isolato contro regressioni nella logica di priorità remediation dei report.
 
-**Prossimo task consigliato:** introdurre una job CI separata per `tests/test_enrichment_engine.py`, così da intercettare regressioni nella normalizzazione/arricchimento finding prima del merge.
+- [x] **Hardening QA — quality gate CI dedicato ai test enrichment engine** (completato il 2026-04-20).
+
+Motivo completamento: esteso `.github/workflows/quality-gate.yml` con la job `enrichment-engine-guards` (Python 3.11 + pip cache) che esegue `tests/test_enrichment_engine.py`, aggiungendo un presidio CI isolato contro regressioni nella normalizzazione/arricchimento finding prima del merge.
+
+**Prossimo task consigliato:** introdurre una job CI separata per `tests/test_config_security_checklist.py`, così da intercettare regressioni sui controlli baseline di hardening configurativo prima del merge.
