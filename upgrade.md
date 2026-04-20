@@ -255,4 +255,8 @@ Motivo completamento: esteso `.github/workflows/quality-gate.yml` con la job `sc
 
 Motivo completamento: esteso `.github/workflows/quality-gate.yml` con la job `execution-guardrails-guards` (Python 3.11 + pip cache) che esegue `tests/test_execution_guardrails.py`, coprendo in pipeline dedicata i blocchi runtime/safe-mode/kill-switch del policy enforcement operativo.
 
-**Prossimo task consigliato:** introdurre una job CI separata per i test `tests/test_performance_budget.py`, così da presidiare in modo isolato anche i regression check su SLA runtime/report e warning automatici del performance budget.
+- [x] **Hardening QA — quality gate CI dedicato ai test performance budget/SLA** (completato il 2026-04-19).
+
+Motivo completamento: esteso `.github/workflows/quality-gate.yml` con la job `performance-budget-guards` (Python 3.11 + pip cache) che esegue `tests/test_performance_budget.py`, aggiungendo un presidio CI isolato sui regression check di SLA runtime scansioni/report e warning automatici del performance budget.
+
+**Prossimo task consigliato:** introdurre una job CI separata per i test `tests/test_design_tokens.py`, così da intercettare regressioni di coerenza token UI/PDF direttamente nel quality gate su push/PR.
