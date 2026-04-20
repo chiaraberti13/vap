@@ -271,4 +271,8 @@ Motivo completamento: esteso `.github/workflows/quality-gate.yml` con la job `re
 
 Motivo completamento: esteso `.github/workflows/quality-gate.yml` con la job `enrichment-engine-guards` (Python 3.11 + pip cache) che esegue `tests/test_enrichment_engine.py`, aggiungendo un presidio CI isolato contro regressioni nella normalizzazione/arricchimento finding prima del merge.
 
-**Prossimo task consigliato:** introdurre una job CI separata per `tests/test_config_security_checklist.py`, così da intercettare regressioni sui controlli baseline di hardening configurativo prima del merge.
+- [x] **Hardening QA — quality gate CI dedicato ai test checklist hardening configurativo** (completato il 2026-04-20).
+
+Motivo completamento: esteso `.github/workflows/quality-gate.yml` con la job `config-security-checklist-guards` (Python 3.11 + pip cache) che esegue `tests/test_config_security_checklist.py`, intercettando regressioni sui controlli baseline di hardening configurativo direttamente su push/PR prima del merge.
+
+**Prossimo task consigliato:** introdurre una job CI separata per `tests/test_scan_configuration.py`, così da intercettare regressioni sui vincoli dello schema `Scan Configuration v1` e sulla normalizzazione dei preset in una pipeline dedicata.
