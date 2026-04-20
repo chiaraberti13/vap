@@ -275,4 +275,8 @@ Motivo completamento: esteso `.github/workflows/quality-gate.yml` con la job `en
 
 Motivo completamento: esteso `.github/workflows/quality-gate.yml` con la job `config-security-checklist-guards` (Python 3.11 + pip cache) che esegue `tests/test_config_security_checklist.py`, intercettando regressioni sui controlli baseline di hardening configurativo direttamente su push/PR prima del merge.
 
-**Prossimo task consigliato:** introdurre una job CI separata per `tests/test_scan_configuration.py`, così da intercettare regressioni sui vincoli dello schema `Scan Configuration v1` e sulla normalizzazione dei preset in una pipeline dedicata.
+- [x] **Hardening QA — quality gate CI dedicato ai test schema/policy di Scan Configuration v1** (completato il 2026-04-20).
+
+Motivo completamento: aggiunti test unitari dedicati in `tests/test_scan_configuration.py` per vincoli schema (normalizzazione/validazione override) e policy enforcement (compatibilità tool/scan type + approvazione high-risk per ruoli non admin); esteso `.github/workflows/quality-gate.yml` con la job `scan-configuration-guards` (Python 3.11 + pip cache) che esegue questo file in pipeline isolata su push/PR.
+
+**Prossimo task consigliato:** introdurre una job CI separata per `tests/test_db_migrations.py`, così da intercettare regressioni su schema/versioning Alembic in una pipeline dedicata prima del merge.
