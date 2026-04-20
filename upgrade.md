@@ -279,4 +279,8 @@ Motivo completamento: esteso `.github/workflows/quality-gate.yml` con la job `co
 
 Motivo completamento: aggiunti test unitari dedicati in `tests/test_scan_configuration.py` per vincoli schema (normalizzazione/validazione override) e policy enforcement (compatibilità tool/scan type + approvazione high-risk per ruoli non admin); esteso `.github/workflows/quality-gate.yml` con la job `scan-configuration-guards` (Python 3.11 + pip cache) che esegue questo file in pipeline isolata su push/PR.
 
+- [x] **Hardening QA — quality gate CI dedicato ai test core security + audit logging middleware** (completato il 2026-04-20).
+
+Motivo completamento: esteso `.github/workflows/quality-gate.yml` con due job isolate (`security-core-guards` e `audit-logging-guards`, Python 3.11 + pip cache) che eseguono rispettivamente `tests/test_security.py` e `tests/test_audit_logging_middleware.py`, così da intercettare regressioni su primitive di sicurezza (API key/JWT/CSRF/proxy trust) e tracciamento audit middleware direttamente su push/PR prima del merge.
+
 **Prossimo task consigliato:** introdurre una job CI separata per `tests/test_db_migrations.py`, così da intercettare regressioni su schema/versioning Alembic in una pipeline dedicata prima del merge.
