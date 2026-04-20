@@ -259,4 +259,8 @@ Motivo completamento: esteso `.github/workflows/quality-gate.yml` con la job `ex
 
 Motivo completamento: esteso `.github/workflows/quality-gate.yml` con la job `performance-budget-guards` (Python 3.11 + pip cache) che esegue `tests/test_performance_budget.py`, aggiungendo un presidio CI isolato sui regression check di SLA runtime scansioni/report e warning automatici del performance budget.
 
-**Prossimo task consigliato:** introdurre una job CI separata per i test `tests/test_design_tokens.py`, così da intercettare regressioni di coerenza token UI/PDF direttamente nel quality gate su push/PR.
+- [x] **Hardening QA — quality gate CI dedicato ai test di coerenza design tokens UI/PDF** (completato il 2026-04-20).
+
+Motivo completamento: esteso `.github/workflows/quality-gate.yml` con la job `design-tokens-guards` (Python 3.11 + pip cache) che esegue `tests/test_design_tokens.py`, aggiungendo un presidio CI isolato contro regressioni di coerenza tra token condivisi UI/PDF prima del merge.
+
+**Prossimo task consigliato:** introdurre una job CI separata per i test `tests/test_remediation_roadmap.py`, così da intercettare regressioni sulla prioritizzazione remediation nei report prima del merge.
