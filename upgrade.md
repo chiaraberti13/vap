@@ -263,4 +263,8 @@ Motivo completamento: esteso `.github/workflows/quality-gate.yml` con la job `pe
 
 Motivo completamento: esteso `.github/workflows/quality-gate.yml` con la job `design-tokens-guards` (Python 3.11 + pip cache) che esegue `tests/test_design_tokens.py`, aggiungendo un presidio CI isolato contro regressioni di coerenza tra token condivisi UI/PDF prima del merge.
 
-**Prossimo task consigliato:** introdurre una job CI separata per i test `tests/test_remediation_roadmap.py`, così da intercettare regressioni sulla prioritizzazione remediation nei report prima del merge.
+- [x] **Hardening QA — quality gate CI dedicato ai test di prioritizzazione remediation roadmap** (completato il 2026-04-20).
+
+Motivo completamento: esteso `.github/workflows/quality-gate.yml` con la job `remediation-roadmap-guards` (Python 3.11 + pip cache) che esegue `tests/test_remediation_roadmap.py`, aggiungendo un controllo CI isolato contro regressioni nella logica di priorità remediation dei report.
+
+**Prossimo task consigliato:** introdurre una job CI separata per `tests/test_enrichment_engine.py`, così da intercettare regressioni nella normalizzazione/arricchimento finding prima del merge.
