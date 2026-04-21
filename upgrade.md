@@ -283,4 +283,8 @@ Motivo completamento: aggiunti test unitari dedicati in `tests/test_scan_configu
 
 Motivo completamento: esteso `.github/workflows/quality-gate.yml` con due job isolate (`security-core-guards` e `audit-logging-guards`, Python 3.11 + pip cache) che eseguono rispettivamente `tests/test_security.py` e `tests/test_audit_logging_middleware.py`, così da intercettare regressioni su primitive di sicurezza (API key/JWT/CSRF/proxy trust) e tracciamento audit middleware direttamente su push/PR prima del merge.
 
-**Prossimo task consigliato:** introdurre una job CI separata per `tests/test_db_migrations.py`, così da intercettare regressioni su schema/versioning Alembic in una pipeline dedicata prima del merge.
+- [x] **Hardening QA — quality gate CI dedicato ai test migrazioni database Alembic** (completato il 2026-04-21).
+
+Motivo completamento: esteso `.github/workflows/quality-gate.yml` con la job `db-migrations-guards` (Python 3.11 + pip cache) che esegue `tests/test_db_migrations.py`, aggiungendo un controllo CI isolato contro regressioni su schema/versioning e drift migrazioni prima del merge.
+
+**Prossimo task consigliato:** introdurre una job CI separata per `tests/test_compliance.py`, così da intercettare regressioni su regole compliance e gating normativo in pipeline dedicata prima del merge.
