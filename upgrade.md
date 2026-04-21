@@ -149,6 +149,7 @@ Creare un piano operativo **didattico e incrementale** per trasformare VAP in un
 - [x] Governance esplicita “scan config lifecycle” (draft/review/approved/deprecated) introdotta su preset configurazione con transizioni controllate e approvazione admin obbligatoria per lo stato `approved` (completato il 2026-04-17).
 - [x] Test regressione CSP disallineato (`tests/test_security_headers.py::test_csp_disallows_inline_scripts_by_default`): expectation allineata alla policy CSP corrente con sole sorgenti locali (`'self'`) per `script-src`/`style-src` (completato il 2026-04-18).
 - [x] Test integrazione flakey su approval high-risk (`tests/test_api_integration.py::test_create_scan_non_admin_high_risk_requires_admin_approval_reference`): isolamento dei test ripristinato centralizzando il reset dello storage del rate limiter dentro `_clear_scans()`, eliminando interferenze tra POST consecutivi e tra test che condividono lo stesso client IP (completato il 2026-04-18).
+- [ ] Riferimento checklist non allineato a repository: task consigliato del 2026-04-21 menzionava `tests/test_compliance.py`, ma il file non esiste attualmente nella suite (`tests/`); da decidere se introdurre una suite compliance dedicata o riallineare definitivamente la roadmap ai test reali disponibili.
 
 ---
 
@@ -287,4 +288,8 @@ Motivo completamento: esteso `.github/workflows/quality-gate.yml` con due job is
 
 Motivo completamento: esteso `.github/workflows/quality-gate.yml` con la job `db-migrations-guards` (Python 3.11 + pip cache) che esegue `tests/test_db_migrations.py`, aggiungendo un controllo CI isolato contro regressioni su schema/versioning e drift migrazioni prima del merge.
 
-**Prossimo task consigliato:** introdurre una job CI separata per `tests/test_compliance.py`, così da intercettare regressioni su regole compliance e gating normativo in pipeline dedicata prima del merge.
+- [x] **Hardening QA — quality gate CI dedicato ai test learning blocks didattici** (completato il 2026-04-21).
+
+Motivo completamento: esteso `.github/workflows/quality-gate.yml` con la job `learning-blocks-guards` (Python 3.11 + pip cache) che esegue `tests/test_learning_blocks.py`, aggiungendo un controllo CI isolato contro regressioni nei contenuti didattici contestuali e nella coerenza dei blocchi formativi UI/API.
+
+**Prossimo task consigliato:** introdurre una job CI separata per `tests/test_new_scanners.py`, così da intercettare regressioni di integrazione sui nuovi scanner/plugin in pipeline dedicata prima del merge.
