@@ -292,4 +292,8 @@ Motivo completamento: esteso `.github/workflows/quality-gate.yml` con la job `db
 
 Motivo completamento: esteso `.github/workflows/quality-gate.yml` con la job `learning-blocks-guards` (Python 3.11 + pip cache) che esegue `tests/test_learning_blocks.py`, aggiungendo un controllo CI isolato contro regressioni nei contenuti didattici contestuali e nella coerenza dei blocchi formativi UI/API.
 
-**Prossimo task consigliato:** introdurre una job CI separata per `tests/test_new_scanners.py`, così da intercettare regressioni di integrazione sui nuovi scanner/plugin in pipeline dedicata prima del merge.
+- [x] **Hardening QA — quality gate CI dedicato ai test di integrazione nuovi scanner/plugin** (completato il 2026-04-21).
+
+Motivo completamento: esteso `.github/workflows/quality-gate.yml` con la job `new-scanners-guards` (Python 3.11 + pip cache) che esegue `tests/test_new_scanners.py`, aggiungendo un presidio CI isolato per intercettare regressioni di integrazione sui nuovi scanner/plugin prima del merge.
+
+**Prossimo task consigliato:** affrontare il backlog aperto sul riferimento checklist non allineato (`tests/test_compliance.py` assente), decidendo se introdurre la suite compliance dedicata o aggiornare definitivamente roadmap/quality gate sui test realmente presenti.
