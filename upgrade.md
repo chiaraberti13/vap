@@ -154,7 +154,7 @@ Creare un piano operativo **didattico e incrementale** per trasformare VAP in un
 ---
 
 
-- [ ] Disallineamento documentazione CI: `upgrade.md` riporta estensioni del workflow `.github/workflows/quality-gate.yml`, ma nel repository corrente la directory `.github/workflows` non è presente; da verificare se i workflow non sono stati versionati o se la checklist include attività eseguite fuori repo.
+- [x] Disallineamento documentazione CI: ripristinato e versionato il workflow `.github/workflows/quality-gate.yml` con job dedicati (security/style, API integration matrix 3.10/3.11, accessibility, frontend security, scanner runtime), riallineando la checklist allo stato reale del repository (completato il 2026-04-24).
 
 ## 5) Definizione “Done” per ogni task
 Un task è completato solo se:

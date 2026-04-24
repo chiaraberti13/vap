@@ -7,6 +7,9 @@ ALLOWED_HELPERS = ("subject_headers(", "bootstrap_csrf_json_client(")
 ALLOWLISTED_OCCURRENCES: dict[str, dict[int, str]] = {
     # Formato: "percorso/relativo.py": {linea: "motivazione"}
     # Usare con parsimonia: prima preferire sempre i helper condivisi.
+    "tests/test_compliance.py": {
+        43: "Test unitario su Request costruita manualmente per validare precedence header/session in get_subject_id.",
+    },
 }
 
 
