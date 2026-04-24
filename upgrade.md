@@ -149,7 +149,7 @@ Creare un piano operativo **didattico e incrementale** per trasformare VAP in un
 - [x] Governance esplicita “scan config lifecycle” (draft/review/approved/deprecated) introdotta su preset configurazione con transizioni controllate e approvazione admin obbligatoria per lo stato `approved` (completato il 2026-04-17).
 - [x] Test regressione CSP disallineato (`tests/test_security_headers.py::test_csp_disallows_inline_scripts_by_default`): expectation allineata alla policy CSP corrente con sole sorgenti locali (`'self'`) per `script-src`/`style-src` (completato il 2026-04-18).
 - [x] Test integrazione flakey su approval high-risk (`tests/test_api_integration.py::test_create_scan_non_admin_high_risk_requires_admin_approval_reference`): isolamento dei test ripristinato centralizzando il reset dello storage del rate limiter dentro `_clear_scans()`, eliminando interferenze tra POST consecutivi e tra test che condividono lo stesso client IP (completato il 2026-04-18).
-- [ ] Riferimento checklist non allineato a repository: task consigliato del 2026-04-21 menzionava `tests/test_compliance.py`, ma il file non esiste attualmente nella suite (`tests/`); da decidere se introdurre una suite compliance dedicata o riallineare definitivamente la roadmap ai test reali disponibili.
+- [x] Riferimento checklist non allineato a repository risolto: introdotta la suite `tests/test_compliance.py` per coprire utility compliance (subject resolution, consenso versionato, audit redaction, export anonimizzato) ed esteso il quality gate CI con job dedicata `compliance-guards` (completato il 2026-04-24).
 
 ---
 
@@ -296,4 +296,8 @@ Motivo completamento: esteso `.github/workflows/quality-gate.yml` con la job `le
 
 Motivo completamento: esteso `.github/workflows/quality-gate.yml` con la job `new-scanners-guards` (Python 3.11 + pip cache) che esegue `tests/test_new_scanners.py`, aggiungendo un presidio CI isolato per intercettare regressioni di integrazione sui nuovi scanner/plugin prima del merge.
 
-**Prossimo task consigliato:** affrontare il backlog aperto sul riferimento checklist non allineato (`tests/test_compliance.py` assente), decidendo se introdurre la suite compliance dedicata o aggiornare definitivamente roadmap/quality gate sui test realmente presenti.
+- [x] **Hardening QA — suite pytest compliance dedicata + quality gate CI** (completato il 2026-04-24).
+
+Motivo completamento: aggiunto `tests/test_compliance.py` con copertura su risoluzione subject/actor, verifica consensi richiesti per versione corrente, redazione metadata audit e anonimizzazione export scan; workflow `.github/workflows/quality-gate.yml` esteso con job isolata `compliance-guards` per prevenire regressioni compliance su push/PR.
+
+**Prossimo task consigliato:** introdurre test dedicati per i casi limite di `resolve_actor` con JWT non valido e fallback API key/query-param negli endpoint che registrano audit, così da rafforzare ulteriormente la robustezza del tracciamento identità in scenari ostili.
