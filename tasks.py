@@ -319,18 +319,28 @@ def run_scan_in_process(scan_id: int, scan_type: str, target: str) -> None:
         db.commit()
 
     results: List[Dict[str, Any]] = []
+    scanner_timeout = settings.celery_task_time_limit or 900
     with ThreadPoolExecutor(max_workers=max(1, total)) as pool:
         futures = {
             pool.submit(_run_single_scanner_sync, scan_id, name, target, total): name
             for name in scanner_names
         }
-        for future in as_completed(futures):
-            try:
-                results.append(future.result())
-            except Exception as exc:
+        try:
+            for future in as_completed(futures, timeout=scanner_timeout * total):
                 name = futures[future]
-                _log.error("scanner %s failed in sync run: %s", name, exc)
-                results.append({"tool": name, "status": "error", "message": str(exc), "findings": []})
+                try:
+                    results.append(future.result(timeout=scanner_timeout))
+                except TimeoutError:
+                    _log.error("scanner %s timed out in sync run", name)
+                    results.append({"tool": name, "status": "timeout", "message": "Scanner timed out", "findings": []})
+                except Exception as exc:
+                    _log.error("scanner %s failed in sync run: %s", name, exc)
+                    results.append({"tool": name, "status": "error", "message": str(exc), "findings": []})
+        except TimeoutError:
+            for future, name in futures.items():
+                if not future.done():
+                    _log.error("scanner %s timed out (global pool timeout)", name)
+                    results.append({"tool": name, "status": "timeout", "message": "Scanner timed out", "findings": []})
 
     findings: List[Dict[str, Any]] = []
     for r in results:
