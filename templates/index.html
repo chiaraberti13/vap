@@ -585,7 +585,7 @@
 
     <footer class="border-t border-slate-800 px-4 py-6 text-sm text-slate-500 sm:px-6">
       <div class="home-container flex flex-col justify-between gap-2 md:flex-row">
-        <span>© 2024 Vulnerability Assessment Platform</span>
+        <span>© {{ now().year }} Vulnerability Assessment Platform</span>
         <span class="flex flex-wrap gap-3">
           <span>Ambiente: {{ request.app.title }}</span>
           <a class="text-cyan-300 hover:underline" href="/privacy-policy">Privacy Policy</a>

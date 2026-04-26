@@ -62,21 +62,32 @@
             <h2 class="text-xl font-semibold">Progressione scansione</h2>
             <p class="text-sm text-slate-400 mt-1">Aggiornamenti in tempo reale via WebSocket.</p>
           </div>
-          {% if scan.status not in ["completed", "report_failed", "canceled"] %}
-          <button id="cancel-scan" class="inline-flex items-center rounded-lg border border-rose-400/50 px-4 py-2 text-sm text-rose-200 hover:border-rose-300">
-            Annulla scan
-          </button>
-          {% endif %}
+          <div class="flex items-center gap-3 flex-wrap">
+            {% if scan.status not in ["completed", "report_failed", "canceled"] %}
+            <span id="ws-status" class="text-xs text-slate-400">Connessione...</span>
+            {% endif %}
+            {% if scan.status not in ["completed", "report_failed", "canceled"] %}
+            <button id="cancel-scan" class="inline-flex items-center rounded-lg border border-rose-400/50 px-4 py-2 text-sm text-rose-200 hover:border-rose-300">
+              Annulla scan
+            </button>
+            {% endif %}
+          </div>
         </div>
+        {% if scan.status not in ["completed", "report_failed", "canceled"] %}
+        <div id="scan-spinner" class="mt-3 flex items-center gap-2 text-sm text-cyan-300">
+          <span class="inline-block h-2.5 w-2.5 rounded-full bg-cyan-400 animate-pulse"></span>
+          Scansione in corso...
+        </div>
+        {% endif %}
         <div class="mt-4 h-3 w-full overflow-hidden rounded-full bg-slate-800">
-          <div id="scan-progress-bar" class="h-full bg-cyan-400 transition-all" data-progress="{{ scan.progress or 0 }}"></div>
+          <div id="scan-progress-bar" class="h-full bg-cyan-400 transition-all {% if scan.status in ['running', 'queued'] %}animate-pulse{% endif %}" data-progress="{{ scan.progress or 0 }}"></div>
         </div>
         <p class="mt-3 text-sm text-slate-300">Progresso: <span id="scan-progress-value">{{ scan.progress or 0 }}</span>%</p>
       </section>
 
       <!-- Logs, Notifications & Learning Sidebar -->
       <section class="grid gap-4 lg:grid-cols-3" aria-label="Telemetria scansione e supporto didattico">
-        <details class="content-card cognitive-panel">
+        <details class="content-card cognitive-panel" {% if scan.status in ["running", "queued"] %}open{% endif %}>
           <summary class="cognitive-panel-summary">Log streaming</summary>
           <p class="home-microcopy mt-3 text-slate-400">Apri i log completi quando devi investigare errori runtime o verificare sequenze tecniche.</p>
           <div id="scan-logs" class="space-y-1 text-xs font-mono text-slate-300 max-h-60 overflow-y-auto" role="log" aria-live="polite" aria-relevant="additions text">
@@ -120,7 +131,7 @@
       <!-- Findings -->
       <section>
         <div class="flex items-center justify-between mb-4">
-          <h2 class="text-2xl font-semibold">Findings (sintesi video)
+          <h2 class="text-2xl font-semibold">Findings (riepilogo)
             {% if findings %}
             <span class="ml-2 text-base font-normal text-slate-400">({{ findings | length }})</span>
             {% endif %}
