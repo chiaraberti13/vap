@@ -1899,28 +1899,15 @@ def create_scan_form(
     db.commit()
     db.refresh(scan)
 
-    try:
-        task_result = orchestrate_scan.apply_async(
-            args=[scan.id, scan.scan_type, scan.target],
-            priority=priority,
-        )
-        scan.celery_task_id = task_result.id
-        db.commit()
-    except Exception as exc:
-        if not check_broker_connection():
-            # Broker non disponibile: esegui la scansione direttamente in un thread
-            http_logger.warning(
-                "celery_unavailable_fallback_sync",
-                scan_id=scan.id,
-                broker=settings.celery_broker_url,
-            )
-            t = threading.Thread(
-                target=run_scan_in_process,
+    if check_broker_connection():
+        try:
+            task_result = orchestrate_scan.apply_async(
                 args=[scan.id, scan.scan_type, scan.target],
-                daemon=True,
+                priority=priority,
             )
-            t.start()
-        else:
+            scan.celery_task_id = task_result.id
+            db.commit()
+        except Exception as exc:
             http_logger.error("celery_dispatch_failed", scan_id=scan.id, error=str(exc))
             scan.status = "failed"
             db.commit()
@@ -1971,6 +1958,19 @@ def create_scan_form(
                 samesite="lax",
             )
             return response
+    else:
+        # Broker non disponibile: esegui la scansione direttamente in un thread
+        http_logger.warning(
+            "celery_unavailable_fallback_sync",
+            scan_id=scan.id,
+            broker=settings.celery_broker_url,
+        )
+        t = threading.Thread(
+            target=run_scan_in_process,
+            args=[scan.id, scan.scan_type, scan.target],
+            daemon=True,
+        )
+        t.start()
 
     redirect_url = f"/scans/{scan.id}"
     if api_key:
@@ -2148,28 +2148,15 @@ def create_scan(
     db.commit()
     db.refresh(scan)
 
-    try:
-        task_result = orchestrate_scan.apply_async(
-            args=[scan.id, scan.scan_type, scan.target],
-            priority=payload.priority,
-        )
-        scan.celery_task_id = task_result.id
-        db.commit()
-    except Exception as exc:
-        if not check_broker_connection():
-            # Broker non disponibile: esegui la scansione direttamente in un thread
-            http_logger.warning(
-                "celery_unavailable_fallback_sync",
-                scan_id=scan.id,
-                broker=settings.celery_broker_url,
-            )
-            t = threading.Thread(
-                target=run_scan_in_process,
+    if check_broker_connection():
+        try:
+            task_result = orchestrate_scan.apply_async(
                 args=[scan.id, scan.scan_type, scan.target],
-                daemon=True,
+                priority=payload.priority,
             )
-            t.start()
-        else:
+            scan.celery_task_id = task_result.id
+            db.commit()
+        except Exception as exc:
             http_logger.error("celery_dispatch_failed", scan_id=scan.id, error=str(exc))
             scan.status = "failed"
             db.commit()
@@ -2188,6 +2175,19 @@ def create_scan(
                     f"({settings.celery_broker_url}). Verifica che Redis sia avviato."
                 ),
             )
+    else:
+        # Broker non disponibile: esegui la scansione direttamente in un thread
+        http_logger.warning(
+            "celery_unavailable_fallback_sync",
+            scan_id=scan.id,
+            broker=settings.celery_broker_url,
+        )
+        t = threading.Thread(
+            target=run_scan_in_process,
+            args=[scan.id, scan.scan_type, scan.target],
+            daemon=True,
+        )
+        t.start()
 
     _invalidate_cache_keys(_cache_key("scans:list", subject_id))
 
