@@ -55,6 +55,10 @@ def _scan_error_count(scan: Scan) -> int:
 def _duration_seconds(start: datetime | None, end: datetime | None) -> float:
     if not start or not end:
         return 0.0
+    if start.tzinfo is None:
+        start = start.replace(tzinfo=timezone.utc)
+    if end.tzinfo is None:
+        end = end.replace(tzinfo=timezone.utc)
     return max((end - start).total_seconds(), 0.0)
 
 
