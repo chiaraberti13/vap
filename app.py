@@ -170,6 +170,7 @@ if settings.cors_allowed_origins:
     )
 
 templates = Jinja2Templates(directory="templates")
+templates.env.globals["now"] = datetime.now
 
 SCAN_TYPES = get_scan_type_choices()
 DIDACTIC_MODES = {"beginner", "analyst", "expert"}
@@ -1300,6 +1301,15 @@ def _build_scan_payload(scan: Scan) -> Dict[str, Any]:
 
 def _active_scan_query(db: Session) -> Query:
     return db.query(Scan).filter(Scan.deleted_at.is_(None))
+
+
+def _fetch_scan_payload(scan_id: int) -> Optional[Dict[str, Any]]:
+    """Fetch scan and build WS payload synchronously (designed for asyncio.to_thread)."""
+    with SessionLocal() as db:
+        scan = _active_scan_query(db).filter(Scan.id == scan_id).first()
+        if not scan:
+            return None
+        return _build_scan_payload(scan)
 
 
 def _count_findings(records: List[Optional[str]]) -> int:
@@ -3056,13 +3066,11 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
     try:
         while True:
             await asyncio.sleep(settings.websocket_poll_seconds)
-            with SessionLocal() as db:
-                scan = _active_scan_query(db).filter(Scan.id == scan_id).first()
-                if not scan:
-                    await websocket.send_json({"error": "Scan non trovata"})
-                    continue
-                payload = _build_scan_payload(scan)
-                await manager.broadcast(scan_id, payload)
+            payload = await asyncio.to_thread(_fetch_scan_payload, scan_id)
+            if payload is None:
+                await websocket.send_json({"error": "Scan non trovata"})
+                break
+            await manager.broadcast(scan_id, payload)
     except (WebSocketDisconnect, Exception):
         manager.disconnect(scan_id, websocket)
 
