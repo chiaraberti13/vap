@@ -541,3 +541,6 @@ Storico e telemetria operativa sono tracciati nel database/log applicativi.
 ## LICENZA
 
 Distribuito secondo la licenza indicata in [`LICENSE`](LICENSE).
+
+
+© Chiara Berti 13 - 2026
