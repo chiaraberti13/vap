@@ -12,17 +12,23 @@
   <a href="#new-scan-title" class="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-50 focus:rounded-md focus:bg-cyan-500 focus:px-4 focus:py-2 focus:text-slate-900 focus:font-semibold">
     Salta al form di nuova scansione
   </a>
+  {% set active_nav = 'home' %}
+  {% include "_nav.html" %}
   <main class="min-h-screen flex flex-col">
     <header class="border-b border-slate-800 bg-slate-950/80 px-4 py-10 sm:px-6 md:py-14" aria-labelledby="hero-title">
       <div class="home-container grid gap-8 lg:grid-cols-[1.25fr_0.75fr] lg:items-end">
         <div class="space-y-4">
-          <p class="home-eyebrow font-semibold uppercase text-cyan-300">Security Operations</p>
+          <p class="home-eyebrow font-semibold uppercase text-cyan-300">Strumento didattico + tool professionale</p>
           <h1 id="hero-title" class="home-hero-title text-balance font-semibold text-slate-50">
-            Guided Security Analysis per team tecnici e compliance.
+            Esegui scansioni di sicurezza reali e impara a interpretarle.
           </h1>
           <p class="home-lead max-w-2xl text-slate-300">
-            Pianifica la scansione in 5 step, riduci errori operativi e genera report professionali con evidenze utili a remediation e audit.
+            Un'unica piattaforma per <span class="text-emerald-200">imparare passo-passo</span> la sicurezza web e per condurre <span class="text-sky-200">assessment professionali</span>: wizard guidato in 5 step, modalità Beginner / Analyst / Expert, report tecnici ed evidenze tracciabili per remediation e audit.
           </p>
+          <div class="flex flex-wrap items-center gap-2 pt-2">
+            <span class="mode-badge mode-badge-learn">Modalità didattica</span>
+            <span class="mode-badge mode-badge-pro">Uso professionale</span>
+          </div>
           <div class="flex flex-wrap items-center gap-3 pt-2">
             <a
               href="#new-scan-title"
@@ -41,14 +47,26 @@
           </div>
         </div>
         <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 shadow-lg">
-          <p class="text-xs uppercase tracking-[0.2em] text-slate-400">Flusso consigliato</p>
-          <ol class="mt-3 space-y-2 text-sm text-slate-200">
-            <li><span class="font-semibold text-cyan-200">Step 1:</span> Definisci obiettivo e target autorizzato.</li>
-            <li><span class="font-semibold text-cyan-200">Step 2:</span> Scegli il tipo di scansione più adatto.</li>
-            <li><span class="font-semibold text-cyan-200">Step 3:</span> Configura parametri e consensi legali.</li>
-            <li><span class="font-semibold text-cyan-200">Step 4:</span> Valuta impatto tecnico e rischio operativo.</li>
-            <li><span class="font-semibold text-cyan-200">Step 5:</span> Conferma checklist compliance prima del run.</li>
+          <p class="text-xs uppercase tracking-[0.2em] text-slate-400">Due modi, una piattaforma</p>
+          <div class="mt-3 space-y-3 text-sm text-slate-200">
+            <div class="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3">
+              <p class="font-semibold text-emerald-200">🎓 Didattico</p>
+              <p class="mt-1 text-slate-300">Modalità Beginner con parametri protetti, spiegazione di ogni scelta, glossario integrato e learning blocks sui findings.</p>
+            </div>
+            <div class="rounded-lg border border-sky-500/30 bg-sky-500/5 p-3">
+              <p class="font-semibold text-sky-200">🛠 Professionale</p>
+              <p class="mt-1 text-slate-300">Modalità Analyst / Expert con controllo completo dei moduli, report PDF, API REST e audit trail per compliance.</p>
+            </div>
+          </div>
+          <p class="mt-4 text-xs uppercase tracking-[0.2em] text-slate-400">Flusso guidato in 5 step</p>
+          <ol class="mt-2 space-y-1 text-xs text-slate-300">
+            <li><span class="font-semibold text-cyan-200">1.</span> Obiettivo e target autorizzato</li>
+            <li><span class="font-semibold text-cyan-200">2.</span> Tipo di scansione e moduli</li>
+            <li><span class="font-semibold text-cyan-200">3.</span> Parametri e consensi legali</li>
+            <li><span class="font-semibold text-cyan-200">4.</span> Impatto tecnico e rischio operativo</li>
+            <li><span class="font-semibold text-cyan-200">5.</span> Checklist compliance pre-run</li>
           </ol>
+          <a href="/guida" class="mt-4 inline-flex items-center gap-1 text-sm text-cyan-300 underline decoration-slate-600 underline-offset-4 transition hover:text-cyan-200 hover:decoration-cyan-300">Apri la Guida completa →</a>
         </div>
       </div>
     </header>
@@ -191,7 +209,7 @@
                 <span id="learning-goal-error" class="home-microcopy hidden text-red-200">Seleziona un obiettivo per ricevere una scansione consigliata coerente.</span>
               </fieldset>
               <fieldset class="grid gap-2 rounded-lg border border-slate-800 bg-slate-950/50 p-4" aria-describedby="didactic-mode-guidance">
-                <legend class="text-sm text-slate-300 px-1">Didactic mode</legend>
+                <legend class="text-sm font-semibold text-slate-200 px-1">Livello di esperienza · modalità didattica</legend>
                 <label class="flex items-start gap-2 text-sm text-slate-300">
                   <input type="radio" name="didactic_mode" value="beginner" class="mt-1 accent-cyan-400" />
                   <span><span class="font-semibold text-emerald-200">Beginner</span> · parametri bloccati e limiti stretti per ridurre rischio operativo.</span>
@@ -558,7 +576,10 @@
           <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-6">
             <h3 class="font-semibold">Guida rapida</h3>
             <p class="mt-2 text-sm text-slate-300">
-              Dopo la scansione, consulta lo storico in <a class="text-cyan-300 underline" href="/scans">Scans</a> e scarica il report PDF.
+              Nuovo qui? Imposta la <span class="text-emerald-200 font-medium">modalità Beginner</span> nello Step 1: i parametri più rischiosi restano protetti e ogni scelta è spiegata.
+            </p>
+            <p class="mt-2 text-sm text-slate-300">
+              Dopo la scansione consulta lo <a class="text-cyan-300 underline" href="/scans">storico</a>, scarica il report PDF e approfondisci nella <a class="text-cyan-300 underline" href="/guida">Guida</a>.
             </p>
           </div>
         </aside>
@@ -570,6 +591,7 @@
         <span>© {{ now().year }} Vulnerability Assessment Platform</span>
         <span class="flex flex-wrap gap-3">
           <span>Ambiente: {{ request.app.title }}</span>
+          <a class="text-cyan-300 hover:underline" href="/guida">Guida</a>
           <a class="text-cyan-300 hover:underline" href="/privacy-policy">Privacy Policy</a>
           <a class="text-cyan-300 hover:underline" href="/terms-of-service">Termini di Servizio</a>
         </span>

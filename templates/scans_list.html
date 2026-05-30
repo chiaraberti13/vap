@@ -9,7 +9,12 @@
   <link rel="stylesheet" href="/static/css/style.css" />
 </head>
 <body class="bg-slate-950 text-slate-100">
-  <main class="min-h-screen px-4 py-8 sm:px-6 sm:py-10">
+  <a href="#scans-main" class="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-50 focus:rounded-md focus:bg-cyan-500 focus:px-4 focus:py-2 focus:text-slate-900 focus:font-semibold">
+    Salta allo storico scansioni
+  </a>
+  {% set active_nav = 'scans' %}
+  {% include "_nav.html" %}
+  <main id="scans-main" class="min-h-screen px-4 py-8 sm:px-6 sm:py-10">
     <div class="content-shell content-stack-lg">
       <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>

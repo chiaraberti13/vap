@@ -1614,6 +1614,21 @@ def terms_of_service(request: Request) -> Response:
     )
 
 
+@app.get("/guida", response_class=HTMLResponse)
+def guide(request: Request) -> Response:
+    """In-app learning hub: scan catalog, learning paths, glossary, safe usage."""
+    return templates.TemplateResponse(
+        request,
+        "guide.html",
+        {
+            "request": request,
+            "scan_catalog": get_scan_catalog(),
+            "privacy_policy_version": settings.privacy_policy_version,
+            "terms_version": settings.terms_of_service_version,
+        },
+    )
+
+
 @app.post("/auth/token")
 @limiter.limit(settings.rate_limit_auth)
 def issue_token(

@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Guida & Documentazione · VAP</title>
+  <link rel="stylesheet" href="/static/css/tailwind.min.css" />
+  <link rel="stylesheet" href="/static/css/design-tokens.css" />
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body class="bg-slate-950 text-slate-100">
+  <a href="#guide-main" class="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-50 focus:rounded-md focus:bg-cyan-500 focus:px-4 focus:py-2 focus:text-slate-900 focus:font-semibold">
+    Salta al contenuto della guida
+  </a>
+  {% set active_nav = 'guide' %}
+  {% include "_nav.html" %}
+  <main id="guide-main" class="min-h-screen px-4 py-8 sm:px-6 sm:py-10">
+    <div class="content-shell content-stack-lg">
+
+      <!-- Header -->
+      <header class="space-y-3">
+        <p class="text-sm uppercase tracking-[0.3em] text-slate-400">Guida & Documentazione</p>
+        <h1 class="text-3xl font-semibold">Impara la sicurezza web. Esegui assessment professionali.</h1>
+        <p class="max-w-3xl text-slate-300">
+          VAP è pensato per due pubblici nello stesso strumento: chi <strong class="text-emerald-200">studia</strong> sicurezza
+          offensiva/difensiva e chi conduce <strong class="text-sky-200">assessment reali</strong>. Questa guida spiega come usarlo
+          in sicurezza, cosa fa ogni tipo di scansione e come interpretare i risultati.
+        </p>
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="mode-badge mode-badge-learn">Modalità didattica</span>
+          <span class="mode-badge mode-badge-pro">Uso professionale</span>
+        </div>
+      </header>
+
+      <!-- Quick links -->
+      <nav class="guide-grid guide-grid-3" aria-label="Indice rapido della guida">
+        <a href="#modalita" class="guide-card transition hover:border-cyan-400">
+          <p class="font-semibold text-cyan-200">① Le due modalità</p>
+          <p class="mt-1 text-sm text-slate-300">Didattico vs Professionale: cosa cambia e quando usarli.</p>
+        </a>
+        <a href="#percorsi" class="guide-card transition hover:border-cyan-400">
+          <p class="font-semibold text-cyan-200">② Percorsi di apprendimento</p>
+          <p class="mt-1 text-sm text-slate-300">Beginner, Analyst e Professional passo-passo.</p>
+        </a>
+        <a href="#catalogo" class="guide-card transition hover:border-cyan-400">
+          <p class="font-semibold text-cyan-200">③ Catalogo scansioni</p>
+          <p class="mt-1 text-sm text-slate-300">Tutti i tipi di scansione e quando sceglierli.</p>
+        </a>
+      </nav>
+
+      <!-- Two modes -->
+      <section id="modalita" aria-labelledby="modalita-title" class="content-stack-lg">
+        <div>
+          <h2 id="modalita-title" class="text-2xl font-semibold">Le due modalità di VAP</h2>
+          <p class="mt-2 max-w-3xl text-slate-400">
+            La modalità si sceglie nello <strong class="text-slate-200">Step 1</strong> del wizard tramite il campo
+            “Livello di esperienza”. Cambia limiti, moduli disponibili e quantità di spiegazioni — ma i
+            <strong class="text-slate-200">guardrail di sicurezza lato server restano sempre attivi</strong>.
+          </p>
+        </div>
+        <div class="guide-grid guide-grid-2">
+          <article class="guide-card border-emerald-500/30">
+            <div class="flex items-center gap-2">
+              <span class="mode-badge mode-badge-learn">🎓 Didattico</span>
+            </div>
+            <p class="mt-3 text-sm text-slate-300">Ideale per studenti, junior e chi vuole capire il “perché” di ogni risultato.</p>
+            <ul class="mt-3 space-y-2 text-sm text-slate-200">
+              <li>• <strong>Beginner</strong>: moduli ad alto rischio (SQLMap, Commix, NoSQLMap) disabilitati e limiti timeout/payload conservativi.</li>
+              <li>• Spiegazione di ogni parametro: cosa cambia, trade-off, impatto sui falsi positivi, anti-pattern.</li>
+              <li>• Glossario integrato (OWASP, CVSS, false positive) e <em>learning blocks</em> su ogni finding.</li>
+              <li>• Simulazione di impatto e rischio prima di lanciare la scansione.</li>
+            </ul>
+          </article>
+          <article class="guide-card border-sky-500/30">
+            <div class="flex items-center gap-2">
+              <span class="mode-badge mode-badge-pro">🛠 Professionale</span>
+            </div>
+            <p class="mt-3 text-sm text-slate-300">Ideale per analyst e penetration tester che conducono engagement autorizzati.</p>
+            <ul class="mt-3 space-y-2 text-sm text-slate-200">
+              <li>• <strong>Analyst</strong>: limiti intermedi e bilanciati. <strong>Expert</strong>: pieno controllo dei parametri.</li>
+              <li>• Selezione granulare dei moduli scanner e configurazione avanzata per modulo.</li>
+              <li>• Report PDF tecnici, remediation roadmap, trend storico per target.</li>
+              <li>• API REST per automazione e audit trail completo per compliance.</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <!-- Learning paths -->
+      <section id="percorsi" aria-labelledby="percorsi-title" class="content-stack-lg">
+        <div>
+          <h2 id="percorsi-title" class="text-2xl font-semibold">Percorsi di apprendimento</h2>
+          <p class="mt-2 max-w-3xl text-slate-400">Tre percorsi progressivi per passare da principiante ad analista autonomo.</p>
+        </div>
+        <div class="guide-grid guide-grid-3">
+          <article class="guide-card">
+            <p class="font-semibold text-emerald-200">Beginner path</p>
+            <ol class="mt-3 space-y-2 text-sm text-slate-200">
+              <li class="flex gap-2"><span class="guide-step-num">1</span> Lancia una scansione <strong>Light</strong> su un target autorizzato di test.</li>
+              <li class="flex gap-2"><span class="guide-step-num">2</span> Leggi i <em>learning blocks</em>: spiegazione per junior e rischio business.</li>
+              <li class="flex gap-2"><span class="guide-step-num">3</span> Impara a distinguere un finding confermato da un falso positivo.</li>
+              <li class="flex gap-2"><span class="guide-step-num">4</span> Studia il glossario OWASP / CVSS direttamente nel wizard.</li>
+            </ol>
+          </article>
+          <article class="guide-card">
+            <p class="font-semibold text-amber-200">Analyst path</p>
+            <ol class="mt-3 space-y-2 text-sm text-slate-200">
+              <li class="flex gap-2"><span class="guide-step-num">1</span> Passa alla modalità <strong>Analyst</strong> e seleziona i moduli manualmente.</li>
+              <li class="flex gap-2"><span class="guide-step-num">2</span> Confronta i tipi di scansione con lo <em>Scan Type Explorer</em>.</li>
+              <li class="flex gap-2"><span class="guide-step-num">3</span> Regola timeout e budget payload valutando i trade-off.</li>
+              <li class="flex gap-2"><span class="guide-step-num">4</span> Usa la remediation roadmap per prioritizzare per impatto × effort.</li>
+            </ol>
+          </article>
+          <article class="guide-card">
+            <p class="font-semibold text-rose-200">Professional path</p>
+            <ol class="mt-3 space-y-2 text-sm text-slate-200">
+              <li class="flex gap-2"><span class="guide-step-num">1</span> Modalità <strong>Expert</strong>: pieno controllo entro i guardrail server-side.</li>
+              <li class="flex gap-2"><span class="guide-step-num">2</span> Esegui scansioni mirate (SQLMap, ZAP, Nuclei) su scope concordato.</li>
+              <li class="flex gap-2"><span class="guide-step-num">3</span> Automatizza con le API REST e integra in pipeline CI/CD.</li>
+              <li class="flex gap-2"><span class="guide-step-num">4</span> Esporta report PDF e usa il trend storico per dimostrare la remediation.</li>
+            </ol>
+          </article>
+        </div>
+      </section>
+
+      <!-- How a scan works -->
+      <section aria-labelledby="flusso-title" class="content-stack-lg">
+        <div>
+          <h2 id="flusso-title" class="text-2xl font-semibold">Come funziona una scansione</h2>
+          <p class="mt-2 max-w-3xl text-slate-400">Il wizard guidato accompagna ogni run in 5 step per ridurre errori operativi e run non conformi.</p>
+        </div>
+        <ol class="guide-grid guide-grid-3">
+          <li class="guide-card"><div class="flex gap-2"><span class="guide-step-num">1</span><div><p class="font-semibold text-slate-100">Obiettivo &amp; target</p><p class="mt-1 text-sm text-slate-300">Definisci il bersaglio autorizzato e conferma il perimetro legale.</p></div></div></li>
+          <li class="guide-card"><div class="flex gap-2"><span class="guide-step-num">2</span><div><p class="font-semibold text-slate-100">Tipo &amp; moduli</p><p class="mt-1 text-sm text-slate-300">Scegli il tipo di scansione e i moduli scanner da eseguire.</p></div></div></li>
+          <li class="guide-card"><div class="flex gap-2"><span class="guide-step-num">3</span><div><p class="font-semibold text-slate-100">Parametri &amp; consensi</p><p class="mt-1 text-sm text-slate-300">Regola i parametri avanzati e accetta privacy e termini.</p></div></div></li>
+          <li class="guide-card"><div class="flex gap-2"><span class="guide-step-num">4</span><div><p class="font-semibold text-slate-100">Impatto &amp; rischio</p><p class="mt-1 text-sm text-slate-300">Valuta durata stimata, rumore operativo e priorità.</p></div></div></li>
+          <li class="guide-card"><div class="flex gap-2"><span class="guide-step-num">5</span><div><p class="font-semibold text-slate-100">Checklist compliance</p><p class="mt-1 text-sm text-slate-300">Conferma autorizzazione e finestra operativa, poi avvia.</p></div></div></li>
+          <li class="guide-card border-cyan-500/30">
+            <p class="font-semibold text-cyan-200">Pronto?</p>
+            <p class="mt-1 text-sm text-slate-300">Apri il wizard e inizia la tua prima scansione guidata.</p>
+            <a href="/" class="mt-3 inline-flex items-center rounded-lg bg-cyan-500 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-cyan-400">Avvia nuova scansione</a>
+          </li>
+        </ol>
+      </section>
+
+      <!-- Scan catalog -->
+      <section id="catalogo" aria-labelledby="catalogo-title" class="content-stack-lg">
+        <div>
+          <h2 id="catalogo-title" class="text-2xl font-semibold">Catalogo scansioni</h2>
+          <p class="mt-2 max-w-3xl text-slate-400">
+            Ogni tipo di scansione include obiettivo didattico, durata attesa e livello di invasività. Parti da
+            <strong class="text-slate-200">Light</strong> per la ricognizione, usa <strong class="text-slate-200">Full</strong> per coperture estese
+            e gli scanner mirati per approfondimenti verticali.
+          </p>
+        </div>
+        {% for category, entries in scan_catalog | groupby('category') %}
+        <div>
+          <h3 class="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300">{{ category }}</h3>
+          <div class="mt-3 guide-grid guide-grid-2">
+            {% for entry in entries %}
+            <article class="guide-card">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <h4 class="font-semibold text-slate-100">{{ entry.display_name }}</h4>
+                {% if entry.level == 'beginner' %}
+                <span class="rounded-full border border-emerald-400/40 bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-200">beginner</span>
+                {% elif entry.level == 'intermediate' %}
+                <span class="rounded-full border border-amber-400/40 bg-amber-500/10 px-2 py-0.5 text-xs text-amber-200">intermediate</span>
+                {% else %}
+                <span class="rounded-full border border-rose-400/40 bg-rose-500/10 px-2 py-0.5 text-xs text-rose-200">{{ entry.level }}</span>
+                {% endif %}
+              </div>
+              <p class="mt-2 text-sm text-slate-300">{{ entry.learning_objective }}</p>
+              <div class="mt-3 flex flex-wrap gap-2 text-[11px] text-slate-200">
+                <span class="rounded-full border border-slate-600 px-2 py-0.5">⏱ {{ entry.expected_duration }}</span>
+                <span class="rounded-full border border-slate-600 px-2 py-0.5">🛡 invasività {{ entry.invasiveness }}</span>
+                <span class="rounded-full border border-slate-600 px-2 py-0.5">📶 rumore {{ entry.noise_level }}</span>
+                {% if entry.owasp_tags %}
+                <span class="rounded-full border border-slate-600 px-2 py-0.5">OWASP {{ entry.owasp_tags | join(', ') }}</span>
+                {% endif %}
+              </div>
+              <p class="mt-3 text-xs text-slate-400"><span class="font-semibold text-slate-300">Quando usarla:</span> {{ entry.when_to_use }}</p>
+            </article>
+            {% endfor %}
+          </div>
+        </div>
+        {% endfor %}
+      </section>
+
+      <!-- Glossary -->
+      <section id="glossario" aria-labelledby="glossario-title">
+        <h2 id="glossario-title" class="text-2xl font-semibold">Glossario essenziale</h2>
+        <dl class="mt-4 guide-grid guide-grid-2">
+          <div class="guide-card">
+            <dt class="font-semibold text-cyan-200">OWASP Top 10</dt>
+            <dd class="mt-1 text-sm text-slate-300">Lista, aggiornata periodicamente, delle vulnerabilità web più critiche. Usata per classificare i findings.</dd>
+          </div>
+          <div class="guide-card">
+            <dt class="font-semibold text-cyan-200">CVSS</dt>
+            <dd class="mt-1 text-sm text-slate-300">Punteggio standard 0–10 che stima la gravità tecnica di una vulnerabilità.</dd>
+          </div>
+          <div class="guide-card">
+            <dt class="font-semibold text-cyan-200">CVE / CWE</dt>
+            <dd class="mt-1 text-sm text-slate-300">CVE identifica una vulnerabilità nota specifica; CWE classifica la <em>categoria</em> di debolezza sottostante.</dd>
+          </div>
+          <div class="guide-card">
+            <dt class="font-semibold text-cyan-200">False positive</dt>
+            <dd class="mt-1 text-sm text-slate-300">Alert non confermato: richiede sempre validazione manuale prima della remediation.</dd>
+          </div>
+          <div class="guide-card">
+            <dt class="font-semibold text-cyan-200">Invasività &amp; rumore</dt>
+            <dd class="mt-1 text-sm text-slate-300">Quanto una scansione è intrusiva e quanto traffico/log genera: più alti = più impatto operativo.</dd>
+          </div>
+          <div class="guide-card">
+            <dt class="font-semibold text-cyan-200">Remediation roadmap</dt>
+            <dd class="mt-1 text-sm text-slate-300">Findings ordinati per impatto × effort, per decidere cosa correggere prima.</dd>
+          </div>
+        </dl>
+      </section>
+
+      <!-- Legal & safe usage -->
+      <section aria-labelledby="legale-title">
+        <h2 id="legale-title" class="text-2xl font-semibold">Uso legale e responsabile</h2>
+        <div class="mt-4 rounded-2xl border border-amber-400/40 bg-amber-500/10 p-5 text-amber-50">
+          <p class="font-semibold">Scansiona solo ciò che sei autorizzato a testare.</p>
+          <ul class="mt-3 space-y-2 text-sm">
+            <li>• Esegui scansioni esclusivamente su sistemi di tua proprietà o con autorizzazione scritta esplicita.</li>
+            <li>• Le scansioni non autorizzate sono illegali nella maggior parte delle giurisdizioni.</li>
+            <li>• Concorda finestra operativa, perimetro e contatto tecnico per rollback/stop immediato.</li>
+            <li>• Conserva i report con controlli d'accesso rigorosi: possono contenere dettagli infrastrutturali sensibili.</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- Further reading -->
+      <section aria-labelledby="approfondimenti-title">
+        <h2 id="approfondimenti-title" class="text-2xl font-semibold">Approfondimenti</h2>
+        <div class="mt-4 guide-grid guide-grid-2">
+          <div class="guide-card">
+            <p class="font-semibold text-slate-100">Documentazione nel repository</p>
+            <ul class="mt-2 space-y-1 text-sm text-slate-300">
+              <li>• <code class="text-cyan-200">docs/scan-playbooks/</code> — playbook per ogni scanner.</li>
+              <li>• <code class="text-cyan-200">docs/learning-paths/</code> — percorsi beginner / analyst / professional.</li>
+              <li>• <code class="text-cyan-200">docs/glossary-faq.md</code> — glossario completo e FAQ.</li>
+              <li>• <code class="text-cyan-200">docs/user-manual.md</code> — manuale utente dettagliato.</li>
+            </ul>
+          </div>
+          <div class="guide-card">
+            <p class="font-semibold text-slate-100">Compliance &amp; privacy</p>
+            <ul class="mt-2 space-y-1 text-sm text-slate-300">
+              <li>• <a class="text-cyan-300 underline" href="/privacy-policy">Privacy Policy</a> (v{{ privacy_policy_version }})</li>
+              <li>• <a class="text-cyan-300 underline" href="/terms-of-service">Termini di Servizio</a> (v{{ terms_version }})</li>
+              <li>• <a class="text-cyan-300 underline" href="/scans">Storico scansioni</a></li>
+              <li>• <a class="text-cyan-300 underline" href="/">Avvia una nuova scansione</a></li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <footer class="border-t border-slate-800 px-4 py-6 text-sm text-slate-500 sm:px-6">
+    <div class="content-shell flex flex-col justify-between gap-2 md:flex-row">
+      <span>© {{ now().year }} Vulnerability Assessment Platform</span>
+      <span class="flex flex-wrap gap-3">
+        <a class="text-cyan-300 hover:underline" href="/">Nuova scansione</a>
+        <a class="text-cyan-300 hover:underline" href="/scans">Storico</a>
+        <a class="text-cyan-300 hover:underline" href="/privacy-policy">Privacy Policy</a>
+        <a class="text-cyan-300 hover:underline" href="/terms-of-service">Termini di Servizio</a>
+      </span>
+    </div>
+  </footer>
+</body>
+</html>
