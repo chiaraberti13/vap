@@ -144,22 +144,174 @@ body {
     animation: fadeIn 0.3s ease-in;
 }
 
-/* Custom scrollbar */
+/* Custom scrollbar (dark-theme aligned) */
 ::-webkit-scrollbar {
-    width: 8px;
+    width: 10px;
+    height: 10px;
 }
 
 ::-webkit-scrollbar-track {
-    background: #f1f1f1;
+    background: rgb(2 6 23);
 }
 
 ::-webkit-scrollbar-thumb {
-    background: var(--primary-color);
-    border-radius: 4px;
+    background: rgb(51 65 85);
+    border-radius: 6px;
+    border: 2px solid rgb(2 6 23);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: var(--secondary-color);
+    background: rgb(34 211 238 / 0.7);
+}
+
+/* ===========================================================================
+   Shared site navigation (consistent across every page)
+   =========================================================================== */
+.site-nav {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    border-bottom: 1px solid rgb(30 41 59 / 0.9);
+    background: rgb(2 6 23 / 0.92);
+    backdrop-filter: blur(8px);
+}
+
+.site-nav-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    min-height: 3.5rem;
+}
+
+.site-nav-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    text-decoration: none;
+}
+
+.site-nav-logo {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 1.9rem;
+    padding-inline: 0.55rem;
+    border-radius: 0.5rem;
+    background: linear-gradient(135deg, #06b6d4 0%, #2563eb 100%);
+    color: #02061a;
+    font-weight: 800;
+    font-size: var(--font-size-sm);
+    letter-spacing: 0.05em;
+}
+
+.site-nav-brand-text {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: rgb(226 232 240);
+}
+
+.site-nav-links {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.site-nav-link {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.4rem 0.75rem;
+    border-radius: 0.5rem;
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: rgb(148 163 184);
+    text-decoration: none;
+    transition: color 0.15s ease, background 0.15s ease;
+}
+
+.site-nav-link:hover {
+    color: rgb(226 232 240);
+    background: rgb(30 41 59 / 0.6);
+}
+
+.site-nav-link:focus-visible {
+    outline: 2px solid rgb(34 211 238);
+    outline-offset: 2px;
+}
+
+.site-nav-link-active {
+    color: rgb(165 243 252);
+    background: rgb(8 145 178 / 0.18);
+}
+
+@media (max-width: 640px) {
+    .site-nav-brand-text {
+        display: none;
+    }
+}
+
+/* ===========================================================================
+   Mode badges — the dual identity of VAP (didactic vs professional)
+   =========================================================================== */
+.mode-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.25rem 0.7rem;
+    border-radius: 9999px;
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    border: 1px solid transparent;
+}
+
+.mode-badge-learn {
+    color: rgb(167 243 208);
+    background: rgb(16 185 129 / 0.12);
+    border-color: rgb(16 185 129 / 0.4);
+}
+
+.mode-badge-pro {
+    color: rgb(186 230 253);
+    background: rgb(14 165 233 / 0.12);
+    border-color: rgb(14 165 233 / 0.4);
+}
+
+/* ===========================================================================
+   Guide / documentation hub
+   =========================================================================== */
+.guide-grid {
+    display: grid;
+    gap: 1rem;
+}
+
+@media (min-width: 768px) {
+    .guide-grid-2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .guide-grid-3 {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+.guide-card {
+    border-radius: 1rem;
+    border: 1px solid rgb(30 41 59 / 0.9);
+    background: rgb(15 23 42 / 0.72);
+    padding: 1.25rem;
+}
+
+.guide-step-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.6rem;
+    height: 1.6rem;
+    border-radius: 9999px;
+    background: rgb(8 145 178 / 0.2);
+    color: rgb(165 243 252);
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    flex-shrink: 0;
 }
 
 /* scan_detail.html extracted styles for CSP hardening */

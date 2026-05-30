@@ -1,75 +1,88 @@
-# Vulnerability Assessment Platform (VAP)
+# 🛡️ Vulnerability Assessment Platform (VAP)
 
-> **English** | [Italiano](#-vulnerability-assessment-platform-vap-italiano)
+> **English** | [Italiano](#-vulnerability-assessment-platform-vap--italiano)
 
-Professional, modular web platform to orchestrate security scans, correlate findings, and generate actionable reports from a single dashboard.
+**Learn web security hands-on _and_ run professional assessments — from a single web dashboard.**
 
----
-
-> **Legal Disclaimer:** Use this platform only on systems you own or for which you have explicit written authorization. Unauthorized scanning is illegal.
+VAP is two tools in one: a **didactic platform** that explains every choice and finding step‑by‑step, and a **professional scanner** that orchestrates 25+ industry tools, correlates findings and generates audit‑ready reports.
 
 ---
 
-## COMPLETE PACKAGE
-
-This repository includes:
-
-- **`app.py`** - FastAPI web app (UI + REST API)
-- **`scanner_engine.py`** - scan orchestration and validation runtime
-- **`scanners/`** - tool-specific scanner plugins
-- **`templates/` + `static/`** - dashboard UI
-- **`report_generator.py`** - PDF reporting pipeline
-- **`tests/`** - regression and security-focused automated tests
-- **`installer.sh` / `installer.ps1`** - guided installers
-- **`docker-compose.yml`** - Redis helper service for async workers
-- **`docs/`** - architecture, security, operations, and playbooks
-- **`README.md`** - setup and usage documentation
+> ⚠️ **Legal Disclaimer:** Use this platform only on systems you own or for which you have explicit written authorization. Unauthorized scanning is illegal in most jurisdictions.
 
 ---
 
-## ✅ INSTALLATION
+## ✨ Two ways to use it
 
-This project is **not** a single-file app: installation is required once, then normal usage is straightforward.
+VAP adapts to your experience level. You pick the mode in **Step 1** of the guided wizard (field *"Livello di esperienza"*). Server‑side safety guardrails stay active in every mode.
 
-### Linux / macOS (recommended)
+| | 🎓 **Didactic mode** | 🛠️ **Professional mode** |
+|---|---|---|
+| **For** | Students, juniors, anyone learning | Analysts, pentesters, security teams |
+| **Level** | `Beginner` | `Analyst` / `Expert` |
+| **Risk** | High‑risk modules disabled, conservative limits | Full module control, extended limits |
+| **Help** | Per‑parameter explanations, glossary, learning blocks | Concise, automation‑oriented |
+| **Output** | Guided interpretation of every finding | PDF reports, remediation roadmap, REST API, audit trail |
+
+➡️ The in‑app **Guida** (`/guida`) is a full learning hub: scan catalog, learning paths, glossary and safe‑usage rules.
+
+---
+
+## 🚀 Quick start
 
 ```bash
-# 1) Clone repository
+# 1) Clone
+git clone <repository-url> VAP && cd VAP
+
+# 2) Install (see per-OS instructions below)
+#    Linux/macOS:  ./installer.sh        Windows:  .\installer.ps1
+
+# 3) Configure
+cp .env.example .env        # then edit secrets (see "Configuration")
+
+# 4) Run
+source venv/bin/activate
+python3 app.py
+```
+
+Then open **http://localhost:8000** and use the top navigation: **Nuova scansione · Storico · Guida**.
+
+---
+
+## ✅ Installation (all 3 operating systems)
+
+This project is **not** a single‑file app: it installs once, then everyday use is straightforward.
+The guided installers create a Python virtual environment and install dependencies.
+
+### 🐧 Linux / 🍎 macOS
+
+```bash
 git clone <repository-url> VAP
 cd VAP
-
-# 2) Run installer
 chmod +x installer.sh
-./installer.sh
-
-# 3) Activate virtual environment
+./installer.sh                 # creates venv + installs dependencies
 source venv/bin/activate
-
-# 4) Create env file
 cp .env.example .env
 ```
 
-### Windows (PowerShell)
+Supported: Ubuntu/Debian/Kali/Fedora/RHEL‑like/Arch/openSUSE and macOS 11+.
+
+### 🪟 Windows 10/11 (PowerShell)
 
 ```powershell
-# 1) Open PowerShell (Administrator recommended)
 Set-ExecutionPolicy Bypass -Scope Process -Force
-
-# 2) Run installer
-.\installer.ps1
-
-# 3) Activate virtual environment
+.\installer.ps1                # creates venv + installs dependencies
 .\venv\Scripts\Activate.ps1
-
-# 4) Create env file
 copy .env.example .env
 ```
 
+WSL2 is also fully supported — follow the Linux instructions inside your WSL distro.
+
+> **Optional frontend build:** the dashboard CSS ships pre‑built. To rebuild Tailwind after editing the UI: `npm install && npm run build:css`.
+
 ---
 
-## HOW TO USE IN 3 STEPS
-
-### Step 1: Configure secure defaults
+## ⚙️ Configuration
 
 Edit `.env` and set at least:
 
@@ -81,22 +94,24 @@ VAP_API_KEY=<strong-random-key>
 VAP_REQUIRE_HTTPS=true
 ```
 
-Generate secrets with:
+Generate strong secrets with:
 
 ```bash
 openssl rand -hex 32
 ```
 
-### Step 2: Start services
+---
 
-#### Minimal local mode (simulated scans)
+## ▶️ Running the app
+
+### Minimal local mode (no queue)
 
 ```bash
 source venv/bin/activate
 python3 app.py
 ```
 
-#### Full async mode (Redis + Celery)
+### Full async mode (Redis + Celery)
 
 ```bash
 # Terminal A
@@ -111,245 +126,192 @@ source venv/bin/activate
 python3 app.py
 ```
 
-Open: `http://localhost:8000`
-
-### Step 3: Run your first scan
-
-1. Open the dashboard at `http://localhost:8000`
-2. Insert target URL/IP and select scan type (`light`, `full`, `wordpress`)
-3. Start scan and monitor progress in real time
-4. Review findings and download PDF report
+Open **http://localhost:8000**.
 
 ---
 
-## TECHNICAL LIMITS
+## 🧭 Your first scan
 
-### Scanner availability
-
-Results depend on installed tools and permissions:
-
-- Some scanners require external binaries (e.g., Nmap, Nuclei, WhatWeb)
-- Enterprise scanners (Acunetix/Nessus) require valid API credentials
-- Without optional tools, VAP may run fallback or reduced coverage flows
-
-### Concurrency and workload
-
-- Async processing requires Redis + Celery
-- Very large scans can increase RAM/CPU usage significantly
-- Recommended: run heavy scans on dedicated hosts and avoid shared production nodes
-
-### Report size
-
-- PDF output scales with findings volume
-- Large engagements may produce multi-megabyte reports
+1. Open the dashboard and read the **Guida** (`/guida`) if it's your first time.
+2. In **Step 1**, choose your **experience level** (Beginner / Analyst / Expert) and enter an **authorized** target.
+3. In **Step 2**, pick the scan type (`light`, `full`, `wordpress`, or a tool‑specific scan) and the scanner modules.
+4. Review impact, risk and the compliance checklist (Steps 3–5), then start the scan.
+5. Watch real‑time progress, then review findings — with **learning blocks**, **remediation roadmap** and **trend** — and download the **PDF report**.
 
 ---
 
-## FEATURES
+## 🧩 Features
 
-✅ Multi-scanner orchestration from one interface  
-✅ Scan profiles (`light`, `full`, `wordpress`)  
-✅ Security controls (CSRF, JWT/API key, security headers, rate limiting, audit logging)  
-✅ Finding enrichment (CVE context and correlation engine)  
-✅ False-positive scoring support  
-✅ Realtime scan progress UX  
-✅ PDF report generation and historical tracking  
-✅ REST API for automation  
-✅ Extensible plugin architecture for new scanner adapters
-
----
-
-## SYSTEM REQUIREMENTS
-
-### Runtime requirements
-
-- **Python:** 3.10–3.12
-- **Redis:** 6/7 (required for async workers)
-- **Go:** >= 1.19 (for selected tools)
-- **Node.js/npm:** required only for frontend utility workflows/tests
-
-### Supported OS
-
-- ✅ Linux (Ubuntu/Debian/Kali/Fedora/RHEL-like/Arch/openSUSE)
-- ✅ macOS 11+
-- ✅ Windows 10/11 (native PowerShell or WSL2)
-
-### Minimum recommended resources
-
-- **CPU:** 2 cores (4+ recommended for concurrent scans)
-- **RAM:** 4 GB minimum (8+ GB recommended for heavy scans)
-- **Disk:** 2 GB for base setup + scan/report artifacts
+- ✅ **Guided 5‑step scan wizard** with real‑time validation and accessibility (keyboard, skip links, ARIA live regions)
+- ✅ **Didactic modes** (Beginner / Analyst / Expert) with per‑parameter explanations and a built‑in glossary
+- ✅ **In‑app learning hub** (`/guida`): scan catalog, learning paths, glossary, safe‑usage rules
+- ✅ **Multi‑scanner orchestration** from one interface (Nmap, Nuclei, ZAP, SQLMap, WPScan, and 20+ more)
+- ✅ **Scan profiles** (`light`, `full`, `wordpress`) and tool‑specific scans
+- ✅ **Finding enrichment** (CVE/CWE/CVSS, NVD, ExploitDB, OWASP & MITRE ATT&CK mapping)
+- ✅ **Learning blocks** on every finding (junior explanation, business risk, manual verification, next skill)
+- ✅ **Remediation roadmap** ordered by impact × effort, plus **historical trend** per target
+- ✅ **False‑positive scoring** and confidence rubric
+- ✅ **PDF report generation** and scan history
+- ✅ **REST API** for automation
+- ✅ **Security controls**: CSRF, JWT/API key, hardened headers, rate limiting, audit logging
+- ✅ **Extensible plugin architecture** for new scanner adapters
 
 ---
 
-## TROUBLESHOOTING
+## 🗂️ Project structure
 
-### `ModuleNotFoundError` or missing packages
-
-**Cause:** virtual environment not active or dependencies not installed.
-
-**Fix:**
-
-```bash
-source venv/bin/activate
-pip install -r requirements.txt
-```
-
-### Celery jobs not starting
-
-**Cause:** Redis not running or invalid broker URL.
-
-**Fix:**
-
-1. Start Redis: `redis-server`
-2. Verify `.env` broker/backend values
-3. Restart worker:
-
-```bash
-celery -A celery_app worker --loglevel=info
-```
-
-### Scanner returns empty/partial findings
-
-**Cause:** tool missing, target unreachable, permission/network constraints.
-
-**Fix:**
-
-1. Check scanner binary installation
-2. Validate target reachability/DNS
-3. Run with reduced profile (`light`) to isolate failures
-
-### UI loads but static assets are broken
-
-**Cause:** incorrect working directory or deployment proxy/static mapping.
-
-**Fix:** run app from repository root and verify `static/` path exposure.
+| Path | Description |
+|---|---|
+| `app.py` | FastAPI app — dashboard UI + REST API |
+| `scanner_engine.py` | Scan orchestration and target validation |
+| `scanners/` | Tool‑specific scanner plugins |
+| `templates/` + `static/` | Dashboard UI (shared nav, guided wizard, scan detail, **Guida**) |
+| `report_generator.py` | PDF reporting pipeline |
+| `enrichment_engine.py` | CVE/NVD/ExploitDB correlation |
+| `tests/` | Regression and security‑focused tests |
+| `installer.sh` / `installer.ps1` | Guided installers (Linux/macOS, Windows) |
+| `docker-compose.yml` | Redis helper service for async workers |
+| `docs/` | Architecture, security, operations, scan playbooks, learning paths |
 
 ---
 
-## GENERATED OUTPUT STRUCTURE
+## 💻 System requirements
 
-Typical artifacts:
+**Runtime:** Python 3.10–3.12 · Redis 6/7 (async workers) · Go ≥ 1.19 (selected tools) · Node.js/npm (frontend build/tests only)
 
-```text
-scans/                     # raw scan data and execution artifacts
-reports/                   # generated PDF reports
-reports/<scan_id>.pdf      # per-scan output file
-```
+**Supported OS:** ✅ Linux · ✅ macOS 11+ · ✅ Windows 10/11 (native PowerShell or WSL2)
 
-Database and logs capture scan history and operational telemetry for auditing.
+**Recommended resources:** CPU 2 cores (4+ for concurrent scans) · RAM 4 GB min (8+ GB for heavy scans) · Disk 2 GB + scan/report artifacts
+
+> Results depend on installed tools and permissions. Some scanners need external binaries (e.g., Nmap, Nuclei, WhatWeb); enterprise scanners (Acunetix/Nessus) need valid API credentials. Without optional tools, VAP runs reduced‑coverage flows.
 
 ---
 
-## SECURITY AND PRIVACY
+## 🛠️ Troubleshooting
 
-✅ Secrets managed via environment variables (`.env`)  
-✅ Security middleware and hardened response headers  
-✅ Input validation and target sanitation  
-✅ Optional JWT/API-key protections for API usage  
-✅ Audit logging for security-relevant actions
-
-⚠️ Sensitive scan data may include infrastructure details. Protect backups, reports, and DB files with strict access controls.
-
----
-
-## TEAM SHARING
-
-To share with teammates:
-
-1. Share repository access
-2. Share a sanitized `.env` template (**never** commit real secrets)
-3. Provide role-based credentials and onboarding runbook from `docs/`
+| Symptom | Likely cause | Fix |
+|---|---|---|
+| `ModuleNotFoundError` | venv not active / deps missing | `source venv/bin/activate && pip install -r requirements.txt` |
+| Celery jobs don't start | Redis down / bad broker URL | start `redis-server`, verify `.env`, restart the worker |
+| Empty/partial findings | tool missing / target unreachable | check scanner binary, verify reachability, try the `light` profile |
+| UI loads but styling is broken | wrong working dir / static mapping | run from the repo root; verify `static/` is served |
 
 ---
 
-## CHANGELOG (HIGH LEVEL)
+## 🔐 Security & privacy
 
-### Current line
+- ✅ Secrets via environment variables (`.env`)
+- ✅ Security middleware and hardened response headers
+- ✅ Input validation and target sanitation
+- ✅ Optional JWT / API‑key protections for the API
+- ✅ Audit logging for security‑relevant actions
 
-- FastAPI dashboard + API
-- Scanner orchestration and plugin ecosystem
-- Async background jobs with Celery/Redis
-- Security hardening controls and audit trails
-- PDF reporting + knowledge and operations docs
-
-For detailed evolution and operational notes, see `docs/`.
+⚠️ Scan data may include sensitive infrastructure details. Protect reports, DB files and backups with strict access controls.
 
 ---
 
-## SUPPORT
+## 📚 Documentation
 
-- Open an issue in the repository for bugs or feature requests.
-- Read operations/security docs in `docs/` before production rollout.
+- `docs/user-manual.md` — detailed user manual
+- `docs/learning-paths/` — beginner / analyst / professional paths
+- `docs/scan-playbooks/` — per‑scanner playbooks
+- `docs/glossary-faq.md` — glossary and FAQ
+- `docs/architecture.md`, `docs/security.md`, `docs/deployment.md` — operations
 
 ---
 
-## LICENSE
+## 📄 License
 
 Distributed under the terms of the license in [`LICENSE`](LICENSE).
 
 ---
+---
+
+# 🛡️ Vulnerability Assessment Platform (VAP) — Italiano
+
+> [English](#-vulnerability-assessment-platform-vap) | **Italiano**
+
+**Impara la sicurezza web sul campo _e_ conduci assessment professionali — da un'unica dashboard web.**
+
+VAP è due strumenti in uno: una **piattaforma didattica** che spiega passo‑passo ogni scelta e ogni risultato, e uno **scanner professionale** che orchestra oltre 25 tool, correla i findings e genera report pronti per l'audit.
 
 ---
 
-# Vulnerability Assessment Platform (VAP) Italiano
-
-> [English](#vulnerability-assessment-platform-vap) | **Italiano**
-
-Piattaforma web professionale e modulare per orchestrare scansioni di sicurezza, correlare vulnerabilità e produrre report operativi da un’unica dashboard.
+> ⚠️ **Disclaimer legale:** usa la piattaforma solo su sistemi di tua proprietà o con autorizzazione scritta esplicita. Le scansioni non autorizzate sono illegali.
 
 ---
 
-> **Disclaimer legale:** usa la piattaforma solo su sistemi di tua proprietà o con autorizzazione scritta esplicita. Le scansioni non autorizzate sono illegali.
+## ✨ Due modi di usarlo
+
+VAP si adatta al tuo livello. La modalità si sceglie nello **Step 1** del wizard guidato (campo *"Livello di esperienza"*). I guardrail di sicurezza lato server restano sempre attivi.
+
+| | 🎓 **Modalità didattica** | 🛠️ **Modalità professionale** |
+|---|---|---|
+| **Per chi** | Studenti, junior, chi sta imparando | Analyst, pentester, team di sicurezza |
+| **Livello** | `Beginner` | `Analyst` / `Expert` |
+| **Rischio** | Moduli ad alto rischio disabilitati, limiti conservativi | Controllo completo dei moduli, limiti estesi |
+| **Aiuto** | Spiegazione di ogni parametro, glossario, learning blocks | Conciso, orientato all'automazione |
+| **Output** | Interpretazione guidata di ogni finding | Report PDF, remediation roadmap, API REST, audit trail |
+
+➡️ La **Guida** integrata (`/guida`) è un hub didattico completo: catalogo scansioni, percorsi di apprendimento, glossario e regole d'uso legale.
 
 ---
 
-## PACCHETTO COMPLETO
+## 🚀 Avvio rapido
 
-Questo repository contiene:
+```bash
+# 1) Clona
+git clone <repository-url> VAP && cd VAP
 
-- **`app.py`** - applicazione FastAPI (UI + API REST)
-- **`scanner_engine.py`** - orchestrazione scansioni e validazione target
-- **`scanners/`** - plugin scanner per singolo strumento
-- **`templates/` + `static/`** - interfaccia dashboard
-- **`report_generator.py`** - pipeline report PDF
-- **`tests/`** - test automatici di regressione e sicurezza
-- **`installer.sh` / `installer.ps1`** - installazione guidata
-- **`docker-compose.yml`** - servizio Redis di supporto ai worker async
-- **`docs/`** - documentazione tecnica, sicurezza e operativa
-- **`README.md`** - guida installazione e utilizzo
+# 2) Installa (istruzioni per OS qui sotto)
+#    Linux/macOS:  ./installer.sh        Windows:  .\installer.ps1
+
+# 3) Configura
+cp .env.example .env        # poi modifica i segreti (vedi "Configurazione")
+
+# 4) Avvia
+source venv/bin/activate
+python3 app.py
+```
+
+Apri **http://localhost:8000** e usa la barra di navigazione in alto: **Nuova scansione · Storico · Guida**.
 
 ---
 
-## ✅ INSTALLAZIONE
+## ✅ Installazione (tutti e 3 i sistemi operativi)
 
-Questa applicazione **richiede installazione iniziale** (non è un file standalone).
+L'applicazione **richiede un'installazione iniziale** (non è un file standalone).
+Gli installer guidati creano un ambiente virtuale Python e installano le dipendenze.
 
-### Linux / macOS (consigliato)
+### 🐧 Linux / 🍎 macOS
 
 ```bash
 git clone <repository-url> VAP
 cd VAP
 chmod +x installer.sh
-./installer.sh
+./installer.sh                 # crea venv + installa dipendenze
 source venv/bin/activate
 cp .env.example .env
 ```
 
-### Windows (PowerShell)
+Supportati: Ubuntu/Debian/Kali/Fedora/RHEL‑like/Arch/openSUSE e macOS 11+.
+
+### 🪟 Windows 10/11 (PowerShell)
 
 ```powershell
 Set-ExecutionPolicy Bypass -Scope Process -Force
-.\installer.ps1
+.\installer.ps1                # crea venv + installa dipendenze
 .\venv\Scripts\Activate.ps1
 copy .env.example .env
 ```
 
+WSL2 è pienamente supportato — segui le istruzioni Linux dentro la tua distro WSL.
+
+> **Build frontend opzionale:** la CSS della dashboard è già pre‑compilata. Per ricompilare Tailwind dopo modifiche all'UI: `npm install && npm run build:css`.
+
 ---
 
-## COME USARE IN 3 PASSI
-
-### Passo 1: Configura i parametri di sicurezza
+## ⚙️ Configurazione
 
 Nel file `.env` imposta almeno:
 
@@ -361,16 +323,24 @@ VAP_API_KEY=<chiave-random-forte>
 VAP_REQUIRE_HTTPS=true
 ```
 
-### Passo 2: Avvia i servizi
+Genera segreti robusti con:
 
-Modalità locale minima:
+```bash
+openssl rand -hex 32
+```
+
+---
+
+## ▶️ Avvio dell'applicazione
+
+### Modalità locale minima (senza coda)
 
 ```bash
 source venv/bin/activate
 python3 app.py
 ```
 
-Modalità completa asincrona:
+### Modalità completa asincrona (Redis + Celery)
 
 ```bash
 # Terminale A
@@ -385,160 +355,101 @@ source venv/bin/activate
 python3 app.py
 ```
 
-Apri `http://localhost:8000`.
-
-### Passo 3: Esegui la prima scansione
-
-1. Apri la dashboard
-2. Inserisci target (URL/IP) e tipo scansione (`light`, `full`, `wordpress`)
-3. Avvia la scansione e monitora il progresso realtime
-4. Analizza i findings e scarica il PDF
+Apri **http://localhost:8000**.
 
 ---
 
-## LIMITI TECNICI
+## 🧭 La tua prima scansione
 
-### Disponibilità scanner
-
-La copertura dipende dai tool installati e dai permessi:
-
-- alcuni scanner necessitano binari esterni (Nmap, Nuclei, WhatWeb, ecc.)
-- scanner enterprise (Acunetix/Nessus) richiedono API key valide
-- in assenza di componenti opzionali, VAP può operare con copertura ridotta
-
-### Concorrenza e carico
-
-- l’asincrono richiede Redis + Celery
-- scansioni grandi possono saturare CPU/RAM
-- consigliato dedicare host separati per carichi elevati
-
-### Dimensione report
-
-- i PDF crescono con il numero di findings
-- engagement grandi possono generare file multipli o molto pesanti
+1. Apri la dashboard e, se è la prima volta, leggi la **Guida** (`/guida`).
+2. Nello **Step 1** scegli il **livello di esperienza** (Beginner / Analyst / Expert) e inserisci un target **autorizzato**.
+3. Nello **Step 2** scegli il tipo di scansione (`light`, `full`, `wordpress` o uno scan mirato) e i moduli scanner.
+4. Verifica impatto, rischio e checklist compliance (Step 3–5), poi avvia.
+5. Monitora il progresso realtime, poi analizza i findings — con **learning blocks**, **remediation roadmap** e **trend** — e scarica il **report PDF**.
 
 ---
 
-## CARATTERISTICHE
+## 🧩 Caratteristiche
 
-✅ Orchestrazione multi-scanner da un’unica interfaccia  
-✅ Profili scansione (`light`, `full`, `wordpress`)  
-✅ Controlli sicurezza applicativa (CSRF, JWT/API key, header hardening, rate limiting, audit log)  
-✅ Correlazione findings ed enrichment CVE  
-✅ Supporto scoring falsi positivi  
-✅ Avanzamento scansione realtime  
-✅ Generazione report PDF e storico scan  
-✅ API REST per automazione  
-✅ Architettura estendibile a nuovi plugin scanner
-
----
-
-## REQUISITI DI SISTEMA
-
-### Runtime
-
-- **Python:** 3.10–3.12
-- **Redis:** 6/7 (obbligatorio per worker async)
-- **Go:** >= 1.19 (tool specifici)
-- **Node.js/npm:** solo per workflow/test frontend
-
-### Sistemi operativi
-
-- ✅ Linux
-- ✅ macOS 11+
-- ✅ Windows 10/11 (nativo o WSL2)
-
-### Risorse minime consigliate
-
-- **CPU:** 2 core (4+ raccomandati)
-- **RAM:** 4 GB (8+ per carichi pesanti)
-- **Disco:** 2 GB + spazio per artefatti di scansione/report
+- ✅ **Wizard guidato in 5 step** con validazione realtime e accessibilità (tastiera, skip link, ARIA live region)
+- ✅ **Modalità didattiche** (Beginner / Analyst / Expert) con spiegazione di ogni parametro e glossario integrato
+- ✅ **Hub didattico integrato** (`/guida`): catalogo scansioni, percorsi, glossario, regole d'uso legale
+- ✅ **Orchestrazione multi‑scanner** da un'unica interfaccia (Nmap, Nuclei, ZAP, SQLMap, WPScan e oltre 20 altri)
+- ✅ **Profili di scansione** (`light`, `full`, `wordpress`) e scan mirati per singolo tool
+- ✅ **Enrichment dei findings** (CVE/CWE/CVSS, NVD, ExploitDB, mapping OWASP e MITRE ATT&CK)
+- ✅ **Learning blocks** su ogni finding (spiegazione junior, rischio business, verifica manuale, skill successiva)
+- ✅ **Remediation roadmap** ordinata per impatto × effort e **trend storico** per target
+- ✅ **Scoring falsi positivi** e rubrica di affidabilità
+- ✅ **Generazione report PDF** e storico scansioni
+- ✅ **API REST** per automazione
+- ✅ **Controlli di sicurezza**: CSRF, JWT/API key, header hardenizzati, rate limiting, audit log
+- ✅ **Architettura a plugin** estendibile a nuovi scanner
 
 ---
 
-## RISOLUZIONE PROBLEMI
+## 🗂️ Struttura del progetto
 
-### Errore `ModuleNotFoundError`
-
-```bash
-source venv/bin/activate
-pip install -r requirements.txt
-```
-
-### Job Celery non partono
-
-1. Avvia Redis (`redis-server`)
-2. Controlla broker/backend in `.env`
-3. Riavvia worker:
-
-```bash
-celery -A celery_app worker --loglevel=info
-```
-
-### Findings vuoti/parziali
-
-- verifica installazione binari scanner
-- verifica raggiungibilità target
-- prova profilo `light` per isolare problemi
-
-### Asset statici non caricati
-
-Esegui l’app dalla root del repository e verifica mapping di `static/`.
+| Percorso | Descrizione |
+|---|---|
+| `app.py` | App FastAPI — UI dashboard + API REST |
+| `scanner_engine.py` | Orchestrazione scansioni e validazione target |
+| `scanners/` | Plugin scanner per singolo strumento |
+| `templates/` + `static/` | Interfaccia (nav condivisa, wizard guidato, dettaglio scan, **Guida**) |
+| `report_generator.py` | Pipeline report PDF |
+| `enrichment_engine.py` | Correlazione CVE/NVD/ExploitDB |
+| `tests/` | Test di regressione e sicurezza |
+| `installer.sh` / `installer.ps1` | Installer guidati (Linux/macOS, Windows) |
+| `docker-compose.yml` | Servizio Redis per worker async |
+| `docs/` | Architettura, sicurezza, operations, playbook, percorsi |
 
 ---
 
-## STRUTTURA OUTPUT GENERATI
+## 💻 Requisiti di sistema
 
-```text
-scans/                     # artefatti scansione
-reports/                   # report PDF
-reports/<scan_id>.pdf      # report per scansione
-```
+**Runtime:** Python 3.10–3.12 · Redis 6/7 (worker async) · Go ≥ 1.19 (tool specifici) · Node.js/npm (solo build/test frontend)
 
-Storico e telemetria operativa sono tracciati nel database/log applicativi.
+**Sistemi operativi:** ✅ Linux · ✅ macOS 11+ · ✅ Windows 10/11 (PowerShell nativo o WSL2)
 
----
+**Risorse consigliate:** CPU 2 core (4+ per scansioni concorrenti) · RAM 4 GB min (8+ GB per carichi pesanti) · Disco 2 GB + artefatti scansione/report
 
-## PRIVACY E SICUREZZA
-
-✅ Segreti in variabili ambiente (`.env`)  
-✅ Middleware e security headers hardenizzati  
-✅ Validazione input e sanitizzazione target  
-✅ Protezioni API opzionali (JWT/API key)  
-✅ Audit logging per azioni sensibili
-
-⚠️ I dati di scansione possono essere sensibili: proteggi report, DB e backup con controlli d’accesso rigorosi.
+> La copertura dipende dai tool installati e dai permessi. Alcuni scanner richiedono binari esterni (Nmap, Nuclei, WhatWeb…); gli scanner enterprise (Acunetix/Nessus) richiedono API key valide. Senza i componenti opzionali, VAP opera con copertura ridotta.
 
 ---
 
-## CONDIVISIONE TEAM
+## 🛠️ Risoluzione problemi
 
-1. Condividi accesso al repository
-2. Condividi template `.env` sanificato (mai segreti reali)
-3. Definisci onboarding con runbook in `docs/`
-
----
-
-## CHANGELOG (ALTO LIVELLO)
-
-### Linea corrente
-
-- Dashboard + API FastAPI
-- Orchestrazione scanner e plugin estendibili
-- Background jobs con Celery/Redis
-- Hardening sicurezza applicativa e audit trail
-- Report PDF + documentazione operativa completa
+| Sintomo | Causa probabile | Soluzione |
+|---|---|---|
+| `ModuleNotFoundError` | venv non attivo / dipendenze mancanti | `source venv/bin/activate && pip install -r requirements.txt` |
+| Job Celery non partono | Redis spento / broker URL errato | avvia `redis-server`, verifica `.env`, riavvia il worker |
+| Findings vuoti/parziali | tool mancante / target irraggiungibile | controlla il binario, verifica raggiungibilità, prova il profilo `light` |
+| UI senza stile | working dir errata / mapping static | esegui dalla root del repo; verifica che `static/` sia servito |
 
 ---
 
-## SUPPORTO
+## 🔐 Privacy e sicurezza
 
-- Apri issue nel repository per bug/richieste.
-- Consulta prima la documentazione in `docs/`.
+- ✅ Segreti in variabili d'ambiente (`.env`)
+- ✅ Middleware e security header hardenizzati
+- ✅ Validazione input e sanitizzazione target
+- ✅ Protezioni API opzionali (JWT/API key)
+- ✅ Audit logging per azioni sensibili
+
+⚠️ I dati di scansione possono essere sensibili: proteggi report, DB e backup con controlli d'accesso rigorosi.
 
 ---
 
-## LICENZA
+## 📚 Documentazione
+
+- `docs/user-manual.md` — manuale utente dettagliato
+- `docs/learning-paths/` — percorsi beginner / analyst / professional
+- `docs/scan-playbooks/` — playbook per singolo scanner
+- `docs/glossary-faq.md` — glossario e FAQ
+- `docs/architecture.md`, `docs/security.md`, `docs/deployment.md` — operations
+
+---
+
+## 📄 Licenza
 
 Distribuito secondo la licenza indicata in [`LICENSE`](LICENSE).
 
