@@ -888,6 +888,13 @@
     return false;
   }
 
+  function scrollWizardIntoView() {
+    const anchor = document.getElementById("new-scan-title") || guidedForm;
+    if (anchor && typeof anchor.scrollIntoView === "function") {
+      anchor.scrollIntoView({ block: "start" });
+    }
+  }
+
   stepNext.addEventListener("click", () => {
     if (!validateCurrentStep()) {
       sendScanBuilderTelemetry("validation_error", {
@@ -902,6 +909,7 @@
     stepEnteredAtMs = performance.now();
     sendScanBuilderTelemetry("step_view");
     updateStepperUi();
+    scrollWizardIntoView();
   });
 
   stepPrev.addEventListener("click", () => {
@@ -912,6 +920,7 @@
     stepEnteredAtMs = performance.now();
     sendScanBuilderTelemetry("step_view");
     updateStepperUi();
+    scrollWizardIntoView();
   });
 
   guidedForm.addEventListener("submit", (event) => {

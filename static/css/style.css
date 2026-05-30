@@ -117,6 +117,29 @@ body {
     box-shadow: 0 0 0 2px rgba(248, 113, 113, 0.28);
 }
 
+/* Guided wizard: keep step navigation in view so the long Step 2 never forces
+   the user to scroll up to the stepper or down to the controls. */
+.wizard-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 20;
+    background: rgb(15 23 42 / 0.97);
+    backdrop-filter: blur(6px);
+    margin-top: 0.5rem;
+}
+
+@media (min-width: 640px) {
+    .wizard-stepper {
+        position: sticky;
+        top: 3.75rem;
+        z-index: 20;
+        background: rgb(15 23 42 / 0.97);
+        backdrop-filter: blur(6px);
+        padding-block: 0.5rem;
+        border-bottom: 1px solid rgb(30 41 59 / 0.7);
+    }
+}
+
 @media (min-width: 1024px) {
     .home-main-grid {
         grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
