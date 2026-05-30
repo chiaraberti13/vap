@@ -14,55 +14,73 @@
   </a>
   {% set active_nav = 'guide' %}
   {% include "_nav.html" %}
-  <main id="guide-main" class="min-h-screen px-4 py-8 sm:px-6 sm:py-10">
-    <div class="content-shell content-stack-lg">
 
-      <!-- Header -->
-      <header class="space-y-3">
-        <p class="text-sm uppercase tracking-[0.3em] text-slate-400">Guida & Documentazione</p>
-        <h1 class="text-3xl font-semibold">Impara la sicurezza web. Esegui assessment professionali.</h1>
-        <p class="max-w-3xl text-slate-300">
-          VAP è pensato per due pubblici nello stesso strumento: chi <strong class="text-emerald-200">studia</strong> sicurezza
-          offensiva/difensiva e chi conduce <strong class="text-sky-200">assessment reali</strong>. Questa guida spiega come usarlo
-          in sicurezza, cosa fa ogni tipo di scansione e come interpretare i risultati.
-        </p>
-        <div class="flex flex-wrap items-center gap-2">
+  <!-- Sticky section navigation: jump between groups without long scrolling -->
+  <div class="guide-tabs-bar">
+    <div class="content-shell px-4 sm:px-6">
+      <div id="guide-tabs" class="guide-tabs" role="tablist" aria-label="Sezioni della guida">
+        <a class="guide-tab" role="tab" id="tab-panoramica" href="#panoramica" data-guide-tab="panoramica" aria-controls="panoramica" aria-selected="true">Panoramica</a>
+        <a class="guide-tab" role="tab" id="tab-modalita" href="#modalita" data-guide-tab="modalita" aria-controls="modalita" aria-selected="false">Modalità</a>
+        <a class="guide-tab" role="tab" id="tab-percorsi" href="#percorsi" data-guide-tab="percorsi" aria-controls="percorsi" aria-selected="false">Percorsi</a>
+        <a class="guide-tab" role="tab" id="tab-flusso" href="#flusso" data-guide-tab="flusso" aria-controls="flusso" aria-selected="false">Flusso scansione</a>
+        <a class="guide-tab" role="tab" id="tab-catalogo" href="#catalogo" data-guide-tab="catalogo" aria-controls="catalogo" aria-selected="false">Catalogo</a>
+        <a class="guide-tab" role="tab" id="tab-glossario" href="#glossario" data-guide-tab="glossario" aria-controls="glossario" aria-selected="false">Glossario</a>
+        <a class="guide-tab" role="tab" id="tab-sicurezza" href="#sicurezza" data-guide-tab="sicurezza" aria-controls="sicurezza" aria-selected="false">Sicurezza</a>
+        <a class="guide-tab" role="tab" id="tab-risorse" href="#risorse" data-guide-tab="risorse" aria-controls="risorse" aria-selected="false">Risorse</a>
+      </div>
+    </div>
+  </div>
+
+  <main id="guide-main" class="px-4 py-6 sm:px-6 sm:py-8">
+    <div class="content-shell">
+
+      <!-- Header (compact) -->
+      <header class="space-y-2">
+        <p class="text-xs uppercase tracking-[0.3em] text-slate-400">Guida & Documentazione</p>
+        <h1 class="text-2xl sm:text-3xl font-semibold">Impara la sicurezza web. Esegui assessment professionali.</h1>
+        <div class="flex flex-wrap items-center gap-2 pt-1">
           <span class="mode-badge mode-badge-learn">Modalità didattica</span>
           <span class="mode-badge mode-badge-pro">Uso professionale</span>
         </div>
       </header>
 
-      <!-- Quick links -->
-      <nav class="guide-grid guide-grid-3" aria-label="Indice rapido della guida">
-        <a href="#modalita" class="guide-card transition hover:border-cyan-400">
-          <p class="font-semibold text-cyan-200">① Le due modalità</p>
-          <p class="mt-1 text-sm text-slate-300">Didattico vs Professionale: cosa cambia e quando usarli.</p>
-        </a>
-        <a href="#percorsi" class="guide-card transition hover:border-cyan-400">
-          <p class="font-semibold text-cyan-200">② Percorsi di apprendimento</p>
-          <p class="mt-1 text-sm text-slate-300">Beginner, Analyst e Professional passo-passo.</p>
-        </a>
-        <a href="#catalogo" class="guide-card transition hover:border-cyan-400">
-          <p class="font-semibold text-cyan-200">③ Catalogo scansioni</p>
-          <p class="mt-1 text-sm text-slate-300">Tutti i tipi di scansione e quando sceglierli.</p>
-        </a>
-      </nav>
-
-      <!-- Two modes -->
-      <section id="modalita" aria-labelledby="modalita-title" class="content-stack-lg">
-        <div>
-          <h2 id="modalita-title" class="text-2xl font-semibold">Le due modalità di VAP</h2>
-          <p class="mt-2 max-w-3xl text-slate-400">
-            La modalità si sceglie nello <strong class="text-slate-200">Step 1</strong> del wizard tramite il campo
-            “Livello di esperienza”. Cambia limiti, moduli disponibili e quantità di spiegazioni — ma i
-            <strong class="text-slate-200">guardrail di sicurezza lato server restano sempre attivi</strong>.
-          </p>
+      <!-- PANORAMICA -->
+      <section id="panoramica" role="tabpanel" aria-labelledby="tab-panoramica" data-guide-panel tabindex="-1" class="guide-panel">
+        <p class="max-w-3xl text-slate-300">
+          VAP è due strumenti in uno: chi <strong class="text-emerald-200">studia</strong> sicurezza offensiva/difensiva e chi
+          conduce <strong class="text-sky-200">assessment reali</strong>. Usa le schede qui sopra per spostarti tra le sezioni
+          senza scorrere a lungo.
+        </p>
+        <div class="mt-4 guide-grid guide-grid-3">
+          <a href="#modalita" data-guide-jump="modalita" class="guide-card transition hover:border-cyan-400">
+            <p class="font-semibold text-cyan-200">① Le due modalità</p>
+            <p class="mt-1 text-sm text-slate-300">Didattico vs Professionale: cosa cambia e quando usarli.</p>
+          </a>
+          <a href="#percorsi" data-guide-jump="percorsi" class="guide-card transition hover:border-cyan-400">
+            <p class="font-semibold text-cyan-200">② Percorsi di apprendimento</p>
+            <p class="mt-1 text-sm text-slate-300">Beginner, Analyst e Professional passo-passo.</p>
+          </a>
+          <a href="#catalogo" data-guide-jump="catalogo" class="guide-card transition hover:border-cyan-400">
+            <p class="font-semibold text-cyan-200">③ Catalogo scansioni</p>
+            <p class="mt-1 text-sm text-slate-300">Tutti i tipi di scansione e quando sceglierli.</p>
+          </a>
         </div>
-        <div class="guide-grid guide-grid-2">
+        <div class="mt-4">
+          <a href="/" class="inline-flex items-center rounded-lg bg-cyan-500 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-cyan-400">Avvia una nuova scansione</a>
+        </div>
+      </section>
+
+      <!-- MODALITÀ -->
+      <section id="modalita" role="tabpanel" aria-labelledby="tab-modalita" data-guide-panel tabindex="-1" class="guide-panel">
+        <h2 id="modalita-title" class="text-2xl font-semibold">Le due modalità di VAP</h2>
+        <p class="mt-2 max-w-3xl text-slate-400">
+          La modalità si sceglie nello <strong class="text-slate-200">Step 1</strong> del wizard tramite il campo
+          “Livello di esperienza”. Cambia limiti, moduli disponibili e quantità di spiegazioni — ma i
+          <strong class="text-slate-200">guardrail di sicurezza lato server restano sempre attivi</strong>.
+        </p>
+        <div class="mt-4 guide-grid guide-grid-2">
           <article class="guide-card border-emerald-500/30">
-            <div class="flex items-center gap-2">
-              <span class="mode-badge mode-badge-learn">🎓 Didattico</span>
-            </div>
+            <span class="mode-badge mode-badge-learn">🎓 Didattico</span>
             <p class="mt-3 text-sm text-slate-300">Ideale per studenti, junior e chi vuole capire il “perché” di ogni risultato.</p>
             <ul class="mt-3 space-y-2 text-sm text-slate-200">
               <li>• <strong>Beginner</strong>: moduli ad alto rischio (SQLMap, Commix, NoSQLMap) disabilitati e limiti timeout/payload conservativi.</li>
@@ -72,9 +90,7 @@
             </ul>
           </article>
           <article class="guide-card border-sky-500/30">
-            <div class="flex items-center gap-2">
-              <span class="mode-badge mode-badge-pro">🛠 Professionale</span>
-            </div>
+            <span class="mode-badge mode-badge-pro">🛠 Professionale</span>
             <p class="mt-3 text-sm text-slate-300">Ideale per analyst e penetration tester che conducono engagement autorizzati.</p>
             <ul class="mt-3 space-y-2 text-sm text-slate-200">
               <li>• <strong>Analyst</strong>: limiti intermedi e bilanciati. <strong>Expert</strong>: pieno controllo dei parametri.</li>
@@ -86,13 +102,11 @@
         </div>
       </section>
 
-      <!-- Learning paths -->
-      <section id="percorsi" aria-labelledby="percorsi-title" class="content-stack-lg">
-        <div>
-          <h2 id="percorsi-title" class="text-2xl font-semibold">Percorsi di apprendimento</h2>
-          <p class="mt-2 max-w-3xl text-slate-400">Tre percorsi progressivi per passare da principiante ad analista autonomo.</p>
-        </div>
-        <div class="guide-grid guide-grid-3">
+      <!-- PERCORSI -->
+      <section id="percorsi" role="tabpanel" aria-labelledby="tab-percorsi" data-guide-panel tabindex="-1" class="guide-panel">
+        <h2 id="percorsi-title" class="text-2xl font-semibold">Percorsi di apprendimento</h2>
+        <p class="mt-2 max-w-3xl text-slate-400">Tre percorsi progressivi per passare da principiante ad analista autonomo.</p>
+        <div class="mt-4 guide-grid guide-grid-3">
           <article class="guide-card">
             <p class="font-semibold text-emerald-200">Beginner path</p>
             <ol class="mt-3 space-y-2 text-sm text-slate-200">
@@ -123,13 +137,11 @@
         </div>
       </section>
 
-      <!-- How a scan works -->
-      <section aria-labelledby="flusso-title" class="content-stack-lg">
-        <div>
-          <h2 id="flusso-title" class="text-2xl font-semibold">Come funziona una scansione</h2>
-          <p class="mt-2 max-w-3xl text-slate-400">Il wizard guidato accompagna ogni run in 5 step per ridurre errori operativi e run non conformi.</p>
-        </div>
-        <ol class="guide-grid guide-grid-3">
+      <!-- FLUSSO -->
+      <section id="flusso" role="tabpanel" aria-labelledby="tab-flusso" data-guide-panel tabindex="-1" class="guide-panel">
+        <h2 id="flusso-title" class="text-2xl font-semibold">Come funziona una scansione</h2>
+        <p class="mt-2 max-w-3xl text-slate-400">Il wizard guidato accompagna ogni run in 5 step per ridurre errori operativi e run non conformi.</p>
+        <ol class="mt-4 guide-grid guide-grid-3">
           <li class="guide-card"><div class="flex gap-2"><span class="guide-step-num">1</span><div><p class="font-semibold text-slate-100">Obiettivo &amp; target</p><p class="mt-1 text-sm text-slate-300">Definisci il bersaglio autorizzato e conferma il perimetro legale.</p></div></div></li>
           <li class="guide-card"><div class="flex gap-2"><span class="guide-step-num">2</span><div><p class="font-semibold text-slate-100">Tipo &amp; moduli</p><p class="mt-1 text-sm text-slate-300">Scegli il tipo di scansione e i moduli scanner da eseguire.</p></div></div></li>
           <li class="guide-card"><div class="flex gap-2"><span class="guide-step-num">3</span><div><p class="font-semibold text-slate-100">Parametri &amp; consensi</p><p class="mt-1 text-sm text-slate-300">Regola i parametri avanzati e accetta privacy e termini.</p></div></div></li>
@@ -143,51 +155,54 @@
         </ol>
       </section>
 
-      <!-- Scan catalog -->
-      <section id="catalogo" aria-labelledby="catalogo-title" class="content-stack-lg">
-        <div>
-          <h2 id="catalogo-title" class="text-2xl font-semibold">Catalogo scansioni</h2>
-          <p class="mt-2 max-w-3xl text-slate-400">
-            Ogni tipo di scansione include obiettivo didattico, durata attesa e livello di invasività. Parti da
-            <strong class="text-slate-200">Light</strong> per la ricognizione, usa <strong class="text-slate-200">Full</strong> per coperture estese
-            e gli scanner mirati per approfondimenti verticali.
-          </p>
+      <!-- CATALOGO -->
+      <section id="catalogo" role="tabpanel" aria-labelledby="tab-catalogo" data-guide-panel tabindex="-1" class="guide-panel">
+        <h2 id="catalogo-title" class="text-2xl font-semibold">Catalogo scansioni</h2>
+        <p class="mt-2 max-w-3xl text-slate-400">
+          Ogni tipo di scansione include obiettivo didattico, durata attesa e livello di invasività. Parti da
+          <strong class="text-slate-200">Light</strong> per la ricognizione, usa <strong class="text-slate-200">Full</strong> per coperture estese
+          e gli scanner mirati per approfondimenti verticali. Apri una categoria per vedere i dettagli.
+        </p>
+        <div class="mt-4 space-y-3">
+          {% for category, entries in scan_catalog | groupby('category') %}
+          <details class="guide-cat" {% if loop.first %}open{% endif %}>
+            <summary class="guide-cat-summary">
+              <span class="text-sm font-semibold uppercase tracking-[0.15em] text-cyan-300">{{ category }}</span>
+              <span class="text-xs text-slate-400">{{ entries | length }} scansion{{ 'e' if (entries | length) != 1 else 'e' }}</span>
+            </summary>
+            <div class="mt-3 guide-grid guide-grid-2">
+              {% for entry in entries %}
+              <article class="guide-card">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <h3 class="font-semibold text-slate-100">{{ entry.display_name }}</h3>
+                  {% if entry.level == 'beginner' %}
+                  <span class="rounded-full border border-emerald-400/40 bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-200">beginner</span>
+                  {% elif entry.level == 'intermediate' %}
+                  <span class="rounded-full border border-amber-400/40 bg-amber-500/10 px-2 py-0.5 text-xs text-amber-200">intermediate</span>
+                  {% else %}
+                  <span class="rounded-full border border-rose-400/40 bg-rose-500/10 px-2 py-0.5 text-xs text-rose-200">{{ entry.level }}</span>
+                  {% endif %}
+                </div>
+                <p class="mt-2 text-sm text-slate-300">{{ entry.learning_objective }}</p>
+                <div class="mt-3 flex flex-wrap gap-2 text-[11px] text-slate-200">
+                  <span class="rounded-full border border-slate-600 px-2 py-0.5">⏱ {{ entry.expected_duration }}</span>
+                  <span class="rounded-full border border-slate-600 px-2 py-0.5">🛡 invasività {{ entry.invasiveness }}</span>
+                  <span class="rounded-full border border-slate-600 px-2 py-0.5">📶 rumore {{ entry.noise_level }}</span>
+                  {% if entry.owasp_tags %}
+                  <span class="rounded-full border border-slate-600 px-2 py-0.5">OWASP {{ entry.owasp_tags | join(', ') }}</span>
+                  {% endif %}
+                </div>
+                <p class="mt-3 text-xs text-slate-400"><span class="font-semibold text-slate-300">Quando usarla:</span> {{ entry.when_to_use }}</p>
+              </article>
+              {% endfor %}
+            </div>
+          </details>
+          {% endfor %}
         </div>
-        {% for category, entries in scan_catalog | groupby('category') %}
-        <div>
-          <h3 class="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300">{{ category }}</h3>
-          <div class="mt-3 guide-grid guide-grid-2">
-            {% for entry in entries %}
-            <article class="guide-card">
-              <div class="flex flex-wrap items-center justify-between gap-2">
-                <h4 class="font-semibold text-slate-100">{{ entry.display_name }}</h4>
-                {% if entry.level == 'beginner' %}
-                <span class="rounded-full border border-emerald-400/40 bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-200">beginner</span>
-                {% elif entry.level == 'intermediate' %}
-                <span class="rounded-full border border-amber-400/40 bg-amber-500/10 px-2 py-0.5 text-xs text-amber-200">intermediate</span>
-                {% else %}
-                <span class="rounded-full border border-rose-400/40 bg-rose-500/10 px-2 py-0.5 text-xs text-rose-200">{{ entry.level }}</span>
-                {% endif %}
-              </div>
-              <p class="mt-2 text-sm text-slate-300">{{ entry.learning_objective }}</p>
-              <div class="mt-3 flex flex-wrap gap-2 text-[11px] text-slate-200">
-                <span class="rounded-full border border-slate-600 px-2 py-0.5">⏱ {{ entry.expected_duration }}</span>
-                <span class="rounded-full border border-slate-600 px-2 py-0.5">🛡 invasività {{ entry.invasiveness }}</span>
-                <span class="rounded-full border border-slate-600 px-2 py-0.5">📶 rumore {{ entry.noise_level }}</span>
-                {% if entry.owasp_tags %}
-                <span class="rounded-full border border-slate-600 px-2 py-0.5">OWASP {{ entry.owasp_tags | join(', ') }}</span>
-                {% endif %}
-              </div>
-              <p class="mt-3 text-xs text-slate-400"><span class="font-semibold text-slate-300">Quando usarla:</span> {{ entry.when_to_use }}</p>
-            </article>
-            {% endfor %}
-          </div>
-        </div>
-        {% endfor %}
       </section>
 
-      <!-- Glossary -->
-      <section id="glossario" aria-labelledby="glossario-title">
+      <!-- GLOSSARIO -->
+      <section id="glossario" role="tabpanel" aria-labelledby="tab-glossario" data-guide-panel tabindex="-1" class="guide-panel">
         <h2 id="glossario-title" class="text-2xl font-semibold">Glossario essenziale</h2>
         <dl class="mt-4 guide-grid guide-grid-2">
           <div class="guide-card">
@@ -217,8 +232,8 @@
         </dl>
       </section>
 
-      <!-- Legal & safe usage -->
-      <section aria-labelledby="legale-title">
+      <!-- SICUREZZA -->
+      <section id="sicurezza" role="tabpanel" aria-labelledby="tab-sicurezza" data-guide-panel tabindex="-1" class="guide-panel">
         <h2 id="legale-title" class="text-2xl font-semibold">Uso legale e responsabile</h2>
         <div class="mt-4 rounded-2xl border border-amber-400/40 bg-amber-500/10 p-5 text-amber-50">
           <p class="font-semibold">Scansiona solo ciò che sei autorizzato a testare.</p>
@@ -231,8 +246,8 @@
         </div>
       </section>
 
-      <!-- Further reading -->
-      <section aria-labelledby="approfondimenti-title">
+      <!-- RISORSE -->
+      <section id="risorse" role="tabpanel" aria-labelledby="tab-risorse" data-guide-panel tabindex="-1" class="guide-panel">
         <h2 id="approfondimenti-title" class="text-2xl font-semibold">Approfondimenti</h2>
         <div class="mt-4 guide-grid guide-grid-2">
           <div class="guide-card">
@@ -270,5 +285,7 @@
       </span>
     </div>
   </footer>
+
+  <script src="/static/js/guide.js"></script>
 </body>
 </html>
