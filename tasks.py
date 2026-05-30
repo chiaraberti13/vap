@@ -11,6 +11,7 @@ from typing import Any, Dict, List
 from uuid import uuid4
 
 from celery import chord
+from sqlalchemy.orm.exc import ObjectDeletedError, StaleDataError
 
 from celery_app import celery_app
 from config import settings
@@ -27,6 +28,26 @@ from scanner_engine import (
     run_single_scanner,
     serialize_findings,
 )
+
+
+_LOGGER = logging.getLogger("vap.tasks")
+
+
+def _safe_commit(db, context: str) -> bool:
+    """Commit scan updates, tolerating concurrent deletion of the scan row.
+
+    Background scanner threads can still be running when a scan is canceled or
+    deleted (e.g. via the DELETE API or test teardown). In that case the UPDATE
+    matches no rows and SQLAlchemy raises StaleDataError. We roll back and stop
+    quietly instead of crashing the worker thread with an unhandled exception.
+    """
+    try:
+        db.commit()
+        return True
+    except (StaleDataError, ObjectDeletedError):
+        db.rollback()
+        _LOGGER.info("scan row removed during %s; skipping update", context)
+        return False
 
 
 def _append_log(scan: Scan, message: str, level: str = "info") -> None:
@@ -267,7 +288,7 @@ def _run_single_scanner_sync(scan_id: int, scanner_name: str, target: str, total
         if not scan or scan.status == "canceled":
             return {"tool": scanner_name, "status": "canceled", "findings": []}
         _append_log(scan, f"Avvio scanner {scanner_name}.")
-        db.commit()
+        _safe_commit(db, f"scanner {scanner_name} start")
 
     try:
         result = run_single_scanner(scanner_name, target)
@@ -293,7 +314,7 @@ def _run_single_scanner_sync(scan_id: int, scanner_name: str, target: str, total
             if critical_notifications:
                 _append_notifications(scan, critical_notifications)
                 _append_log(scan, f"Notifiche critiche: {len(critical_notifications)}", "warning")
-            db.commit()
+            _safe_commit(db, f"scanner {scanner_name} progress")
 
     return result
 
@@ -320,7 +341,7 @@ def run_scan_in_process(scan_id: int, scan_type: str, target: str) -> None:
         scan.completed_scanners = 0
         scan.progress = 0
         _append_log(scan, "Scansione in esecuzione (modalità diretta, senza broker Celery).")
-        db.commit()
+        _safe_commit(db, "scan start")
 
     results: List[Dict[str, Any]] = []
     scanner_timeout = settings.celery_task_time_limit or 900
@@ -364,7 +385,7 @@ def run_scan_in_process(scan_id: int, scan_type: str, target: str) -> None:
             return
         if scan.status == "canceled":
             _append_log(scan, "Scansione annullata. Nessun report generato.", "warning")
-            db.commit()
+            _safe_commit(db, "scan cancel finalize")
             return
         scan.completed_at = datetime.now(timezone.utc)
         scan.status = "completed"
@@ -400,5 +421,5 @@ def run_scan_in_process(scan_id: int, scan_type: str, target: str) -> None:
             scan.report_path = None
             _append_log(scan, f"Errore report PDF: {exc}", "error")
         _record_performance_budget(scan, report_render_seconds=report_render_seconds)
-        db.commit()
+        _safe_commit(db, "scan completion")
     _log.info("run_scan_in_process: scan %d completed (sync)", scan_id)

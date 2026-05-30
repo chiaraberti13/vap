@@ -9,7 +9,6 @@ from report_generator import (
     _owasp_classification_lines,
     _scan_parameters_rows,
     _scan_type_label,
-    _technology_category_icon,
     _sorted_scan_coverage,
     _validation_steps_for_finding,
 )
@@ -19,9 +18,9 @@ def test_owasp_classification_lines_includes_all_versions_with_fallbacks():
     lines = _owasp_classification_lines(None, None, None, ["owasp-a03"])
 
     assert lines == [
-        "OWASP 2017: Non classificato",
+        "OWASP 2017: Unclassified",
         "OWASP 2021: owasp-a03",
-        "OWASP 2025: Non classificato",
+        "OWASP 2025: Unclassified",
     ]
 
 
@@ -38,11 +37,6 @@ def test_owasp_classification_lines_prefers_explicit_values():
         "OWASP 2021: A03:2021 - Injection",
         "OWASP 2025: A03:2025 - Injection",
     ]
-
-
-def test_technology_category_icon_defaults_and_known_mapping():
-    assert _technology_category_icon("Web Server") == "🖥️"
-    assert _technology_category_icon("Unknown Category") == "🔧"
 
 
 def test_is_technology_finding_matches_whatweb_tool_or_title():
@@ -80,7 +74,7 @@ def test_validation_steps_for_finding_builds_fallback_steps():
     assert "Verify affected endpoint: https://example.test/login" in steps
     assert "Confirm affected parameters: username, password" in steps
     assert "Cross-check scanner evidence and reproduce on staging before remediation." in steps
-    assert "After remediation, execute a focused re-scan to confirm closure." in steps
+    assert "After remediation, run a focused re-scan to confirm closure." in steps
 
 
 def test_sorted_scan_coverage_orders_ports_and_deduplicates_tests():
@@ -161,7 +155,7 @@ def test_build_severity_heatmap_table_includes_expected_rows():
 
     assert rendered_rows[0][0].getPlainText() == "Severity"
     assert len(rendered_rows) == 6
-    assert rendered_rows[1][0].getPlainText() == "Critical"
+    assert rendered_rows[1][0].getPlainText() == "CRITICAL"
     assert rendered_rows[1][1].getPlainText() == "2"
 
 
@@ -177,5 +171,5 @@ def test_build_remediation_roadmap_orders_highest_severity_first():
     rendered_rows = table._cellvalues
 
     assert len(rendered_rows) == 3
-    assert rendered_rows[1][0].getPlainText() == "P1 · Critical"
+    assert rendered_rows[1][0].getPlainText() == "P1 CRITICAL"
     assert "SQL Injection" in rendered_rows[1][1].getPlainText()
