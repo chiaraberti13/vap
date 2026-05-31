@@ -611,8 +611,12 @@
   function renderModuleSelector(entry) {
     const modules = Array.isArray(entry?.modules) ? entry.modules : [];
     const modulesSet = new Set(modules.map((module) => module.id));
+    const moduleLabels = new Map(modules.map((module) => [module.id, module.label || module.id]));
     const filteredSelection = Array.from(selectedModules).filter((moduleId) => modulesSet.has(moduleId));
-    selectedModules = new Set(filteredSelection.length > 0 ? filteredSelection : modules.map((module) => module.id));
+    const baseSelection = filteredSelection.length > 0 ? filteredSelection : modules.map((module) => module.id);
+    // Mai abilitare insieme moduli incompatibili (es. zap/burp): la combinazione
+    // verrebbe rifiutata dal server. Risolvi i conflitti a monte.
+    selectedModules = new Set(resolveExclusivity(baseSelection));
 
     moduleSelector.innerHTML = "";
     modules.forEach((module) => {
@@ -632,16 +636,27 @@
         selectedModules.delete(module.id);
         delete advancedModuleConfig[module.id];
       }
+      // Partner incompatibili presenti tra i moduli di questa scansione.
+      const partners = Array.from(exclusivePartners(module.id)).filter((id) => modulesSet.has(id));
+      const activePartner = partners.find((id) => selectedModules.has(id));
       checkbox.disabled = isBeginnerBlocked;
       checkbox.addEventListener("change", () => {
         if (checkbox.checked) {
           selectedModules.add(module.id);
+          // Selezionando un modulo, deseleziona gli incompatibili.
+          partners.forEach((partnerId) => {
+            if (selectedModules.has(partnerId)) {
+              selectedModules.delete(partnerId);
+              delete advancedModuleConfig[partnerId];
+            }
+          });
         } else {
           selectedModules.delete(module.id);
           delete advancedModuleConfig[module.id];
         }
         updateSelectedModulesInput();
         updateModulesSummary(entry);
+        renderModuleSelector(entry);
         renderAdvancedModuleConfig(entry);
         updateImpactSimulation(entry);
       });
@@ -659,10 +674,26 @@
         desc.textContent = module.description;
         text.appendChild(desc);
       }
+      if (partners.length > 0) {
+        const note = document.createElement("span");
+        note.className = "block text-xs text-amber-300/80 mt-0.5";
+        const partnerNames = partners.map((id) => moduleLabels.get(id) || id).join(", ");
+        note.textContent = (activePartner && !checkbox.checked)
+          ? `In alternativa a ${moduleLabels.get(activePartner) || activePartner} (selezionalo per sostituirlo).`
+          : `Non utilizzabile insieme a ${partnerNames}: selezionando questo, l'altro viene deselezionato.`;
+        text.appendChild(note);
+      }
       wrapper.appendChild(checkbox);
       wrapper.appendChild(text);
       moduleSelector.appendChild(wrapper);
     });
+
+    const moduleGuidance = document.getElementById("module-selection-guidance");
+    if (moduleGuidance && entry) {
+      moduleGuidance.textContent =
+        `Questi sono i moduli inclusi nella scansione «${entry.display_name}»: cambiando tipo di scansione cambiano anche i moduli. ` +
+        "Deseleziona quelli che non vuoi eseguire; la configurazione viene salvata per audit/riproducibilità.";
+    }
 
     updateSelectedModulesInput();
     updateModulesSummary(entry);
