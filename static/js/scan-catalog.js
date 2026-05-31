@@ -129,6 +129,7 @@
   let selectedModules = new Set();
   let advancedModuleConfig = {};
   let recommendedScanType = "";
+  const MAX_COMPARE = 6;
   const goalToScan = { baseline: "light", verification: "light", deep_dive: "full" };
   const goalLabels = {
     baseline: "mappare l'esposizione iniziale",
@@ -267,12 +268,8 @@
     return 1;
   }
 
-  function riskUiFromEntry(entry) {
-    const invasivenessScore = riskScoreFromLabel(entry.invasiveness);
-    const noiseScore = riskScoreFromLabel(entry.noise_level);
-    const combinedScore = Math.max(invasivenessScore, noiseScore);
-
-    if (combinedScore >= 3) {
+  function riskUiForScore(score) {
+    if (score >= 3) {
       return {
         badgeClass: "border-rose-400/60 text-rose-100 bg-rose-500/20",
         panelClass: "border-rose-400/40 bg-rose-500/10",
@@ -282,7 +279,7 @@
       };
     }
 
-    if (combinedScore === 2) {
+    if (score === 2) {
       return {
         badgeClass: "border-amber-300/60 text-amber-100 bg-amber-500/20",
         panelClass: "border-amber-400/40 bg-amber-500/10",
@@ -299,6 +296,32 @@
       summary:
         "Questa scansione è a bassa invasività: resta comunque obbligatorio il consenso e la validazione del target.",
     };
+  }
+
+  function priorityRiskAdjustment() {
+    const { value } = getPriorityInfo();
+    if (value >= 7) {
+      return 1; // Alta / Critica → maggiore rischio operativo
+    }
+    if (value <= 3) {
+      return -1; // Bassa / Minima → minore urgenza/impatto
+    }
+    return 0; // Media
+  }
+
+  function riskScoreFromEntry(entry) {
+    return Math.max(
+      riskScoreFromLabel(entry.invasiveness),
+      riskScoreFromLabel(entry.noise_level)
+    );
+  }
+
+  function riskUiFromEntry(entry) {
+    // Il rischio mostrato combina l'invasività/rumore della scansione con la
+    // priorità scelta: il tag (e non solo la descrizione) cambia di conseguenza.
+    const base = riskScoreFromEntry(entry);
+    const combined = Math.min(3, Math.max(1, base + priorityRiskAdjustment()));
+    return riskUiForScore(combined);
   }
 
   function getPriorityInfo() {
@@ -603,11 +626,49 @@
     const modules = Array.isArray(entry?.modules) ? entry.modules : [];
     advancedModulesList.innerHTML = "";
 
-    Array.from(selectedModules).forEach((moduleId) => {
+    const selected = Array.from(selectedModules);
+    if (selected.length === 0) {
+      const emptyNote = document.createElement("p");
+      emptyNote.className = "home-microcopy text-slate-500";
+      emptyNote.textContent = "Seleziona almeno un modulo nello Step 2 per configurare parametri avanzati.";
+      advancedModulesList.appendChild(emptyNote);
+      return;
+    }
+
+    const timeoutExplainability = parameterExplainability.timeout_seconds;
+    const payloadExplainability = parameterExplainability.max_payloads;
+
+    // Spiegazione mostrata UNA volta sola (prima era ripetuta per ogni modulo):
+    // riduce drasticamente la lunghezza della sezione.
+    const help = document.createElement("details");
+    help.className = "rounded-md border border-slate-700/80 bg-slate-900/60 p-3 text-[11px] text-slate-300";
+    help.innerHTML = `
+      <summary class="cursor-pointer font-semibold text-cyan-200">Come funzionano questi parametri</summary>
+      <div class="mt-2 grid gap-3 sm:grid-cols-2">
+        <div>
+          <p class="font-semibold text-slate-100">${escapeHtml(timeoutExplainability.title)}</p>
+          <ul class="mt-1 list-disc space-y-1 pl-4">
+            <li><span class="font-semibold text-slate-100">Cosa cambia:</span> ${escapeHtml(timeoutExplainability.whatChanges)}</li>
+            <li><span class="font-semibold text-slate-100">Trade-off:</span> ${escapeHtml(timeoutExplainability.tradeOff)}</li>
+            <li><span class="font-semibold text-slate-100">Falsi positivi:</span> ${escapeHtml(timeoutExplainability.falsePositiveImpact)}</li>
+          </ul>
+        </div>
+        <div>
+          <p class="font-semibold text-slate-100">${escapeHtml(payloadExplainability.title)}</p>
+          <ul class="mt-1 list-disc space-y-1 pl-4">
+            <li><span class="font-semibold text-slate-100">Cosa cambia:</span> ${escapeHtml(payloadExplainability.whatChanges)}</li>
+            <li><span class="font-semibold text-slate-100">Trade-off:</span> ${escapeHtml(payloadExplainability.tradeOff)}</li>
+            <li><span class="font-semibold text-slate-100">Falsi positivi:</span> ${escapeHtml(payloadExplainability.falsePositiveImpact)}</li>
+          </ul>
+        </div>
+      </div>`;
+    advancedModulesList.appendChild(help);
+
+    const modeLimits = getModeLimits();
+    selected.forEach((moduleId) => {
       const moduleEntry = modules.find((module) => module.id === moduleId);
       const moduleLabel = moduleEntry?.label || moduleId;
       const current = advancedModuleConfig[moduleId] || { timeout_seconds: 20, max_payloads: 30 };
-      const modeLimits = getModeLimits();
       const boundedTimeout = Math.min(current.timeout_seconds, modeLimits.timeoutSeconds);
       const boundedPayloads = Math.min(current.max_payloads, modeLimits.maxPayloads);
       advancedModuleConfig[moduleId] = {
@@ -615,54 +676,33 @@
         max_payloads: boundedPayloads,
       };
 
-      const wrapper = document.createElement("fieldset");
-      wrapper.className = "rounded-md border border-slate-700 bg-slate-950/60 p-3";
-      const timeoutHelpId = `advanced-help-timeout-${moduleId}`;
-      const payloadHelpId = `advanced-help-payload-${moduleId}`;
-      const timeoutExplainability = parameterExplainability.timeout_seconds;
-      const payloadExplainability = parameterExplainability.max_payloads;
-
-      wrapper.innerHTML = `
-        <legend class="px-1 text-xs font-semibold uppercase tracking-wide text-slate-300">${escapeHtml(moduleLabel)}</legend>
+      // Ogni modulo è una riga collassabile compatta (chiusa di default).
+      const row = document.createElement("details");
+      row.className = "rounded-md border border-slate-700 bg-slate-950/60 px-3 py-2";
+      row.innerHTML = `
+        <summary class="flex cursor-pointer items-center justify-between gap-3 text-xs">
+          <span class="font-semibold text-slate-100">${escapeHtml(moduleLabel)}</span>
+          <span class="text-slate-400" data-advanced-summary="${moduleId}">timeout ${boundedTimeout}s &middot; ${boundedPayloads} payload</span>
+        </summary>
         <div class="mt-2 grid gap-2 sm:grid-cols-2">
           <label class="grid gap-1 text-xs text-slate-300">
-            <span>${escapeHtml(timeoutExplainability.title)}</span>
-            <input type="number" min="1" max="${modeLimits.timeoutSeconds}" step="1" class="rounded border border-slate-700 bg-slate-950 px-2 py-1 text-slate-100" data-advanced-timeout="${moduleId}" aria-describedby="${timeoutHelpId}" value="${boundedTimeout}" />
-            <details id="${timeoutHelpId}" class="rounded border border-slate-700/80 bg-slate-900/60 p-2 text-[11px] text-slate-300">
-              <summary class="cursor-pointer font-semibold text-cyan-200">Spiegazione parametro</summary>
-              <ul class="mt-2 list-disc space-y-1 pl-4">
-                <li><span class="font-semibold text-slate-100">Cosa cambia:</span> ${escapeHtml(timeoutExplainability.whatChanges)}</li>
-                <li><span class="font-semibold text-slate-100">Trade-off:</span> ${escapeHtml(timeoutExplainability.tradeOff)}</li>
-                <li><span class="font-semibold text-slate-100">Impatto false positive:</span> ${escapeHtml(timeoutExplainability.falsePositiveImpact)}</li>
-                <li><span class="font-semibold text-slate-100">Anti-pattern:</span> ${escapeHtml(timeoutExplainability.antiPattern)}</li>
-              </ul>
-              <p class="mt-2 text-slate-400">${escapeHtml(timeoutExplainability.practicalExample)}</p>
-            </details>
+            <span>${escapeHtml(timeoutExplainability.title)} (max ${modeLimits.timeoutSeconds})</span>
+            <input type="number" min="1" max="${modeLimits.timeoutSeconds}" step="1" class="rounded border border-slate-700 bg-slate-950 px-2 py-1 text-slate-100" data-advanced-timeout="${moduleId}" value="${boundedTimeout}" />
           </label>
           <label class="grid gap-1 text-xs text-slate-300">
-            <span>${escapeHtml(payloadExplainability.title)}</span>
-            <input type="number" min="1" max="${modeLimits.maxPayloads}" step="1" class="rounded border border-slate-700 bg-slate-950 px-2 py-1 text-slate-100" data-advanced-payloads="${moduleId}" aria-describedby="${payloadHelpId}" value="${boundedPayloads}" />
-            <details id="${payloadHelpId}" class="rounded border border-slate-700/80 bg-slate-900/60 p-2 text-[11px] text-slate-300">
-              <summary class="cursor-pointer font-semibold text-cyan-200">Spiegazione parametro</summary>
-              <ul class="mt-2 list-disc space-y-1 pl-4">
-                <li><span class="font-semibold text-slate-100">Cosa cambia:</span> ${escapeHtml(payloadExplainability.whatChanges)}</li>
-                <li><span class="font-semibold text-slate-100">Trade-off:</span> ${escapeHtml(payloadExplainability.tradeOff)}</li>
-                <li><span class="font-semibold text-slate-100">Impatto false positive:</span> ${escapeHtml(payloadExplainability.falsePositiveImpact)}</li>
-                <li><span class="font-semibold text-slate-100">Anti-pattern:</span> ${escapeHtml(payloadExplainability.antiPattern)}</li>
-              </ul>
-              <p class="mt-2 text-slate-400">${escapeHtml(payloadExplainability.practicalExample)}</p>
-            </details>
+            <span>${escapeHtml(payloadExplainability.title)} (max ${modeLimits.maxPayloads})</span>
+            <input type="number" min="1" max="${modeLimits.maxPayloads}" step="1" class="rounded border border-slate-700 bg-slate-950 px-2 py-1 text-slate-100" data-advanced-payloads="${moduleId}" value="${boundedPayloads}" />
           </label>
-        </div>
-      `;
-      advancedModulesList.appendChild(wrapper);
+        </div>`;
+      advancedModulesList.appendChild(row);
     });
 
-    if (selectedModules.size === 0) {
-      const emptyNote = document.createElement("p");
-      emptyNote.className = "home-microcopy text-slate-500";
-      emptyNote.textContent = "Seleziona almeno un modulo nello Step 2 per configurare parametri avanzati.";
-      advancedModulesList.appendChild(emptyNote);
+    function refreshSummary(moduleId) {
+      const cfg = advancedModuleConfig[moduleId] || {};
+      const node = advancedModulesList.querySelector(`[data-advanced-summary="${moduleId}"]`);
+      if (node) {
+        node.textContent = `timeout ${cfg.timeout_seconds}s · ${cfg.max_payloads} payload`;
+      }
     }
 
     advancedModulesList.querySelectorAll("[data-advanced-timeout]").forEach((input) => {
@@ -679,6 +719,7 @@
           timeout_seconds: boundedTimeout,
         };
         input.value = String(boundedTimeout);
+        refreshSummary(moduleId);
         updateSelectedModulesInput();
         updateImpactSimulation(entry);
       });
@@ -697,6 +738,7 @@
           max_payloads: boundedPayloads,
         };
         input.value = String(boundedPayloads);
+        refreshSummary(moduleId);
         updateSelectedModulesInput();
         updateImpactSimulation(entry);
       });
@@ -779,7 +821,7 @@
         event.stopPropagation();
         if (selectedForCompare.has(entry.id)) {
           selectedForCompare.delete(entry.id);
-        } else if (selectedForCompare.size < 3) {
+        } else if (selectedForCompare.size < MAX_COMPARE) {
           selectedForCompare.add(entry.id);
         }
         renderCards();
