@@ -301,6 +301,27 @@
     };
   }
 
+  function getPriorityInfo() {
+    const select = guidedForm.querySelector("select[name='priority']");
+    if (!select) {
+      return { value: 5, label: "Media" };
+    }
+    const value = Number(select.value) || 5;
+    const label = select.options[select.selectedIndex]?.text || "Media";
+    return { value, label };
+  }
+
+  function priorityNote() {
+    const { value, label } = getPriorityInfo();
+    if (value >= 7) {
+      return ` Priorità impostata su ${label}: trattala come run prioritaria — concorda una finestra operativa e avvisa i team operativi prima di avviare.`;
+    }
+    if (value <= 3) {
+      return ` Priorità ${label}: nessuna urgenza di pianificazione; eseguila quando preferisci, sempre entro lo scope autorizzato.`;
+    }
+    return ` Priorità ${label}: pianificazione ordinaria.`;
+  }
+
   function updateRiskPanel(entry) {
     const ui = riskUiFromEntry(entry);
     const normalizedInvasiveness = String(entry.invasiveness || "non specificata");
@@ -310,7 +331,7 @@
     riskBadge.textContent = ui.label;
     invasivenessBadge.textContent = `Invasività: ${normalizedInvasiveness}`;
     noiseBadge.textContent = `Rumore: ${normalizedNoise}`;
-    riskSummary.textContent = ui.summary;
+    riskSummary.textContent = ui.summary + priorityNote();
 
     const panel = riskBadge.closest("#scan-risk-panel");
     if (panel) {
@@ -1030,6 +1051,16 @@
       applyGoalRecommendation(radio.value);
     });
   });
+
+  const prioritySelect = guidedForm.querySelector("select[name='priority']");
+  if (prioritySelect) {
+    prioritySelect.addEventListener("change", () => {
+      const entry = getSelectedEntry();
+      if (entry) {
+        updateRiskPanel(entry);
+      }
+    });
+  }
 
   compareToggle.addEventListener("click", () => {
     if (window.matchMedia("(min-width: 768px)").matches) {
