@@ -1,4 +1,8 @@
+from reportlab.platypus import KeepTogether
+
+import report_generator
 from report_generator import (
+    _build_finding_card,
     _build_remediation_roadmap,
     _build_severity_heatmap_table,
     _build_styles,
@@ -12,6 +16,44 @@ from report_generator import (
     _sorted_scan_coverage,
     _validation_steps_for_finding,
 )
+
+
+def test_report_uses_only_inter_font_family():
+    # The Inter TTFs are bundled under assets/fonts, so registration must
+    # succeed and no built-in fallback font should be selected.
+    assert report_generator.FONT_REGULAR == "Inter"
+    assert report_generator.FONT_SEMIBOLD == "Inter-SemiBold"
+    assert report_generator.FONT_BOLD == "Inter-Bold"
+
+
+def test_all_paragraph_styles_use_inter_family():
+    ss = _build_styles()
+    offenders = {
+        name: style.fontName
+        for name, style in ss.byName.items()
+        if not str(getattr(style, "fontName", "")).startswith("Inter")
+    }
+    assert not offenders, f"non-Inter styles: {offenders}"
+
+
+def test_finding_card_flows_as_independent_flowables_for_clean_pagination():
+    ss = _build_styles()
+    big_finding = {
+        "title": "SQL Injection",
+        "severity": "critical",
+        "tool": "sqlmap",
+        "description": "x" * 4000,
+        "recommendation": "y" * 4000,
+        "url": "https://target.example/a",
+        "cve": [f"CVE-2024-{n:04d}" for n in range(8)],
+        "references": [f"https://ref.example/{n}" for n in range(6)],
+    }
+    flow = _build_finding_card(big_finding, ss)
+    # The header stays together, but the body flows as separate top-level
+    # flowables instead of being locked inside a single non-splittable table
+    # cell — this is what lets tall findings paginate without being clipped.
+    assert isinstance(flow[0], KeepTogether)
+    assert len(flow) > 3
 
 
 def test_owasp_classification_lines_includes_all_versions_with_fallbacks():

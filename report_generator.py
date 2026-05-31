@@ -27,9 +27,35 @@ from reportlab.platypus import (
 from reportlab.graphics.shapes import Drawing
 from reportlab.graphics.charts.barcharts import VerticalBarChart
 
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+
 from config import settings
 from design_tokens import PALETTE, SEVERITY_BG_HEX, SEVERITY_COLORS_HEX
 from security import redact_sensitive_data
+
+# ── Fonts: Inter only (single family, two weights) ─────────────────────────────
+# Graceful fallback to the built-in fonts if the bundled TTFs are unavailable.
+_FONTS_DIR = Path(__file__).resolve().parent / "assets" / "fonts"
+FONT_REGULAR = "Helvetica"
+FONT_SEMIBOLD = "Helvetica-Bold"
+FONT_BOLD = "Helvetica-Bold"
+try:
+    pdfmetrics.registerFont(TTFont("Inter", str(_FONTS_DIR / "Inter-Regular.ttf")))
+    pdfmetrics.registerFont(TTFont("Inter-SemiBold", str(_FONTS_DIR / "Inter-SemiBold.ttf")))
+    pdfmetrics.registerFont(TTFont("Inter-Bold", str(_FONTS_DIR / "Inter-Bold.ttf")))
+    pdfmetrics.registerFontFamily(
+        "Inter", normal="Inter", bold="Inter-Bold", italic="Inter", boldItalic="Inter-Bold"
+    )
+    pdfmetrics.registerFontFamily(
+        "Inter-SemiBold", normal="Inter-SemiBold", bold="Inter-Bold",
+        italic="Inter-SemiBold", boldItalic="Inter-Bold",
+    )
+    FONT_REGULAR = "Inter"
+    FONT_SEMIBOLD = "Inter-SemiBold"
+    FONT_BOLD = "Inter-Bold"
+except Exception:  # pragma: no cover - defensive fallback when TTFs are missing
+    pass
 
 # ── Palette ────────────────────────────────────────────────────────────────────
 BRAND_DARK   = colors.HexColor(PALETTE.brand_dark)
@@ -135,17 +161,17 @@ class ReportDocTemplate(BaseDocTemplate):
         canvas.rect(0, h - bar_h, 0.22 * cm, bar_h, stroke=0, fill=1)
 
         # Product name — left
-        canvas.setFont("Helvetica-Bold", 9)
+        canvas.setFont(FONT_SEMIBOLD, 9)
         canvas.setFillColor(colors.white)
         canvas.drawString(L_MARGIN, h - bar_h + 0.42 * cm, "VAP")
 
-        canvas.setFont("Helvetica", 9)
+        canvas.setFont(FONT_REGULAR, 9)
         canvas.setFillColor(colors.HexColor("#94a3b8"))
         canvas.drawString(L_MARGIN + 0.9 * cm, h - bar_h + 0.42 * cm,
                           "Vulnerability Assessment Platform")
 
         # Target — right
-        canvas.setFont("Helvetica", 8)
+        canvas.setFont(FONT_REGULAR, 8)
         canvas.setFillColor(colors.HexColor("#94a3b8"))
         canvas.drawRightString(w - R_MARGIN, h - bar_h + 0.42 * cm,
                                f"Target: {self.target}")
@@ -155,7 +181,7 @@ class ReportDocTemplate(BaseDocTemplate):
         canvas.setLineWidth(0.4)
         canvas.line(L_MARGIN, B_MARGIN - 0.3 * cm, w - R_MARGIN, B_MARGIN - 0.3 * cm)
 
-        canvas.setFont("Helvetica", 7)
+        canvas.setFont(FONT_REGULAR, 7)
         canvas.setFillColor(TEXT_MUTED)
         canvas.drawString(L_MARGIN, 0.6 * cm, "CONFIDENTIAL")
         canvas.drawCentredString(w / 2, 0.6 * cm, f"Page {doc.page}")
@@ -549,7 +575,7 @@ def _build_styles() -> Any:
     _add(name="ReportTitle",
          parent=ss["Title"],
          fontSize=20,
-         fontName="Helvetica-Bold",
+         fontName=FONT_SEMIBOLD,
          textColor=TEXT_DARK,
          spaceAfter=2,
          leading=24)
@@ -565,7 +591,7 @@ def _build_styles() -> Any:
          parent=ss["Heading2"],
          fontSize=11,
          textColor=BRAND_DARK,
-         fontName="Helvetica-Bold",
+         fontName=FONT_SEMIBOLD,
          spaceBefore=14,
          spaceAfter=6,
          borderPadding=(0, 0, 2, 0))
@@ -573,7 +599,7 @@ def _build_styles() -> Any:
          parent=ss["Heading3"],
          fontSize=10,
          textColor=BRAND_DARK,
-         fontName="Helvetica-Bold",
+         fontName=FONT_SEMIBOLD,
          spaceBefore=8,
          spaceAfter=4)
 
@@ -596,7 +622,7 @@ def _build_styles() -> Any:
          parent=ss["BodyText"],
          fontSize=8,
          textColor=TEXT_MUTED,
-         fontName="Helvetica-Bold",
+         fontName=FONT_SEMIBOLD,
          spaceAfter=2)
     _add(name="LabelVal",
          parent=ss["BodyText"],
@@ -609,7 +635,7 @@ def _build_styles() -> Any:
          parent=ss["BodyText"],
          fontSize=10,
          textColor=TEXT_DARK,
-         fontName="Helvetica-Bold",
+         fontName=FONT_SEMIBOLD,
          spaceAfter=2)
 
     # Small text variants
@@ -623,7 +649,7 @@ def _build_styles() -> Any:
          parent=ss["BodyText"],
          fontSize=8,
          textColor=TEXT_DARK,
-         fontName="Helvetica-Bold",
+         fontName=FONT_SEMIBOLD,
          spaceAfter=2)
     _add(name="SmallMuted",
          parent=ss["BodyText"],
@@ -637,7 +663,7 @@ def _build_styles() -> Any:
          parent=ss["BodyText"],
          fontSize=8,
          textColor=TEXT_DARK,
-         fontName="Helvetica-Bold")
+         fontName=FONT_SEMIBOLD)
     _add(name="TableCell",
          parent=ss["BodyText"],
          fontSize=8,
@@ -647,7 +673,7 @@ def _build_styles() -> Any:
          parent=ss["BodyText"],
          fontSize=8,
          textColor=TEXT_MUTED,
-         fontName="Helvetica",
+         fontName=FONT_REGULAR,
          leading=12)
 
     # Target URL
@@ -655,8 +681,15 @@ def _build_styles() -> Any:
          parent=ss["BodyText"],
          fontSize=10,
          textColor=BRAND_BLUE,
-         fontName="Helvetica-Bold",
+         fontName=FONT_SEMIBOLD,
          spaceAfter=4)
+
+    # Enforce the Inter family on every style — including the base sample styles
+    # (BodyText, Title, Heading*) used directly and as parents — so the PDF
+    # embeds Inter only, with no Helvetica/Times/Courier fallbacks.
+    for _style in ss.byName.values():
+        _fn = getattr(_style, "fontName", "") or ""
+        _style.fontName = FONT_SEMIBOLD if "Bold" in _fn else FONT_REGULAR
 
     return ss
 
@@ -924,6 +957,7 @@ def _build_finding_card(finding: Dict[str, Any], ss: Any) -> List[Any]:
     )
     title_row.setStyle(TableStyle([
         ("BACKGROUND",    (0, 0), (-1, -1), sev_bg),
+        ("LINEBEFORE",    (0, 0), (0, -1), 2.5, sev_color),
         ("LINEBELOW",     (0, 0), (-1, -1), 0.5, BORDER_COLOR),
         ("ALIGN",         (0, 0), (0, 0), "LEFT"),
         ("ALIGN",         (1, 0), (2, 0), "RIGHT"),
@@ -1107,33 +1141,32 @@ def _build_finding_card(finding: Dict[str, Any], ss: Any) -> List[Any]:
 
     body_rows.append([Spacer(1, 4)])
 
-    body_tbl = Table(body_rows, colWidths=[INNER_W - 16])
-    body_tbl.setStyle(TableStyle([
-        ("BACKGROUND",    (0, 0), (-1, -1), colors.white),
-        ("TOPPADDING",    (0, 0), (-1, -1), 2),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
-        ("LEFTPADDING",   (0, 0), (-1, -1), 10),
-        ("RIGHTPADDING",  (0, 0), (-1, -1), 10),
-        ("VALIGN",        (0, 0), (-1, -1), "TOP"),
-    ]))
+    # Flatten the body into independent flowables. Unlike the previous design —
+    # which nested every block inside a single table cell that ReportLab could
+    # not split — these flow naturally: a short finding stays on one page, while
+    # a tall one breaks cleanly between blocks (and between table rows) instead
+    # of being clipped mid-page.
+    body_flowables = [row[0] for row in body_rows]
 
-    # Outer card: left severity strip | content
-    card = Table(
-        [["", title_row], ["", body_tbl]],
-        colWidths=[STRIP_W, INNER_W],
-    )
-    card.setStyle(TableStyle([
-        ("BACKGROUND",    (0, 0), (0, -1), sev_color),
-        ("BACKGROUND",    (1, 0), (1, -1), colors.white),
-        ("BOX",           (0, 0), (-1, -1), 0.5, BORDER_COLOR),
-        ("TOPPADDING",    (0, 0), (-1, -1), 0),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
-        ("LEFTPADDING",   (0, 0), (-1, -1), 0),
-        ("RIGHTPADDING",  (0, 0), (-1, -1), 0),
-        ("VALIGN",        (0, 0), (-1, -1), "TOP"),
-    ]))
+    # Keep the header together with its first real content block so a title bar
+    # never sits orphaned at a page break — but let the remaining blocks flow
+    # freely so tall findings split cleanly across pages instead of being
+    # clipped or pushed to a new page behind a large white gap.
+    lead: List[Any] = [title_row, Spacer(1, 6)]
+    rest: List[Any] = list(body_flowables)
+    for idx, flowable in enumerate(rest):
+        if not isinstance(flowable, Spacer):
+            lead.extend(rest[: idx + 1])
+            rest = rest[idx + 1:]
+            break
 
-    return [KeepTogether([card]), Spacer(1, 10)]
+    return [
+        KeepTogether(lead),
+        *rest,
+        HRFlowable(width="100%", thickness=0.5, color=BORDER_COLOR,
+                   spaceBefore=4, spaceAfter=0),
+        Spacer(1, 12),
+    ]
 
 
 # ── Severity bar chart ────────────────────────────────────────────────────────
@@ -1149,13 +1182,19 @@ def _build_charts(counts: Counter) -> Drawing:
     bar.data   = [[counts.get(s, 0) for s in SEVERITY_ORDER]]
     bar.categoryAxis.categoryNames = [s.upper() for s in SEVERITY_ORDER]
     bar.categoryAxis.labels.fontSize = 8
+    bar.categoryAxis.labels.fontName = FONT_REGULAR
     bar.valueAxis.valueMin  = 0
     max_val = max(bar.data[0]) if bar.data[0] else 1
     bar.valueAxis.valueStep = max(1, max_val // 5)
     bar.valueAxis.labels.fontSize = 7
+    bar.valueAxis.labels.fontName = FONT_REGULAR
     bar.barWidth   = 30
     bar.groupSpacing = 20
     bar.strokeColor  = None
+    # Keep every chart label on Inter (avoids reportlab's Times-Roman default).
+    bar.barLabels.fontName = FONT_REGULAR
+    bar.categoryAxis.labels.fontName = FONT_REGULAR
+    bar.valueAxis.labels.fontName = FONT_REGULAR
 
     for i, sev in enumerate(SEVERITY_ORDER):
         bar.bars[0, i].fillColor    = SEVERITY_COLORS[sev]
