@@ -53,6 +53,7 @@ from scan_catalog import (
 from execution_guardrails import ExecutionGuardrailError, enforce_execution_guardrails
 from scan_configuration import (
     HIGH_RISK_TOOLS,
+    MUTUALLY_EXCLUSIVE_TOOLS,
     ScanConfigurationPolicyError,
     ScanConfigurationV1,
     checksum_scan_config_v1,
@@ -178,6 +179,10 @@ if settings.cors_allowed_origins:
 
 templates = Jinja2Templates(directory="templates")
 templates.env.globals["now"] = datetime.now
+# Coppie di tool incompatibili, esposte al wizard per impedire selezioni non valide.
+templates.env.globals["mutually_exclusive_tools"] = [
+    sorted(pair) for pair in MUTUALLY_EXCLUSIVE_TOOLS
+]
 
 SCAN_TYPES = get_scan_type_choices()
 DIDACTIC_MODES = {"beginner", "analyst", "expert"}
@@ -237,13 +242,35 @@ def _scan_modules_for_scan_type(scan_type: str) -> List[Dict[str, str]]:
     return modules
 
 
+def _resolve_tool_exclusivity(modules: List[str]) -> List[str]:
+    """Rimuove le combinazioni di tool mutuamente esclusivi mantenendo l'ordine.
+
+    Per ogni coppia incompatibile (es. zap/burp) tiene il primo tool incontrato
+    e scarta i successivi, così la selezione di default non produce mai una
+    combinazione che il validatore server-side rifiuterebbe (HTTP 400).
+    """
+    result: List[str] = []
+    chosen: Set[str] = set()
+    for module_id in modules:
+        conflict = False
+        for pair in MUTUALLY_EXCLUSIVE_TOOLS:
+            if module_id in pair and (chosen & pair):
+                conflict = True
+                break
+        if conflict:
+            continue
+        result.append(module_id)
+        chosen.add(module_id)
+    return result
+
+
 def _safe_selected_modules(scan_type: str, selected_modules_json: str) -> List[str]:
     allowed_modules = {module["id"] for module in _scan_modules_for_scan_type(scan_type)}
     if not allowed_modules:
         return []
 
     if not selected_modules_json.strip():
-        return sorted(allowed_modules)
+        return _resolve_tool_exclusivity(sorted(allowed_modules))
 
     try:
         raw_modules = json.loads(selected_modules_json)
