@@ -166,8 +166,9 @@ Open **http://localhost:8000**.
 | `scanner_engine.py` | Scan orchestration and target validation |
 | `scanners/` | Tool‑specific scanner plugins |
 | `templates/` + `static/` | Dashboard UI (shared nav, guided wizard, scan detail, **Guida**) |
-| `report_generator.py` | PDF reporting pipeline |
+| `report_generator.py` | PDF reporting pipeline (Inter font, page-safe layout) |
 | `enrichment_engine.py` | CVE/NVD/ExploitDB correlation |
+| `assets/fonts/` | Bundled Inter font used by the PDF reports |
 | `tests/` | Regression and security‑focused tests |
 | `installer.sh` / `installer.ps1` | Guided installers (Linux/macOS, Windows) |
 | `docker-compose.yml` | Redis helper service for async workers |
@@ -395,8 +396,9 @@ Apri **http://localhost:8000**.
 | `scanner_engine.py` | Orchestrazione scansioni e validazione target |
 | `scanners/` | Plugin scanner per singolo strumento |
 | `templates/` + `static/` | Interfaccia (nav condivisa, wizard guidato, dettaglio scan, **Guida**) |
-| `report_generator.py` | Pipeline report PDF |
+| `report_generator.py` | Pipeline report PDF (font Inter, layout page-safe) |
 | `enrichment_engine.py` | Correlazione CVE/NVD/ExploitDB |
+| `assets/fonts/` | Font Inter bundlato usato dai report PDF |
 | `tests/` | Test di regressione e sicurezza |
 | `installer.sh` / `installer.ps1` | Installer guidati (Linux/macOS, Windows) |
 | `docker-compose.yml` | Servizio Redis per worker async |
