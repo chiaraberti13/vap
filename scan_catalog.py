@@ -255,3 +255,130 @@ for scan_id, (display_name, category, fp_note) in _TOOL_VARIANTS.items():
 def get_scan_catalog() -> List[Dict[str, Any]]:
     """Restituisce il catalogo scansioni in formato serializzabile."""
     return [asdict(SCAN_CATALOG[key]) for key in sorted(SCAN_CATALOG.keys())]
+
+
+# ── Descrizioni dei moduli scanner (a cosa serve ogni tool) ────────────────────
+# Spiegazioni brevi e adatte ai principianti, usate sia nel selettore moduli del
+# wizard sia nella sezione "Tool" della Guida. Coprono sia gli scanner singoli
+# sia le varianti di profilo (es. nmap_top_ports).
+TOOL_DESCRIPTIONS: Dict[str, str] = {
+    "nuclei": "Cerca vulnerabilità note e configurazioni errate con migliaia di template aggiornati (CVE, esposizioni, default).",
+    "nmap": "Mappa porte aperte e servizi di rete del target per capire cosa è raggiungibile dall'esterno.",
+    "whatweb": "Riconosce le tecnologie del sito (CMS, framework, web server, librerie): è il fingerprinting di base.",
+    "subfinder": "Scopre i sottodomini del dominio (es. mail.example.com) da fonti pubbliche, per ampliare la superficie nota.",
+    "nikto": "Controlla il web server alla ricerca di file pericolosi, configurazioni deboli e problemi storici noti.",
+    "dirsearch": "Cerca cartelle e file nascosti (es. /admin, /backup, /.git) provando molti percorsi comuni.",
+    "sqlmap": "Individua e sfrutta SQL Injection nei parametri: alto impatto sui dati, modulo invasivo.",
+    "xsstrike": "Rileva Cross-Site Scripting (XSS) riflesso analizzando i parametri della pagina.",
+    "zap": "Scanner web OWASP completo: naviga il sito e cerca le vulnerabilità web più comuni (passive + active).",
+    "burp": "Scanner web automatico in stile professionale: analizza l'applicazione per le falle più note.",
+    "wapiti": "Scanner web che cerca injection, XSS, file disclosure e altre debolezze applicative.",
+    "commix": "Testa Command Injection (esecuzione di comandi sul server): modulo molto invasivo.",
+    "acunetix": "Scanner enterprise di vulnerabilità web (richiede licenza/API key valida).",
+    "nessus": "Scanner enterprise di vulnerabilità infrastrutturali (richiede credenziali e feed plugin).",
+    "wpscan": "Scanner dedicato a WordPress: versioni, plugin, temi e utenti potenzialmente vulnerabili.",
+    "wafw00f": "Rileva se davanti al sito è presente un Web Application Firewall (WAF) e prova a identificarlo.",
+    "testssl": "Analizza la configurazione TLS/SSL: cifrari deboli, protocolli obsoleti e problemi sui certificati.",
+    "theharvester": "Raccoglie email, host e nomi associati al dominio da fonti pubbliche (OSINT).",
+    "arjun": "Scopre parametri HTTP nascosti accettati da un endpoint, utili prima di test più mirati.",
+    "dalfox": "Rileva e verifica rapidamente vulnerabilità XSS in modo automatizzato.",
+    "httpx": "Sonda host e URL per stato HTTP, titolo, tecnologie e redirect: ricognizione veloce e a basso rumore.",
+    "katana": "Crawler che mappa link, endpoint e risorse dell'applicazione web.",
+    "nosqlmap": "Testa vulnerabilità di injection sui database NoSQL (es. MongoDB): modulo invasivo.",
+    "nuclei_wordpress": "Template Nuclei mirati a WordPress: CVE e configurazioni errate tipiche del CMS.",
+    "nikto_headers": "Variante leggera di Nikto focalizzata sugli header di sicurezza HTTP.",
+    "nmap_top_ports": "Scansione Nmap rapida sulle porte più comuni: bassa invasività, utile come baseline.",
+}
+
+
+def get_tool_descriptions() -> Dict[str, str]:
+    """Restituisce la mappa id-modulo → descrizione (a cosa serve)."""
+    return dict(TOOL_DESCRIPTIONS)
+
+
+# ── Obiettivo principale (cosa vuoi ottenere) ──────────────────────────────────
+# Spiega il campo "Obiettivo principale" dello Step 1 e quale scansione consiglia.
+LEARNING_GOAL_GUIDE: List[Dict[str, str]] = [
+    {
+        "id": "baseline",
+        "title": "Mappare l'esposizione iniziale (baseline)",
+        "what": "Una prima fotografia del target: quali tecnologie, porte e problemi evidenti sono visibili dall'esterno.",
+        "when": "È la scelta giusta la prima volta che analizzi un sistema o per un controllo periodico veloce.",
+        "recommends": "light",
+        "recommends_label": "Light Baseline Scan",
+    },
+    {
+        "id": "verification",
+        "title": "Verificare una correzione (remediation)",
+        "what": "Ricontrolla un target dopo aver applicato delle fix, per confermare che le vulnerabilità siano davvero chiuse.",
+        "when": "Dopo un intervento di remediation o prima di chiudere un ticket di sicurezza.",
+        "recommends": "light",
+        "recommends_label": "Light Baseline Scan",
+    },
+    {
+        "id": "deep_dive",
+        "title": "Approfondimento tecnico completo",
+        "what": "Analisi estesa multi-tool per ottenere la copertura più ampia possibile su tutto lo stack.",
+        "when": "Per un assessment serio prima di una release importante o di un penetration test.",
+        "recommends": "full",
+        "recommends_label": "Full Stack Assessment",
+    },
+]
+
+
+# ── Livello di esperienza / modalità didattica ─────────────────────────────────
+DIDACTIC_MODE_GUIDE: List[Dict[str, str]] = [
+    {
+        "id": "beginner",
+        "title": "Beginner",
+        "who": "Per chi inizia: massima sicurezza e spiegazioni.",
+        "controls": "Disabilita i moduli più rischiosi (SQLMap, Commix, NoSQLMap) e applica limiti conservativi di timeout e payload.",
+    },
+    {
+        "id": "analyst",
+        "title": "Analyst",
+        "who": "Via di mezzo bilanciata, adatta a chi ha già esperienza.",
+        "controls": "Sblocca tutti i moduli con limiti intermedi: buona copertura mantenendo sotto controllo rumore e impatto.",
+    },
+    {
+        "id": "expert",
+        "title": "Expert",
+        "who": "Per professionisti che sanno cosa stanno facendo.",
+        "controls": "Pieno controllo di moduli e parametri avanzati. Restano attivi solo i guardrail di sicurezza lato server.",
+    },
+]
+
+
+# ── Glossario didattico esteso ─────────────────────────────────────────────────
+GLOSSARY_TERMS: List[Dict[str, str]] = [
+    {"term": "Vulnerabilità", "definition": "Una debolezza in un sistema che un attaccante può sfruttare per comprometterne sicurezza, dati o disponibilità."},
+    {"term": "Exploit", "definition": "Tecnica o codice che sfrutta concretamente una vulnerabilità per ottenere un effetto (es. accesso non autorizzato)."},
+    {"term": "Payload", "definition": "Il dato/input inviato durante un test per provare a innescare una vulnerabilità (es. una stringa SQL malevola)."},
+    {"term": "Target", "definition": "Il sistema autorizzato che stai analizzando: un dominio, un URL o un indirizzo IP."},
+    {"term": "Scope", "definition": "Il perimetro autorizzato del test: cosa puoi e non puoi scansionare. Operare fuori scope è illegale."},
+    {"term": "Recon (ricognizione)", "definition": "La fase iniziale in cui si raccolgono informazioni sul target prima dei test veri e propri."},
+    {"term": "Scansione passiva vs attiva", "definition": "Passiva = osserva senza inviare traffico aggressivo. Attiva = invia richieste mirate per provocare risposte (più invasiva)."},
+    {"term": "Enumeration", "definition": "Elencare in modo sistematico risorse del target: sottodomini, cartelle, utenti, plugin, parametri."},
+    {"term": "Fingerprinting", "definition": "Identificare le tecnologie usate dal target (server, CMS, framework, versioni) dalle loro 'impronte'."},
+    {"term": "Porta / servizio", "definition": "Una porta è un 'ingresso' di rete numerato; dietro può rispondere un servizio (web, mail, database). Le porte aperte sono superficie d'attacco."},
+    {"term": "OWASP Top 10", "definition": "La lista, aggiornata periodicamente, delle 10 categorie di vulnerabilità web più critiche. Serve a classificare i findings."},
+    {"term": "CVE", "definition": "Identificatore univoco di una vulnerabilità nota e pubblica (es. CVE-2024-1234)."},
+    {"term": "CWE", "definition": "Classifica la categoria di debolezza sottostante (es. CWE-89 = SQL Injection), indipendente dal singolo CVE."},
+    {"term": "CVSS", "definition": "Punteggio standard da 0 a 10 che stima la gravità tecnica di una vulnerabilità."},
+    {"term": "EPSS", "definition": "Stima la probabilità che una vulnerabilità venga sfruttata 'in the wild' nei prossimi giorni."},
+    {"term": "False positive", "definition": "Un allarme non confermato: va sempre validato manualmente prima di intervenire."},
+    {"term": "SQL Injection", "definition": "Vulnerabilità che permette di iniettare comandi nel database tramite input non validati: può esporre o alterare i dati."},
+    {"term": "XSS (Cross-Site Scripting)", "definition": "Vulnerabilità che permette di iniettare script nel browser di altri utenti, ad es. per rubare sessioni."},
+    {"term": "CSRF", "definition": "Attacco che induce il browser di un utente autenticato a inviare richieste non volute a un sito."},
+    {"term": "WAF", "definition": "Web Application Firewall: un filtro davanti al sito che blocca richieste sospette e può alterare i risultati di una scansione."},
+    {"term": "TLS/SSL", "definition": "I protocolli che cifrano il traffico HTTPS. Configurazioni deboli (cifrari obsoleti) sono un rischio."},
+    {"term": "Invasività e rumore", "definition": "Quanto una scansione è intrusiva e quanto traffico/log genera: valori alti = più impatto e più visibilità."},
+    {"term": "Remediation", "definition": "L'insieme delle azioni per correggere una vulnerabilità (patch, configurazione, codice)."},
+    {"term": "Remediation roadmap", "definition": "I findings ordinati per impatto × effort, per decidere cosa correggere prima."},
+    {"term": "Severità", "definition": "Il livello di gravità di un finding: Critical, High, Medium, Low, Info."},
+]
+
+
+def describe_tool(tool_id: str) -> str:
+    """Descrizione breve di un modulo scanner (stringa vuota se sconosciuto)."""
+    return TOOL_DESCRIPTIONS.get((tool_id or "").lower().strip(), "")
