@@ -32,6 +32,30 @@ def test_guide_page_renders_with_core_sections():
     assert "Professional path" in html
 
 
+def test_guide_explains_tools_and_step1_choices_with_rich_glossary():
+    with TestClient(app.app) as client:
+        response = client.get("/guida")
+
+    assert response.status_code == 200
+    html = response.text
+
+    # Dedicated "Tool" section documents what each scanner module does.
+    assert 'id="tool"' in html
+    assert "a cosa serve ogni tool" in html
+    for tool_label in ("SQLMap", "Nuclei", "WhatWeb", "WPScan"):
+        assert tool_label in html
+
+    # Step 1 choices (objective + experience level) are explained in the guide.
+    assert "Lo Step 1 spiegato" in html
+    assert "Obiettivo principale" in html
+    assert "esposizione iniziale" in html
+
+    # The glossary is substantial (beginner-friendly), not a handful of terms.
+    assert "Glossario essenziale" in html
+    for term in ("SQL Injection", "XSS", "Payload", "Recon", "Fingerprinting"):
+        assert term in html
+
+
 def test_guide_page_lists_scan_catalog_entries():
     with TestClient(app.app) as client:
         response = client.get("/guida")

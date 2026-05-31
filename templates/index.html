@@ -150,25 +150,36 @@
               </label>
               {% endif %}
               <fieldset class="grid gap-2" aria-describedby="learning-goal-error">
-                <legend class="text-sm text-slate-300">Obiettivo principale</legend>
-                <label class="flex items-start gap-2 text-sm text-slate-300"><input type="radio" name="learning_goal" value="baseline" class="mt-1 accent-cyan-400" />Mappare esposizione iniziale (baseline).</label>
-                <label class="flex items-start gap-2 text-sm text-slate-300"><input type="radio" name="learning_goal" value="verification" class="mt-1 accent-cyan-400" />Verificare fix o remediation già eseguite.</label>
-                <label class="flex items-start gap-2 text-sm text-slate-300"><input type="radio" name="learning_goal" value="deep_dive" class="mt-1 accent-cyan-400" />Approfondimento tecnico su stack specifico.</label>
-                <span id="learning-goal-error" class="home-microcopy hidden text-red-200">Seleziona un obiettivo per ricevere una scansione consigliata coerente.</span>
+                <legend class="text-sm font-semibold text-slate-200">Obiettivo principale</legend>
+                <p class="home-microcopy text-slate-400">Cosa vuoi ottenere da questa analisi? In base alla scelta, VAP <span class="text-slate-200">consiglia e pre-seleziona</span> la scansione più adatta nello Step 2 (potrai comunque cambiarla).</p>
+                <label class="flex items-start gap-2 rounded-md border border-slate-700 bg-slate-950/50 px-3 py-2 text-sm text-slate-300">
+                  <input type="radio" name="learning_goal" value="baseline" class="mt-1 accent-cyan-400" />
+                  <span><span class="font-medium text-slate-100">Mappare l'esposizione iniziale</span><span class="block text-xs text-slate-400 mt-0.5">Una prima fotografia del target. → consiglia <strong class="text-slate-200">Light</strong>.</span></span>
+                </label>
+                <label class="flex items-start gap-2 rounded-md border border-slate-700 bg-slate-950/50 px-3 py-2 text-sm text-slate-300">
+                  <input type="radio" name="learning_goal" value="verification" class="mt-1 accent-cyan-400" />
+                  <span><span class="font-medium text-slate-100">Verificare una correzione</span><span class="block text-xs text-slate-400 mt-0.5">Ricontrolla dopo una fix di remediation. → consiglia <strong class="text-slate-200">Light</strong>.</span></span>
+                </label>
+                <label class="flex items-start gap-2 rounded-md border border-slate-700 bg-slate-950/50 px-3 py-2 text-sm text-slate-300">
+                  <input type="radio" name="learning_goal" value="deep_dive" class="mt-1 accent-cyan-400" />
+                  <span><span class="font-medium text-slate-100">Approfondimento tecnico completo</span><span class="block text-xs text-slate-400 mt-0.5">Copertura estesa multi-tool su tutto lo stack. → consiglia <strong class="text-slate-200">Full</strong>.</span></span>
+                </label>
+                <span id="learning-goal-error" class="home-microcopy hidden text-red-200">Seleziona un obiettivo: serve per ricevere la scansione consigliata.</span>
               </fieldset>
               <fieldset class="grid gap-2 rounded-lg border border-slate-800 bg-slate-950/50 p-4" aria-describedby="didactic-mode-guidance">
                 <legend class="text-sm font-semibold text-slate-200 px-1">Livello di esperienza · modalità didattica</legend>
-                <label class="flex items-start gap-2 text-sm text-slate-300">
+                <p class="home-microcopy text-slate-400">Decide quanto controllo hai e quanto VAP ti protegge: cambia i limiti e i moduli disponibili. <span class="text-slate-200">I guardrail di sicurezza lato server restano sempre attivi.</span></p>
+                <label class="flex items-start gap-2 rounded-md border border-slate-700 bg-slate-950/40 px-3 py-2 text-sm text-slate-300">
                   <input type="radio" name="didactic_mode" value="beginner" class="mt-1 accent-cyan-400" />
-                  <span><span class="font-semibold text-emerald-200">Beginner</span> · parametri bloccati e limiti stretti per ridurre rischio operativo.</span>
+                  <span><span class="font-semibold text-emerald-200">Beginner</span> — per chi inizia<span class="block text-xs text-slate-400 mt-0.5">Disabilita i moduli più rischiosi (SQLMap, Commix, NoSQLMap) e usa limiti prudenti. Massima sicurezza.</span></span>
                 </label>
-                <label class="flex items-start gap-2 text-sm text-slate-300">
+                <label class="flex items-start gap-2 rounded-md border border-slate-700 bg-slate-950/40 px-3 py-2 text-sm text-slate-300">
                   <input type="radio" name="didactic_mode" value="analyst" class="mt-1 accent-cyan-400" checked />
-                  <span><span class="font-semibold text-amber-200">Analyst</span> · controllo intermedio con limiti estesi e suggerimenti.</span>
+                  <span><span class="font-semibold text-amber-200">Analyst</span> — bilanciato<span class="block text-xs text-slate-400 mt-0.5">Tutti i moduli con limiti intermedi: buona copertura tenendo sotto controllo rumore e impatto.</span></span>
                 </label>
-                <label class="flex items-start gap-2 text-sm text-slate-300">
+                <label class="flex items-start gap-2 rounded-md border border-slate-700 bg-slate-950/40 px-3 py-2 text-sm text-slate-300">
                   <input type="radio" name="didactic_mode" value="expert" class="mt-1 accent-cyan-400" />
-                  <span><span class="font-semibold text-rose-200">Expert</span> · pieno controllo dei parametri (sempre entro guardrail server-side).</span>
+                  <span><span class="font-semibold text-rose-200">Expert</span> — pieno controllo<span class="block text-xs text-slate-400 mt-0.5">Controllo completo di moduli e parametri avanzati. Per chi sa già cosa sta facendo.</span></span>
                 </label>
                 <p id="didactic-mode-guidance" class="home-microcopy text-slate-400">
                   Il livello scelto aggiorna limiti e disponibilità dei moduli nello Step 2/3.

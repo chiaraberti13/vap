@@ -5,9 +5,29 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+import app
 from app import SCAN_TYPES
-from scan_catalog import SCAN_CATALOG
-from scanner_engine import SCAN_TYPE_CHOICES
+from scan_catalog import SCAN_CATALOG, get_tool_descriptions
+from scanner_engine import PROFILE_SCANNERS_MAP, SCAN_TYPE_CHOICES, SCANNERS_MAP
+
+
+def test_every_scanner_module_has_a_description() -> None:
+    """Ogni modulo scanner (anche le varianti di profilo) deve avere una descrizione."""
+    descriptions = get_tool_descriptions()
+    module_ids = set(SCANNERS_MAP) | set(PROFILE_SCANNERS_MAP)
+    missing = sorted(module_ids - set(descriptions))
+    assert not missing, f"Descrizione mancante per moduli: {', '.join(missing)}"
+    assert all(descriptions[module_id].strip() for module_id in module_ids)
+
+
+def test_scan_modules_for_scan_type_include_descriptions() -> None:
+    """Il selettore moduli del wizard espone label e descrizione per ogni modulo."""
+    for scan_type in ("full", "light", "wordpress"):
+        modules = app._scan_modules_for_scan_type(scan_type)
+        assert modules, f"Nessun modulo per {scan_type}"
+        for module in modules:
+            assert module["id"] and module["label"]
+            assert module["description"].strip()
 
 
 def test_app_scan_types_have_catalog_metadata() -> None:

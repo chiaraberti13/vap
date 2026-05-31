@@ -42,7 +42,14 @@ from compliance import (
 from config import settings
 from database import AuditEvent, ConsentRecord, LearningFeedback, LearningPathProgress, Scan, SessionLocal, get_db, init_db
 from database import ScanConfigurationPreset
-from scan_catalog import get_scan_catalog
+from scan_catalog import (
+    DIDACTIC_MODE_GUIDE,
+    GLOSSARY_TERMS,
+    LEARNING_GOAL_GUIDE,
+    describe_tool,
+    get_scan_catalog,
+    get_tool_descriptions,
+)
 from execution_guardrails import ExecutionGuardrailError, enforce_execution_guardrails
 from scan_configuration import (
     HIGH_RISK_TOOLS,
@@ -224,6 +231,7 @@ def _scan_modules_for_scan_type(scan_type: str) -> List[Dict[str, str]]:
             {
                 "id": module_id,
                 "label": TOOL_DISPLAY_NAMES.get(module_id, module_id.upper()),
+                "description": describe_tool(module_id),
             }
         )
     return modules
@@ -1614,6 +1622,19 @@ def terms_of_service(request: Request) -> Response:
     )
 
 
+def _tool_reference() -> List[Dict[str, str]]:
+    """Elenco ordinato dei moduli scanner con descrizione, per la Guida."""
+    tools = [
+        {
+            "id": tool_id,
+            "label": TOOL_DISPLAY_NAMES.get(tool_id, tool_id.upper()),
+            "description": description,
+        }
+        for tool_id, description in get_tool_descriptions().items()
+    ]
+    return sorted(tools, key=lambda tool: tool["label"].lower())
+
+
 @app.get("/guida", response_class=HTMLResponse)
 def guide(request: Request) -> Response:
     """In-app learning hub: scan catalog, learning paths, glossary, safe usage."""
@@ -1623,6 +1644,10 @@ def guide(request: Request) -> Response:
         {
             "request": request,
             "scan_catalog": get_scan_catalog(),
+            "tool_reference": _tool_reference(),
+            "didactic_modes": DIDACTIC_MODE_GUIDE,
+            "learning_goals": LEARNING_GOAL_GUIDE,
+            "glossary_terms": GLOSSARY_TERMS,
             "privacy_policy_version": settings.privacy_policy_version,
             "terms_version": settings.terms_of_service_version,
         },

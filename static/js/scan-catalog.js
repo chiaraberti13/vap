@@ -128,6 +128,13 @@
   let mobileCompareExpanded = false;
   let selectedModules = new Set();
   let advancedModuleConfig = {};
+  let recommendedScanType = "";
+  const goalToScan = { baseline: "light", verification: "light", deep_dive: "full" };
+  const goalLabels = {
+    baseline: "mappare l'esposizione iniziale",
+    verification: "verificare una correzione",
+    deep_dive: "approfondimento tecnico completo",
+  };
   const totalSteps = stepPanels.length;
   const csrfTokenInput = guidedForm.querySelector("input[name='csrf_token']");
   const telemetrySessionId =
@@ -346,13 +353,18 @@
     const expectedDuration = escapeHtml(entry.expected_duration);
     const invasiveness = escapeHtml(entry.invasiveness);
     const owaspCoverage = escapeHtml(((entry.owasp_tags || []).join(", ")) || "N/A");
+    const objective = escapeHtml(entry.learning_objective || "");
+    const whenToUse = escapeHtml(entry.when_to_use || "");
 
     node.innerHTML = `
       <h4 class="font-semibold text-sm">${displayName}</h4>
+      ${objective ? `<p class="mt-1 text-xs text-slate-200">${objective}</p>` : ""}
       <ul class="mt-2 space-y-1 text-xs text-slate-300">
+        <li><span class="text-slate-400">Cosa fa:</span> ${objective || "—"}</li>
+        <li><span class="text-slate-400">Quando usarla:</span> ${whenToUse || "—"}</li>
         <li><span class="text-slate-400">Durata:</span> ${expectedDuration}</li>
         <li><span class="text-slate-400">Invasività:</span> ${invasiveness}</li>
-        <li><span class="text-slate-400">Copertura:</span> ${owaspCoverage}</li>
+        <li><span class="text-slate-400">Copertura OWASP:</span> ${owaspCoverage}</li>
       </ul>
     `;
     return node;
@@ -543,9 +555,18 @@
       });
 
       const text = document.createElement("span");
-      text.textContent = isBeginnerBlocked
+      const labelLine = document.createElement("span");
+      labelLine.className = "block font-medium text-slate-100";
+      labelLine.textContent = isBeginnerBlocked
         ? `${module.label || module.id} (bloccato in Beginner)`
         : module.label || module.id;
+      text.appendChild(labelLine);
+      if (module.description) {
+        const desc = document.createElement("span");
+        desc.className = "block text-xs text-slate-400 mt-0.5";
+        desc.textContent = module.description;
+        text.appendChild(desc);
+      }
       wrapper.appendChild(checkbox);
       wrapper.appendChild(text);
       moduleSelector.appendChild(wrapper);
@@ -690,6 +711,9 @@
       const compareActionLabel = selectedForCompare.has(entry.id)
         ? "Rimuovi dal confronto"
         : "Aggiungi al confronto";
+      const recommendedBadge = entry.id === recommendedScanType
+        ? `<p class="mt-1 text-[11px] font-semibold text-emerald-300">★ Consigliato per il tuo obiettivo</p>`
+        : "";
 
       card.innerHTML = `
         <div class="flex items-center justify-between gap-2">
@@ -698,6 +722,7 @@
             ${level}
           </span>
         </div>
+        ${recommendedBadge}
         <p class="text-xs text-slate-300 mt-2">${learningObjective}</p>
         <div class="mt-3 flex flex-wrap gap-2 text-[11px] text-slate-200">
           <span class="rounded-full border border-slate-600 px-2 py-0.5">⏱ ${expectedDuration}</span>
@@ -970,6 +995,39 @@
     radio.addEventListener("change", () => {
       applyDidacticModeGuidance();
       renderModuleSelector(getSelectedEntry());
+    });
+  });
+
+  const learningGoalRadios = guidedForm.querySelectorAll("input[name='learning_goal']");
+  const scanTypeGuidance = document.getElementById("scan-type-guidance");
+  const defaultScanTypeGuidance = scanTypeGuidance ? scanTypeGuidance.innerHTML : "";
+
+  function applyGoalRecommendation(goalValue) {
+    const recommended = goalToScan[goalValue];
+    const entry = recommended ? catalog.find((item) => item.id === recommended) : null;
+    if (!entry) {
+      recommendedScanType = "";
+      if (scanTypeGuidance) {
+        scanTypeGuidance.innerHTML = defaultScanTypeGuidance;
+      }
+      renderCards();
+      return;
+    }
+    recommendedScanType = recommended;
+    updateSelectedScan(recommended);
+    renderCards();
+    if (scanTypeGuidance) {
+      scanTypeGuidance.innerHTML =
+        `In base al tuo obiettivo (<span class="text-slate-200 font-medium">${escapeHtml(goalLabels[goalValue] || goalValue)}</span>) ` +
+        `ti consigliamo <span class="text-cyan-200 font-semibold">${escapeHtml(entry.display_name)}</span>, ` +
+        `già pre-selezionata qui sotto. Puoi comunque scegliere un'altra scansione dalle card.`;
+    }
+  }
+
+  learningGoalRadios.forEach((radio) => {
+    radio.addEventListener("change", () => {
+      learningGoalError.classList.add("hidden");
+      applyGoalRecommendation(radio.value);
     });
   });
 

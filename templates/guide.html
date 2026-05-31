@@ -24,6 +24,7 @@
         <a class="guide-tab" role="tab" id="tab-percorsi" href="#percorsi" data-guide-tab="percorsi" aria-controls="percorsi" aria-selected="false">Percorsi</a>
         <a class="guide-tab" role="tab" id="tab-flusso" href="#flusso" data-guide-tab="flusso" aria-controls="flusso" aria-selected="false">Flusso scansione</a>
         <a class="guide-tab" role="tab" id="tab-catalogo" href="#catalogo" data-guide-tab="catalogo" aria-controls="catalogo" aria-selected="false">Catalogo</a>
+        <a class="guide-tab" role="tab" id="tab-tool" href="#tool" data-guide-tab="tool" aria-controls="tool" aria-selected="false">Tool</a>
         <a class="guide-tab" role="tab" id="tab-glossario" href="#glossario" data-guide-tab="glossario" aria-controls="glossario" aria-selected="false">Glossario</a>
         <a class="guide-tab" role="tab" id="tab-sicurezza" href="#sicurezza" data-guide-tab="sicurezza" aria-controls="sicurezza" aria-selected="false">Sicurezza</a>
         <a class="guide-tab" role="tab" id="tab-risorse" href="#risorse" data-guide-tab="risorse" aria-controls="risorse" aria-selected="false">Risorse</a>
@@ -99,6 +100,34 @@
               <li>• API REST per automazione e audit trail completo per compliance.</li>
             </ul>
           </article>
+        </div>
+
+        <div class="mt-6">
+          <h3 class="text-lg font-semibold text-slate-100">Lo Step 1 spiegato</h3>
+          <p class="mt-1 text-sm text-slate-400">Le due scelte iniziali del wizard, in chiaro.</p>
+
+          <p class="mt-4 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300">Obiettivo principale — cosa vuoi ottenere</p>
+          <div class="mt-2 guide-grid guide-grid-3">
+            {% for goal in learning_goals %}
+            <article class="guide-card">
+              <h4 class="font-semibold text-slate-100">{{ goal.title }}</h4>
+              <p class="mt-1 text-sm text-slate-300">{{ goal.what }}</p>
+              <p class="mt-2 text-xs text-slate-400"><span class="font-semibold text-slate-300">Quando:</span> {{ goal.when }}</p>
+              <p class="mt-1 text-xs text-emerald-300">→ consiglia: {{ goal.recommends_label }}</p>
+            </article>
+            {% endfor %}
+          </div>
+
+          <p class="mt-5 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300">Livello di esperienza — quanto controllo vuoi</p>
+          <div class="mt-2 guide-grid guide-grid-3">
+            {% for mode in didactic_modes %}
+            <article class="guide-card">
+              <h4 class="font-semibold text-slate-100">{{ mode.title }}</h4>
+              <p class="mt-1 text-sm text-slate-300">{{ mode.who }}</p>
+              <p class="mt-2 text-xs text-slate-400">{{ mode.controls }}</p>
+            </article>
+            {% endfor %}
+          </div>
         </div>
       </section>
 
@@ -201,34 +230,34 @@
         </div>
       </section>
 
+      <!-- TOOL -->
+      <section id="tool" role="tabpanel" aria-labelledby="tab-tool" data-guide-panel tabindex="-1" class="guide-panel">
+        <h2 id="tool-title" class="text-2xl font-semibold">I moduli scanner — a cosa serve ogni tool</h2>
+        <p class="mt-2 max-w-3xl text-slate-400">
+          Ogni tipo di scansione esegue uno o più di questi tool; nello <strong class="text-slate-200">Step 2</strong> del wizard
+          puoi attivarli o disattivarli singolarmente. Qui trovi, in breve, a cosa serve ciascuno.
+        </p>
+        <div class="mt-4 guide-grid guide-grid-2">
+          {% for tool in tool_reference %}
+          <article class="guide-card">
+            <h3 class="font-semibold text-slate-100">{{ tool.label }}</h3>
+            <p class="mt-1 text-sm text-slate-300">{{ tool.description }}</p>
+          </article>
+          {% endfor %}
+        </div>
+      </section>
+
       <!-- GLOSSARIO -->
       <section id="glossario" role="tabpanel" aria-labelledby="tab-glossario" data-guide-panel tabindex="-1" class="guide-panel">
         <h2 id="glossario-title" class="text-2xl font-semibold">Glossario essenziale</h2>
+        <p class="mt-2 max-w-3xl text-slate-400">I termini che incontri più spesso nella sicurezza web, spiegati in modo semplice per chi inizia.</p>
         <dl class="mt-4 guide-grid guide-grid-2">
+          {% for item in glossary_terms %}
           <div class="guide-card">
-            <dt class="font-semibold text-cyan-200">OWASP Top 10</dt>
-            <dd class="mt-1 text-sm text-slate-300">Lista, aggiornata periodicamente, delle vulnerabilità web più critiche. Usata per classificare i findings.</dd>
+            <dt class="font-semibold text-cyan-200">{{ item.term }}</dt>
+            <dd class="mt-1 text-sm text-slate-300">{{ item.definition }}</dd>
           </div>
-          <div class="guide-card">
-            <dt class="font-semibold text-cyan-200">CVSS</dt>
-            <dd class="mt-1 text-sm text-slate-300">Punteggio standard 0–10 che stima la gravità tecnica di una vulnerabilità.</dd>
-          </div>
-          <div class="guide-card">
-            <dt class="font-semibold text-cyan-200">CVE / CWE</dt>
-            <dd class="mt-1 text-sm text-slate-300">CVE identifica una vulnerabilità nota specifica; CWE classifica la <em>categoria</em> di debolezza sottostante.</dd>
-          </div>
-          <div class="guide-card">
-            <dt class="font-semibold text-cyan-200">False positive</dt>
-            <dd class="mt-1 text-sm text-slate-300">Alert non confermato: richiede sempre validazione manuale prima della remediation.</dd>
-          </div>
-          <div class="guide-card">
-            <dt class="font-semibold text-cyan-200">Invasività &amp; rumore</dt>
-            <dd class="mt-1 text-sm text-slate-300">Quanto una scansione è intrusiva e quanto traffico/log genera: più alti = più impatto operativo.</dd>
-          </div>
-          <div class="guide-card">
-            <dt class="font-semibold text-cyan-200">Remediation roadmap</dt>
-            <dd class="mt-1 text-sm text-slate-300">Findings ordinati per impatto × effort, per decidere cosa correggere prima.</dd>
-          </div>
+          {% endfor %}
         </dl>
       </section>
 
