@@ -118,6 +118,54 @@
     return;
   }
 
+  // Coppie di moduli incompatibili (es. zap/burp): il wizard deve impedire di
+  // selezionarli insieme, altrimenti il server rifiuta la scansione (HTTP 400).
+  let exclusivityPairs = [];
+  const exclusivityNode = document.getElementById("scan-exclusivity-json");
+  if (exclusivityNode) {
+    try {
+      const parsed = JSON.parse(exclusivityNode.textContent || "[]");
+      if (Array.isArray(parsed)) {
+        exclusivityPairs = parsed
+          .filter((pair) => Array.isArray(pair) && pair.length >= 2)
+          .map((pair) => pair.map((id) => String(id).toLowerCase()));
+      }
+    } catch (_error) {
+      exclusivityPairs = [];
+    }
+  }
+
+  function exclusivePartners(moduleId) {
+    const partners = new Set();
+    exclusivityPairs.forEach((pair) => {
+      if (pair.includes(moduleId)) {
+        pair.forEach((id) => {
+          if (id !== moduleId) {
+            partners.add(id);
+          }
+        });
+      }
+    });
+    return partners;
+  }
+
+  // Rimuove i conflitti da un set di moduli mantenendo l'ordine: tiene il primo
+  // tool di ogni coppia incompatibile e scarta gli altri.
+  function resolveExclusivity(moduleIds) {
+    const chosen = new Set();
+    const result = [];
+    moduleIds.forEach((moduleId) => {
+      const partners = exclusivePartners(moduleId);
+      const conflicts = Array.from(partners).some((id) => chosen.has(id));
+      if (conflicts) {
+        return;
+      }
+      result.push(moduleId);
+      chosen.add(moduleId);
+    });
+    return result;
+  }
+
   const categories = ["Tutte", ...new Set(catalog.map((entry) => entry.category))];
   if (!scanTypeField.value && catalog[0]?.id) {
     scanTypeField.value = catalog[0].id;
@@ -637,30 +685,36 @@
 
     const timeoutExplainability = parameterExplainability.timeout_seconds;
     const payloadExplainability = parameterExplainability.max_payloads;
+    const timeoutHelpId = "advanced-help-timeout";
+    const payloadHelpId = "advanced-help-payload";
 
-    // Spiegazione mostrata UNA volta sola (prima era ripetuta per ogni modulo):
-    // riduce drasticamente la lunghezza della sezione.
-    const help = document.createElement("details");
+    // Spiegazione mostrata UNA volta sola (prima ripetuta per ogni modulo):
+    // riduce molto la lunghezza. Gli input dei moduli la referenziano via aria.
+    const help = document.createElement("div");
     help.className = "rounded-md border border-slate-700/80 bg-slate-900/60 p-3 text-[11px] text-slate-300";
     help.innerHTML = `
-      <summary class="cursor-pointer font-semibold text-cyan-200">Come funzionano questi parametri</summary>
-      <div class="mt-2 grid gap-3 sm:grid-cols-2">
-        <div>
-          <p class="font-semibold text-slate-100">${escapeHtml(timeoutExplainability.title)}</p>
-          <ul class="mt-1 list-disc space-y-1 pl-4">
+      <p class="font-semibold text-slate-200">Come funzionano questi parametri</p>
+      <div class="mt-2 grid gap-2 sm:grid-cols-2">
+        <details id="${timeoutHelpId}">
+          <summary class="cursor-pointer font-semibold text-cyan-200">Spiegazione parametro &middot; ${escapeHtml(timeoutExplainability.title)}</summary>
+          <ul class="mt-2 list-disc space-y-1 pl-4">
             <li><span class="font-semibold text-slate-100">Cosa cambia:</span> ${escapeHtml(timeoutExplainability.whatChanges)}</li>
             <li><span class="font-semibold text-slate-100">Trade-off:</span> ${escapeHtml(timeoutExplainability.tradeOff)}</li>
-            <li><span class="font-semibold text-slate-100">Falsi positivi:</span> ${escapeHtml(timeoutExplainability.falsePositiveImpact)}</li>
+            <li><span class="font-semibold text-slate-100">Impatto false positive:</span> ${escapeHtml(timeoutExplainability.falsePositiveImpact)}</li>
+            <li><span class="font-semibold text-slate-100">Anti-pattern:</span> ${escapeHtml(timeoutExplainability.antiPattern)}</li>
           </ul>
-        </div>
-        <div>
-          <p class="font-semibold text-slate-100">${escapeHtml(payloadExplainability.title)}</p>
-          <ul class="mt-1 list-disc space-y-1 pl-4">
+          <p class="mt-2 text-slate-400">${escapeHtml(timeoutExplainability.practicalExample)}</p>
+        </details>
+        <details id="${payloadHelpId}">
+          <summary class="cursor-pointer font-semibold text-cyan-200">Spiegazione parametro &middot; ${escapeHtml(payloadExplainability.title)}</summary>
+          <ul class="mt-2 list-disc space-y-1 pl-4">
             <li><span class="font-semibold text-slate-100">Cosa cambia:</span> ${escapeHtml(payloadExplainability.whatChanges)}</li>
             <li><span class="font-semibold text-slate-100">Trade-off:</span> ${escapeHtml(payloadExplainability.tradeOff)}</li>
-            <li><span class="font-semibold text-slate-100">Falsi positivi:</span> ${escapeHtml(payloadExplainability.falsePositiveImpact)}</li>
+            <li><span class="font-semibold text-slate-100">Impatto false positive:</span> ${escapeHtml(payloadExplainability.falsePositiveImpact)}</li>
+            <li><span class="font-semibold text-slate-100">Anti-pattern:</span> ${escapeHtml(payloadExplainability.antiPattern)}</li>
           </ul>
-        </div>
+          <p class="mt-2 text-slate-400">${escapeHtml(payloadExplainability.practicalExample)}</p>
+        </details>
       </div>`;
     advancedModulesList.appendChild(help);
 
@@ -687,11 +741,11 @@
         <div class="mt-2 grid gap-2 sm:grid-cols-2">
           <label class="grid gap-1 text-xs text-slate-300">
             <span>${escapeHtml(timeoutExplainability.title)} (max ${modeLimits.timeoutSeconds})</span>
-            <input type="number" min="1" max="${modeLimits.timeoutSeconds}" step="1" class="rounded border border-slate-700 bg-slate-950 px-2 py-1 text-slate-100" data-advanced-timeout="${moduleId}" value="${boundedTimeout}" />
+            <input type="number" min="1" max="${modeLimits.timeoutSeconds}" step="1" class="rounded border border-slate-700 bg-slate-950 px-2 py-1 text-slate-100" data-advanced-timeout="${moduleId}" aria-describedby="${timeoutHelpId}" value="${boundedTimeout}" />
           </label>
           <label class="grid gap-1 text-xs text-slate-300">
             <span>${escapeHtml(payloadExplainability.title)} (max ${modeLimits.maxPayloads})</span>
-            <input type="number" min="1" max="${modeLimits.maxPayloads}" step="1" class="rounded border border-slate-700 bg-slate-950 px-2 py-1 text-slate-100" data-advanced-payloads="${moduleId}" value="${boundedPayloads}" />
+            <input type="number" min="1" max="${modeLimits.maxPayloads}" step="1" class="rounded border border-slate-700 bg-slate-950 px-2 py-1 text-slate-100" data-advanced-payloads="${moduleId}" aria-describedby="${payloadHelpId}" value="${boundedPayloads}" />
           </label>
         </div>`;
       advancedModulesList.appendChild(row);

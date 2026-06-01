@@ -9,6 +9,38 @@ import app
 from app import SCAN_TYPES
 from scan_catalog import SCAN_CATALOG, get_tool_descriptions
 from scanner_engine import PROFILE_SCANNERS_MAP, SCAN_TYPE_CHOICES, SCANNERS_MAP
+from scan_configuration import MUTUALLY_EXCLUSIVE_TOOLS
+
+
+def test_default_module_selection_never_enables_mutually_exclusive_tools() -> None:
+    """Regressione: il default 'full' includeva zap+burp insieme -> scansione bloccata (400).
+
+    La selezione di default di ogni scan_type non deve mai contenere entrambi i
+    tool di una coppia mutuamente esclusiva.
+    """
+    for scan_type in SCAN_TYPES:
+        default_modules = set(app._safe_selected_modules(scan_type, ""))
+        for pair in MUTUALLY_EXCLUSIVE_TOOLS:
+            assert not pair.issubset(default_modules), (
+                f"Default '{scan_type}' abilita una coppia incompatibile: {sorted(pair)}"
+            )
+
+
+def test_resolve_tool_exclusivity_keeps_one_of_each_pair() -> None:
+    resolved = app._resolve_tool_exclusivity(["whatweb", "burp", "zap", "nmap"])
+    assert "whatweb" in resolved and "nmap" in resolved
+    # Solo uno tra zap/burp deve sopravvivere (il primo incontrato).
+    assert ("zap" in resolved) ^ ("burp" in resolved)
+
+
+def test_index_exposes_exclusivity_pairs_to_wizard() -> None:
+    from fastapi.testclient import TestClient
+
+    with TestClient(app.app) as client:
+        html = client.get("/").text
+    assert 'id="scan-exclusivity-json"' in html
+    # Le coppie incompatibili sono serializzate per il frontend.
+    assert '"zap"' in html and '"burp"' in html
 
 
 def test_every_scanner_module_has_a_description() -> None:

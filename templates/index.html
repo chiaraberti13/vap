@@ -611,6 +611,7 @@
   </main>
   {% if scan_explorer_enabled %}
   <script id="scan-catalog-json" type="application/json">{{ scan_catalog_entries | tojson }}</script>
+  <script id="scan-exclusivity-json" type="application/json">{{ mutually_exclusive_tools | tojson }}</script>
   <script src="/static/js/scan-catalog.js"></script>
   {% endif %}
 </body>
