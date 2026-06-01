@@ -331,18 +331,17 @@ def _safe_module_overrides(
             if not isinstance(raw_module_id, str):
                 raise ScanValidationError("Chiave modulo non valida nei parametri avanzati.")
             module_id = raw_module_id.lower().strip()
+            # Non bloccare mai: ignoriamo silenziosamente i parametri avanzati di
+            # moduli non più pertinenti (non appartenenti allo scan_type o non
+            # selezionati, ad es. un tool deselezionato automaticamente perché in
+            # conflitto). La configurazione conta solo per i moduli effettivamente
+            # eseguiti, quindi scartarli è sicuro e non interrompe la scansione.
             if module_id not in allowed_modules:
-                raise ScanValidationError(
-                    "Parametri avanzati non compatibili con il tipo scansione scelto."
-                )
+                continue
             if module_id not in selected_set:
-                raise ScanValidationError(
-                    "Non puoi configurare parametri avanzati per moduli non selezionati."
-                )
+                continue
             if not isinstance(raw_module_payload, dict):
-                raise ScanValidationError(
-                    "Ogni configurazione avanzata modulo deve essere un oggetto JSON."
-                )
+                continue
             payload_by_module[module_id] = raw_module_payload
 
     overrides: Dict[str, Dict[str, int | bool]] = {}

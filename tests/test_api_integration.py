@@ -1545,10 +1545,11 @@ def test_guided_scan_form_persists_advanced_module_configuration(monkeypatch, bo
     app.app.dependency_overrides.clear()
 
 
-def test_guided_scan_form_blocks_advanced_params_for_unselected_modules(monkeypatch, bootstrap_guided_form_client):
+def test_guided_scan_form_ignores_advanced_params_for_unselected_modules(monkeypatch, bootstrap_guided_form_client):
+    """Advanced params for non-selected modules are ignored, never blocking the scan."""
     _clear_scans()
     class DummyResult:
-        id = "dummy-task-should-not-run"
+        id = "dummy-task-ignore-stale-config"
 
     def fake_apply_async(*_args, **_kwargs):
         return DummyResult()
@@ -1559,12 +1560,13 @@ def test_guided_scan_form_blocks_advanced_params_for_unselected_modules(monkeypa
         create_response = client.post(
             "/scans",
             data={
-                "target": "https://invalid-advanced-config.example",
+                "target": "https://stale-advanced-config.example",
                 "learning_goal": "verification",
                 "scope_acknowledged": "on",
                 "run_compliance_acknowledged": "on",
                 "scan_type": "light",
                 "selected_modules_json": json.dumps(["httpx"]),
+                # whatweb is NOT selected: its stale advanced config must be ignored.
                 "advanced_modules_json": json.dumps(
                     {"whatweb": {"timeout_seconds": 40, "max_payloads": 20}}
                 ),
@@ -1574,17 +1576,22 @@ def test_guided_scan_form_blocks_advanced_params_for_unselected_modules(monkeypa
                 "accept_terms": "on",
                 "csrf_token": csrf_cookie,
             },
+            follow_redirects=False,
         )
 
-    assert create_response.status_code == 400
-    assert "moduli non selezionati" in create_response.text
+    # The scan must start (redirect), not be blocked.
+    assert create_response.status_code == 303, create_response.text
     with SessionLocal() as session:
-        blocked_scan = (
+        scan = (
             session.query(Scan)
-            .filter(Scan.target == "https://invalid-advanced-config.example")
+            .filter(Scan.target == "https://stale-advanced-config.example")
             .one_or_none()
         )
-        assert blocked_scan is None
+        assert scan is not None
+        saved_config = json.loads(scan.scan_configuration_json)
+        # whatweb is disabled (not selected); its stale params are not applied.
+        assert saved_config["tool_overrides"]["whatweb"]["enabled"] is False
+        assert saved_config["tool_overrides"]["httpx"]["enabled"] is True
 
     app.app.dependency_overrides.clear()
 
