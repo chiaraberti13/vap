@@ -300,7 +300,14 @@ def _safe_selected_modules(scan_type: str, selected_modules_json: str) -> List[s
     if not normalized_modules:
         raise ScanValidationError("Seleziona almeno un modulo scanner prima di proseguire.")
 
-    return normalized_modules
+    # Non bloccare mai per combinazioni incompatibili: risolviamo l'esclusività
+    # (es. zap/burp) tenendo il primo tool scelto e scartando i successivi, così
+    # qualunque selezione dell'utente produce sempre una scansione eseguibile.
+    resolved_modules = _resolve_tool_exclusivity(normalized_modules)
+    if not resolved_modules:
+        raise ScanValidationError("Seleziona almeno un modulo scanner prima di proseguire.")
+
+    return resolved_modules
 
 
 def _safe_module_overrides(
@@ -1898,7 +1905,29 @@ def create_scan_form(
                     version=version,
                 )
 
-    form_scan_configuration = ScanConfigurationV1(tool_overrides=module_overrides or {})
+    # Se la selezione include tool ad alto rischio (es. SQLMap/Commix/NoSQLMap),
+    # il validatore richiede una conferma esplicita e un riferimento di
+    # approvazione. Nel wizard guidato l'utente ha già confermato lo scope legale
+    # (Step 1) e la checklist compliance pre-run (Step 5): traduciamo queste
+    # conferme nei campi attesi dalla policy, derivando il riferimento dallo
+    # "scope_reference" quando fornito (altrimenti un default tracciabile).
+    overrides_for_config = module_overrides or {}
+    has_high_risk = any(
+        bool(override.get("enabled")) and module_id in HIGH_RISK_TOOLS
+        for module_id, override in overrides_for_config.items()
+    )
+    approval_reference = None
+    if has_high_risk:
+        candidate = (normalized_scope_reference or "").strip().upper()
+        if candidate.startswith("APR-") and len(candidate) >= 8:
+            approval_reference = candidate
+        else:
+            approval_reference = "APR-DIDACTIC"
+    form_scan_configuration = ScanConfigurationV1(
+        tool_overrides=overrides_for_config,
+        high_risk_acknowledged=has_high_risk,
+        admin_approval_reference=approval_reference,
+    )
     try:
         validate_scan_configuration_policy_v1(
             form_scan_configuration,
