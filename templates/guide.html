@@ -25,6 +25,7 @@
         <a class="guide-tab" role="tab" id="tab-flusso" href="#flusso" data-guide-tab="flusso" aria-controls="flusso" aria-selected="false">Flusso scansione</a>
         <a class="guide-tab" role="tab" id="tab-catalogo" href="#catalogo" data-guide-tab="catalogo" aria-controls="catalogo" aria-selected="false">Catalogo</a>
         <a class="guide-tab" role="tab" id="tab-tool" href="#tool" data-guide-tab="tool" aria-controls="tool" aria-selected="false">Tool</a>
+        <a class="guide-tab" role="tab" id="tab-fonti" href="#fonti" data-guide-tab="fonti" aria-controls="fonti" aria-selected="false">Fonti</a>
         <a class="guide-tab" role="tab" id="tab-glossario" href="#glossario" data-guide-tab="glossario" aria-controls="glossario" aria-selected="false">Glossario</a>
         <a class="guide-tab" role="tab" id="tab-sicurezza" href="#sicurezza" data-guide-tab="sicurezza" aria-controls="sicurezza" aria-selected="false">Sicurezza</a>
         <a class="guide-tab" role="tab" id="tab-risorse" href="#risorse" data-guide-tab="risorse" aria-controls="risorse" aria-selected="false">Risorse</a>
@@ -245,6 +246,68 @@
           </article>
           {% endfor %}
         </div>
+      </section>
+
+      <!-- FONTI -->
+      <section id="fonti" role="tabpanel" aria-labelledby="tab-fonti" data-guide-panel tabindex="-1" class="guide-panel">
+        <h2 id="fonti-title" class="text-2xl font-semibold">Fonti dati &amp; aggiornamenti</h2>
+        <p class="mt-2 max-w-3xl text-slate-400">
+          VAP mantiene le vulnerabilità e le definizioni degli scanner sempre aggiornate attingendo da
+          <strong class="text-slate-200">fonti ufficiali</strong>. Gli aggiornamenti vengono scaricati
+          <strong class="text-slate-200">a ogni avvio</strong> e poi periodicamente, in una cache locale
+          interrogabile anche offline.
+        </p>
+
+        {% set overall = feed_status.overall_status %}
+        {% set overall_map = {
+          'ok': ('border-emerald-500/40 bg-emerald-500/10 text-emerald-100', 'Tutte le fonti ufficiali risultano aggiornate.'),
+          'degraded': ('border-amber-400/40 bg-amber-500/10 text-amber-50', 'Alcune fonti non sono state aggiornate: controlla la connettività o le credenziali.'),
+          'offline': ('border-rose-500/40 bg-rose-500/10 text-rose-100', 'Nessuna connettività alle fonti di rete: verranno usati i dati in cache, se presenti.'),
+          'skipped': ('border-slate-600 bg-slate-800/40 text-slate-200', 'Aggiornamenti di rete non eseguiti in questo avvio.'),
+          'disabled': ('border-slate-600 bg-slate-800/40 text-slate-200', 'Aggiornamento dei feed disabilitato dalla configurazione.'),
+          'unknown': ('border-slate-600 bg-slate-800/40 text-slate-200', 'Nessun aggiornamento ancora eseguito.')
+        } %}
+        {% set overall_style, overall_label = overall_map.get(overall, overall_map['unknown']) %}
+        <div class="mt-4 rounded-2xl border p-4 {{ overall_style }}">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <p class="font-semibold">Stato complessivo: {{ overall_label }}</p>
+            {% if feed_status.last_run_at %}
+            <p class="text-sm opacity-80">Ultimo aggiornamento: {{ feed_status.last_run_at[:16] | replace('T', ' ') }} UTC</p>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="mt-4 guide-grid guide-grid-2">
+          {% for d in feed_status.definitions %}
+          {% set f = feed_status.feeds.get(d.key) %}
+          {% set st = f.status if f else 'unknown' %}
+          {% set badge_map = {
+            'ok': ('border-emerald-500/40 text-emerald-200', 'Aggiornato'),
+            'skipped': ('border-slate-600 text-slate-300', 'Non disponibile'),
+            'error': ('border-rose-500/40 text-rose-200', 'Errore'),
+            'disabled': ('border-slate-600 text-slate-300', 'Disabilitato'),
+            'unknown': ('border-slate-600 text-slate-300', '—')
+          } %}
+          {% set badge_style, badge_label = badge_map.get(st, badge_map['unknown']) %}
+          <article class="guide-card">
+            <div class="flex items-start justify-between gap-3">
+              <h3 class="font-semibold text-slate-100">{{ d.label }}</h3>
+              <span class="shrink-0 rounded-full border px-2 py-0.5 text-xs {{ badge_style }}">{{ badge_label }}</span>
+            </div>
+            <p class="mt-1 text-sm text-slate-300">{{ d.description }}</p>
+            <dl class="mt-2 space-y-1 text-xs text-slate-400">
+              {% if f and f.count is not none %}<div><dt class="inline font-medium text-slate-300">Elementi:</dt> <dd class="inline">{{ f.count }}</dd></div>{% endif %}
+              {% if f and f.message %}<div><dt class="inline font-medium text-slate-300">Note:</dt> <dd class="inline">{{ f.message }}</dd></div>{% endif %}
+              <div><dt class="inline font-medium text-slate-300">Fonte:</dt> <dd class="inline"><a class="text-cyan-300 hover:underline" href="{{ d.source }}" target="_blank" rel="noopener noreferrer">{{ d.source }}</a></dd></div>
+            </dl>
+          </article>
+          {% endfor %}
+        </div>
+        <p class="mt-4 text-xs text-slate-500">
+          I feed legati ai tool (Nuclei, Exploit-DB) si aggiornano solo se il relativo strumento è installato;
+          in caso contrario risultano “Non disponibile” senza generare errori. Stato in tempo reale anche via API:
+          <code class="text-slate-300">GET /api/v1/feeds/status</code>.
+        </p>
       </section>
 
       <!-- GLOSSARIO -->

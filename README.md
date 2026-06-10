@@ -49,6 +49,21 @@ Then open **http://localhost:8000** and use the top navigation: **Nuova scansion
 
 ---
 
+## 🔰 New here? Beginner walkthrough (from zero)
+
+> Never used terminal tools before? Follow these in order:
+>
+> 1. **Prerequisites** — install **Python 3.10–3.12** and **Git** (check with `python3 --version` and `git --version`).
+> 2. **Get the code** — `git clone <repository-url> VAP && cd VAP` (or *Code → Download ZIP* on GitHub).
+> 3. **Install once** — `./installer.sh` (Linux/macOS) or `.\installer.ps1` (Windows). This creates an isolated `venv/` and installs dependencies.
+> 4. **Configure** — `cp .env.example .env`; generate strong secrets with `openssl rand -hex 32` (defaults are fine for a local trial).
+> 5. **Run** — `source venv/bin/activate && python3 app.py`, then open **http://localhost:8000**. VAP auto‑downloads vulnerability updates from official sources on first start (see **Guida → Fonti**).
+> 6. **First scan** — *Nuova scansione* → level **Beginner** → an **authorized** target → follow the wizard → download the PDF report.
+>
+> **External tools are optional to start:** without Nmap/Nuclei/ZAP/etc. coverage is reduced, but the app, official‑source updates and finding enrichment still work. Missing tools are skipped without errors (many ship preinstalled on **Kali Linux**).
+
+---
+
 ## ✅ Installation (all 3 operating systems)
 
 This project is **not** a single‑file app: it installs once, then everyday use is straightforward.
@@ -278,6 +293,90 @@ python3 app.py
 ```
 
 Apri **http://localhost:8000** e usa la barra di navigazione in alto: **Nuova scansione · Storico · Guida**.
+
+---
+
+## 🔰 Primo avvio per principianti (da zero)
+
+> Non hai mai usato strumenti da terminale? Segui questi passi nell'ordine. Ogni comando è spiegato.
+
+### 0) Cosa ti serve prima (prerequisiti)
+
+| Strumento | A cosa serve | Come verificarlo |
+|---|---|---|
+| **Python 3.10–3.12** | Esegue l'applicazione | `python3 --version` |
+| **Git** | Scarica il progetto | `git --version` |
+| **Connessione internet** | Scarica dipendenze e aggiornamenti delle fonti ufficiali | — |
+
+Se Python o Git non sono installati: su **Windows** scaricali da [python.org](https://www.python.org/downloads/) e [git-scm.com](https://git-scm.com/); su **macOS** usa `brew install python git`; su **Linux Debian/Ubuntu/Kali** usa `sudo apt install python3 python3-venv git`.
+
+### 1) Scarica il progetto
+
+```bash
+git clone <repository-url> VAP
+cd VAP
+```
+
+> In alternativa puoi scaricare lo ZIP da GitHub (pulsante **Code → Download ZIP**), estrarlo e aprire un terminale dentro la cartella.
+
+### 2) Installa (crea l'ambiente e le dipendenze)
+
+```bash
+# Linux / macOS
+chmod +x installer.sh
+./installer.sh
+```
+
+```powershell
+# Windows (PowerShell)
+Set-ExecutionPolicy Bypass -Scope Process -Force
+.\installer.ps1
+```
+
+L'installer crea un **ambiente virtuale** (`venv/`, una "scatola" isolata per le librerie) e installa tutto il necessario. Lo fai **una sola volta**.
+
+### 3) Configura i segreti (file `.env`)
+
+```bash
+cp .env.example .env          # Windows: copy .env.example .env
+```
+
+Apri `.env` con un editor di testo e imposta almeno le chiavi di sicurezza. Per generarne di robuste:
+
+```bash
+openssl rand -hex 32          # esegui una volta per ogni segreto (CSRF, JWT, API key)
+```
+
+> Per **provare in locale** puoi anche lasciare i valori di default: l'app parte comunque. I segreti robusti servono soprattutto in produzione.
+
+### 4) Avvia l'applicazione
+
+```bash
+# Linux / macOS
+source venv/bin/activate
+python3 app.py
+```
+
+```powershell
+# Windows (PowerShell)
+.\venv\Scripts\Activate.ps1
+python app.py
+```
+
+Apri il browser su **http://localhost:8000**. Al primo avvio VAP scarica automaticamente gli aggiornamenti delle vulnerabilità dalle **fonti ufficiali** (vedi la scheda **Guida → Fonti**).
+
+### 5) La tua prima scansione
+
+1. Clicca **Nuova scansione**.
+2. **Step 1**: scegli livello **Beginner** e inserisci un target **che sei autorizzato a testare** (es. un tuo sito di prova).
+3. Segui il wizard (tipo di scansione, moduli, conferme) e avvia.
+4. A fine scansione consulta i findings spiegati e scarica il **report PDF**.
+
+### ℹ️ Nota sui tool esterni (opzionali)
+
+VAP orchestra strumenti professionali (Nmap, Nuclei, ZAP, SQLMap, …). **Non sono obbligatori per partire**: senza di essi la copertura è ridotta, ma l'app, l'aggiornamento delle fonti ufficiali e l'enrichment dei findings funzionano comunque. Installa i singoli tool quando ti servono (su **Kali Linux** molti sono già presenti). Se un tool non è installato, il relativo modulo viene semplicemente saltato senza errori.
+
+> Qualcosa non funziona? Vai alla sezione [Risoluzione problemi](#%EF%B8%8F-risoluzione-problemi).
 
 ---
 
