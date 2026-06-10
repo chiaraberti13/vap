@@ -425,6 +425,19 @@
     "Rete": "Porte, servizi e infrastruttura",
   };
 
+  // Icone (SVG inline, CSP-safe) per ogni ambito. stroke=currentColor eredita il colore.
+  const SVG_OPEN = '<svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">';
+  const CATEGORY_ICONS = {
+    "Tutte": SVG_OPEN + '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>',
+    "Web": SVG_OPEN + '<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.5 2.7 2.5 15.3 0 18"/><path d="M12 3c-2.5 2.7-2.5 15.3 0 18"/></svg>',
+    "Web App": SVG_OPEN + '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/><path d="M6.5 6.5h.01M9 6.5h.01"/></svg>',
+    "Rete": SVG_OPEN + '<rect x="3" y="4" width="18" height="6" rx="1"/><rect x="3" y="14" width="18" height="6" rx="1"/><path d="M7 7h.01M7 17h.01"/></svg>',
+  };
+
+  function categoryIcon(category) {
+    return CATEGORY_ICONS[category] || "";
+  }
+
   function categoryCount(category) {
     if (category === "Tutte") {
       return catalog.length;
@@ -449,7 +462,7 @@
       }`;
       button.innerHTML =
         `<span class="flex items-center justify-between gap-2">` +
-        `<span class="text-sm font-semibold">${escapeHtml(category)}</span>` +
+        `<span class="flex items-center gap-1.5">${categoryIcon(category)}<span class="text-sm font-semibold">${escapeHtml(category)}</span></span>` +
         `<span class="text-[11px] rounded-full border border-slate-600 px-1.5 py-0.5 text-slate-300">${categoryCount(category)}</span>` +
         `</span>` +
         (description ? `<span class="mt-0.5 block text-xs text-slate-400">${escapeHtml(description)}</span>` : "");
