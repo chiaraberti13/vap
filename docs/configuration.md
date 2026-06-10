@@ -247,6 +247,18 @@ python -m alembic revision -m "descrizione_migrazione"
 | `VAP_NESSUS_VULNERABILITIES_ENDPOINT` | `/vulnerabilities` | Endpoint vulnerabilità. |
 | `VAP_NESSUS_TIMEOUT` | `20` | Timeout (sec). |
 
+## OpenVAS / Greenbone (GVM)
+
+Adapter opzionale verso un'istanza Greenbone/GVM esistente (legge i risultati,
+non avvia il task). Vedi il [playbook OpenVAS](scan-playbooks/openvas.md).
+
+| Variabile | Default | Descrizione |
+| --- | --- | --- |
+| `VAP_OPENVAS_API_BASE_URL` | `""` | Base URL dell'istanza Greenbone/GVM. |
+| `VAP_OPENVAS_API_KEY` | `""` | API key (header `X-API-KEY`). |
+| `VAP_OPENVAS_VULNERABILITIES_ENDPOINT` | `/gmp/results` | Endpoint dei risultati. |
+| `VAP_OPENVAS_TIMEOUT` | `30` | Timeout (sec). |
+
 ## NVD
 
 | Variabile | Default | Descrizione |

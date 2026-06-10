@@ -188,6 +188,7 @@ _TOOL_VARIANTS = {
     "nosqlmap": ("NoSQLMap", "Web App", "Endpoint non vulnerabili possono apparire sospetti in assenza di contesto."),
     "acunetix": ("Acunetix", "Web App", "Euristiche proprietarie possono richiedere tuning per ridurre rumore."),
     "nessus": ("Nessus", "Rete", "Plugin feed e credenziali influenzano profondità e accuratezza."),
+    "openvas": ("OpenVAS / Greenbone", "Rete", "Risultati dipendenti dai feed NVT e dalla configurazione del task GVM."),
 }
 
 _TOOL_COPYWRITING_OVERRIDES = {
@@ -238,6 +239,18 @@ _TOOL_COPYWRITING_OVERRIDES = {
         "noise_level": "high",
         "interpretation_guide": "Esegui sempre conferma manuale dell'injection e stima impatto su confidenzialità/integrità.",
         "next_learning_step": "Studiare tecniche di parameterized query e validazione server-side anti-injection.",
+    },
+    "openvas": {
+        "learning_objective": "Comprendere il vuln scanning infrastrutturale con Greenbone/OpenVAS e la correlazione a CVE via feed NVT.",
+        "when_to_use": "Quando disponi di un'istanza Greenbone/GVM e vuoi una valutazione di vulnerabilità di rete ampia su host/servizi autorizzati.",
+        "when_not_to_use": "Senza un'istanza GVM configurata o senza autorizzazione esplicita sulla rete target.",
+        "owasp_tags": ["A05", "A06"],
+        "mitre_tags": ["TA0007", "TA0043"],
+        "expected_duration": "20-90 min",
+        "invasiveness": "medium",
+        "noise_level": "high",
+        "interpretation_guide": "Prioritizza per CVSS/EPSS e presenza in CISA KEV; conferma versione reale del servizio prima del patching.",
+        "next_learning_step": "Approfondire la gestione dei task GVM, dei feed NVT e del tuning dei falsi positivi.",
     },
     "wpscan": {
         "learning_objective": "Ridurre rischio WordPress identificando versioni deboli, plugin e utenti esposti.",
@@ -312,6 +325,7 @@ TOOL_DESCRIPTIONS: Dict[str, str] = {
     "commix": "Testa Command Injection (esecuzione di comandi sul server): modulo molto invasivo.",
     "acunetix": "Scanner enterprise di vulnerabilità web (richiede licenza/API key valida).",
     "nessus": "Scanner enterprise di vulnerabilità infrastrutturali (richiede credenziali e feed plugin).",
+    "openvas": "Scanner di vulnerabilità di rete open source (Greenbone/GVM): legge i risultati da un'istanza GVM e li correla a CVE/CVSS. Adapter opzionale.",
     "wpscan": "Scanner dedicato a WordPress: versioni, plugin, temi e utenti potenzialmente vulnerabili.",
     "wafw00f": "Rileva se davanti al sito è presente un Web Application Firewall (WAF) e prova a identificarlo.",
     "testssl": "Analizza la configurazione TLS/SSL: cifrari deboli, protocolli obsoleti e problemi sui certificati.",

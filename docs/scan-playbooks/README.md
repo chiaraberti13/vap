@@ -19,6 +19,7 @@ Queste schede operative spiegano **quando usare ogni tipo di scansione** e come 
 - [Nmap](nmap.md)
 - [NoSQLMap](nosqlmap.md)
 - [Nuclei](nuclei.md)
+- [OpenVAS / Greenbone](openvas.md)
 - [SQLMap](sqlmap.md)
 - [Subfinder](subfinder.md)
 - [testssl.sh](testssl.md)

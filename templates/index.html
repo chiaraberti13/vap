@@ -211,7 +211,7 @@
                 <p class="text-xs text-slate-400">Seleziona fino a 6 card per confronto rapido (il confronto è solo informativo: la scansione che verrà eseguita è quella selezionata).</p>
               </div>
               <p id="scan-type-guidance" class="home-microcopy text-slate-400">
-                Suggerimento: inizia da <span class="text-slate-200 font-medium">light</span> per ricognizione veloce, usa <span class="text-slate-200 font-medium">full</span> quando vuoi una copertura estesa, scegli <span class="text-slate-200 font-medium">wordpress</span> solo se il target usa davvero WordPress.
+                Suggerimento: scegli prima l'<span class="text-slate-200 font-medium">ambito</span> (Web, Web App o Rete), poi la scansione. Inizia da <span class="text-slate-200 font-medium">light</span> per una ricognizione veloce, usa <span class="text-slate-200 font-medium">full</span> per una copertura estesa, <span class="text-slate-200 font-medium">network</span> per porte e servizi di rete, <span class="text-slate-200 font-medium">wordpress</span> solo se il target usa davvero WordPress.
               </p>
               <div class="rounded-lg border border-slate-800 bg-slate-950/70 p-3" aria-label="Glossario termini tecnici">
                 <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Termini tecnici</p>
@@ -242,7 +242,12 @@
                   {% endfor %}
                 </select>
               </div>
-              <div id="scan-category-filters" class="flex flex-wrap gap-2" aria-label="Filtri categorie scansione"></div>
+              <div class="rounded-lg border border-slate-800 bg-slate-950/40 p-3">
+                <p class="text-xs font-semibold uppercase tracking-wide text-slate-300">1. Scegli l'ambito della scansione</p>
+                <p class="home-microcopy mt-1 text-slate-400">Seleziona se vuoi analizzare il <span class="text-slate-200 font-medium">Web</span> (sito/web server), una <span class="text-slate-200 font-medium">Web App</span> (test applicativi) o la <span class="text-slate-200 font-medium">Rete</span> (porte, servizi, infrastruttura). Poi scegli la scansione tra le card.</p>
+                <div id="scan-category-filters" class="mt-3" aria-label="Ambito della scansione"></div>
+              </div>
+              <p class="text-xs font-semibold uppercase tracking-wide text-slate-300">2. Scegli la scansione</p>
               <div id="scan-cards-grid" class="grid gap-3 sm:grid-cols-2"></div>
               <fieldset class="rounded-lg border border-slate-800 bg-slate-950/50 p-4" aria-describedby="module-selection-guidance module-selection-error">
                 <legend class="text-sm text-slate-200 font-semibold">Moduli scanner inclusi</legend>

@@ -18,6 +18,7 @@ from .wapiti_scanner import WapitiScanner
 from .commix_scanner import CommixScanner
 from .acunetix_scanner import AcunetixScanner
 from .nessus_scanner import NessusScanner
+from .openvas_scanner import OpenVASScanner
 from .wpscan_scanner import WpscanScanner
 from .wafw00f_scanner import Wafw00fScanner
 from .testssl_scanner import TestsslScanner
@@ -43,6 +44,7 @@ __all__ = [
     "CommixScanner",
     "AcunetixScanner",
     "NessusScanner",
+    "OpenVASScanner",
     "WpscanScanner",
     "Wafw00fScanner",
     "TestsslScanner",

@@ -417,17 +417,42 @@
     return catalog.filter((entry) => entry.category === activeCategory);
   }
 
+  // Metadati delle macro-categorie (ambito) per un selettore prominente.
+  const CATEGORY_META = {
+    "Tutte": "Tutte le scansioni disponibili",
+    "Web": "Ricognizione e sicurezza del sito / web server",
+    "Web App": "Test attivi sull'applicazione web",
+    "Rete": "Porte, servizi e infrastruttura",
+  };
+
+  function categoryCount(category) {
+    if (category === "Tutte") {
+      return catalog.length;
+    }
+    return catalog.filter((entry) => entry.category === category).length;
+  }
+
   function renderFilters() {
     filtersNode.innerHTML = "";
+    // Layout a griglia: selettore di ambito ben visibile e cliccabile.
+    filtersNode.className = "grid gap-2 sm:grid-cols-2 lg:grid-cols-4";
     categories.forEach((category) => {
+      const description = CATEGORY_META[category] || "";
+      const isActive = category === activeCategory;
       const button = document.createElement("button");
       button.type = "button";
-      button.className = `rounded-full px-3 py-1.5 text-xs border transition ${
-        category === activeCategory
-          ? "border-cyan-300 bg-cyan-400/20 text-cyan-100"
-          : "border-slate-700 bg-slate-900 text-slate-300 hover:border-slate-500"
+      button.setAttribute("aria-pressed", isActive ? "true" : "false");
+      button.className = `text-left rounded-lg border px-3 py-2 transition focus:outline-none focus:ring-2 focus:ring-cyan-400 ${
+        isActive
+          ? "border-cyan-300 bg-cyan-400/15 text-cyan-50"
+          : "border-slate-700 bg-slate-900 text-slate-200 hover:border-slate-500"
       }`;
-      button.textContent = category;
+      button.innerHTML =
+        `<span class="flex items-center justify-between gap-2">` +
+        `<span class="text-sm font-semibold">${escapeHtml(category)}</span>` +
+        `<span class="text-[11px] rounded-full border border-slate-600 px-1.5 py-0.5 text-slate-300">${categoryCount(category)}</span>` +
+        `</span>` +
+        (description ? `<span class="mt-0.5 block text-xs text-slate-400">${escapeHtml(description)}</span>` : "");
       button.addEventListener("click", () => {
         activeCategory = category;
         renderFilters();
