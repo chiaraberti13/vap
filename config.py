@@ -204,6 +204,13 @@ class Settings:
         "VAP_NESSUS_VULNERABILITIES_ENDPOINT", "/vulnerabilities"
     )
     nessus_timeout_seconds: int = int(os.getenv("VAP_NESSUS_TIMEOUT", "20"))
+    # OpenVAS / Greenbone (GVM) — adapter opzionale verso un'istanza esistente.
+    openvas_api_base_url: str = os.getenv("VAP_OPENVAS_API_BASE_URL", "")
+    openvas_api_key: str = os.getenv("VAP_OPENVAS_API_KEY", "")
+    openvas_vulnerabilities_endpoint: str = os.getenv(
+        "VAP_OPENVAS_VULNERABILITIES_ENDPOINT", "/gmp/results"
+    )
+    openvas_timeout_seconds: int = int(os.getenv("VAP_OPENVAS_TIMEOUT", "30"))
     wpscan_api_token: str = os.getenv("VAP_WPSCAN_API_TOKEN", "")
     wpscan_enumerate: str = os.getenv(
         "VAP_WPSCAN_ENUMERATE", "plugins,themes,users,timthumbs,config_backups,db_exports"

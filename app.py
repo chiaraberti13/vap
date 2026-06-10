@@ -1683,6 +1683,7 @@ def guide(request: Request) -> Response:
             "didactic_modes": DIDACTIC_MODE_GUIDE,
             "learning_goals": LEARNING_GOAL_GUIDE,
             "glossary_terms": GLOSSARY_TERMS,
+            "feed_status": get_feed_status(),
             "privacy_policy_version": settings.privacy_policy_version,
             "terms_version": settings.terms_of_service_version,
         },
