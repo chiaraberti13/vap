@@ -30,6 +30,7 @@ import structlog
 
 from background_jobs import start_background_jobs
 from celery_app import celery_app, check_broker_connection
+from feed_updater import get_feed_status, refresh_all_feeds, trigger_startup_refresh
 from compliance import (
     DATA_CLASSIFICATIONS,
     CONSENT_TYPES,
@@ -92,6 +93,7 @@ async def lifespan(_: FastAPI):
     configure_structlog()
     require_jwt_configuration()
     scheduler = start_background_jobs()
+    trigger_startup_refresh()
     start_telemetry_push()
     if not check_broker_connection():
         import logging
@@ -2710,6 +2712,33 @@ def get_scan_catalog_endpoint(
     response_payload = _scan_catalog_for_ui()
     _set_cached_json(cache_key, response_payload)
     return response_payload
+
+
+@app.get("/api/v1/feeds/status", response_model=Dict[str, Any])
+@limiter.limit(settings.rate_limit_read)
+def get_feeds_status_endpoint(
+    request: Request,
+    _: None = Depends(enforce_api_key),
+    __: str = Depends(enforce_viewer_role),
+) -> Dict[str, Any]:
+    """Stato di aggiornamento dei feed di threat intelligence (fonti ufficiali).
+
+    Riporta, per ogni fonte (NVD/NIST, CISA KEV, EPSS, template Nuclei,
+    Exploit-DB), l'esito dell'ultimo aggiornamento, il conteggio degli elementi
+    e il timestamp, oltre allo stato complessivo e all'indicazione di staleness.
+    """
+    return get_feed_status()
+
+
+@app.post("/api/v1/feeds/refresh", response_model=Dict[str, Any])
+@limiter.limit(settings.rate_limit_create_scan)
+def refresh_feeds_endpoint(
+    request: Request,
+    _: None = Depends(enforce_api_key),
+    __: str = Depends(enforce_admin_role),
+) -> Dict[str, Any]:
+    """Forza l'aggiornamento immediato dei feed da fonti ufficiali (solo admin)."""
+    return refresh_all_feeds(force=True)
 
 
 @app.get("/api/v1/scan-config/schema", response_model=Dict[str, Any])

@@ -24,6 +24,9 @@ logs/
 reports/*.pdf
 scans/*.json
 
+# Threat intelligence feed cache (rigenerata a ogni avvio dalle fonti ufficiali)
+feeds/
+
 # IDE
 .vscode/
 .idea/

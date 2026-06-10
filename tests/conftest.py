@@ -1,9 +1,15 @@
 from contextlib import contextmanager
+import os
 from pathlib import Path
 import sys
 from typing import Any, Callable, Iterator
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+# Disabilita il refresh dei feed all'avvio durante i test: evita chiamate di
+# rete e scritture su disco quando il lifespan dell'app viene attivato da
+# TestClient. Va impostato prima di importare `app`/`config`.
+os.environ.setdefault("VAP_FEED_UPDATE_ON_STARTUP", "false")
 
 import pytest
 from fastapi.testclient import TestClient

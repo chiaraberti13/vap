@@ -23,6 +23,7 @@ nav:
   - Manuale Utente: user-manual.md
   - Architettura: architecture.md
   - Configurazione: configuration.md
+  - Threat Intelligence Feeds: threat-intelligence-feeds.md
   - Deployment: deployment.md
   - Security: security.md
   - WCAG AA Audit (2026-04): wcag-aa-audit-2026-04.md

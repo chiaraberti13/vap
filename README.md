@@ -147,6 +147,7 @@ Open **http://localhost:8000**.
 - ✅ **In‑app learning hub** (`/guida`): scan catalog, learning paths, glossary, safe‑usage rules
 - ✅ **Multi‑scanner orchestration** from one interface (Nmap, Nuclei, ZAP, SQLMap, WPScan, and 20+ more)
 - ✅ **Scan profiles** (`light`, `full`, `wordpress`) and tool‑specific scans
+- ✅ **Always‑updated threat‑intel feeds** from official sources (NVD/NIST, CISA KEV, FIRST.org EPSS, Nuclei templates, Exploit‑DB) — refreshed **at every startup** into a local, offline‑queryable cache
 - ✅ **Finding enrichment** (CVE/CWE/CVSS, NVD, ExploitDB, OWASP & MITRE ATT&CK mapping)
 - ✅ **Learning blocks** on every finding (junior explanation, business risk, manual verification, next skill)
 - ✅ **Remediation roadmap** ordered by impact × effort, plus **historical trend** per target
@@ -168,6 +169,7 @@ Open **http://localhost:8000**.
 | `templates/` + `static/` | Dashboard UI (shared nav, guided wizard, scan detail, **Guida**) |
 | `report_generator.py` | PDF reporting pipeline (Inter font, page-safe layout) |
 | `enrichment_engine.py` | CVE/NVD/ExploitDB correlation |
+| `feed_updater.py` | Threat‑intel feed manager (NVD/CISA KEV/EPSS + scanner defs), startup + scheduled refresh |
 | `assets/fonts/` | Bundled Inter font used by the PDF reports |
 | `tests/` | Regression and security‑focused tests |
 | `installer.sh` / `installer.ps1` | Guided installers (Linux/macOS, Windows) |
@@ -377,6 +379,7 @@ Apri **http://localhost:8000**.
 - ✅ **Hub didattico integrato** (`/guida`): catalogo scansioni, percorsi, glossario, regole d'uso legale
 - ✅ **Orchestrazione multi‑scanner** da un'unica interfaccia (Nmap, Nuclei, ZAP, SQLMap, WPScan e oltre 20 altri)
 - ✅ **Profili di scansione** (`light`, `full`, `wordpress`) e scan mirati per singolo tool
+- ✅ **Feed di threat intelligence sempre aggiornati** da fonti ufficiali (NVD/NIST, CISA KEV, FIRST.org EPSS, template Nuclei, Exploit‑DB) — aggiornati **a ogni avvio** in una cache locale interrogabile anche offline
 - ✅ **Enrichment dei findings** (CVE/CWE/CVSS, NVD, ExploitDB, mapping OWASP e MITRE ATT&CK)
 - ✅ **Learning blocks** su ogni finding (spiegazione junior, rischio business, verifica manuale, skill successiva)
 - ✅ **Remediation roadmap** ordinata per impatto × effort e **trend storico** per target
@@ -398,6 +401,7 @@ Apri **http://localhost:8000**.
 | `templates/` + `static/` | Interfaccia (nav condivisa, wizard guidato, dettaglio scan, **Guida**) |
 | `report_generator.py` | Pipeline report PDF (font Inter, layout page-safe) |
 | `enrichment_engine.py` | Correlazione CVE/NVD/ExploitDB |
+| `feed_updater.py` | Gestore feed threat‑intel (NVD/CISA KEV/EPSS + definizioni scanner), refresh all'avvio e periodico |
 | `assets/fonts/` | Font Inter bundlato usato dai report PDF |
 | `tests/` | Test di regressione e sicurezza |
 | `installer.sh` / `installer.ps1` | Installer guidati (Linux/macOS, Windows) |

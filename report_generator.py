@@ -32,6 +32,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 
 from config import settings
 from design_tokens import PALETTE, SEVERITY_BG_HEX, SEVERITY_COLORS_HEX
+from feed_updater import get_feed_status
 from security import redact_sensitive_data
 
 # ── Fonts: Inter only (single family, two weights) ─────────────────────────────
@@ -1271,6 +1272,41 @@ def _scan_parameters_rows(
 
 
 # ── Main entry point ──────────────────────────────────────────────────────────
+def _threat_intel_sources_line(ss: Any) -> Optional["Paragraph"]:
+    """Riga minimale che dichiara le fonti ufficiali di threat intelligence.
+
+    Mostra quali feed (NVD/NIST, CISA KEV, EPSS, ecc.) erano aggiornati al
+    momento della generazione del report e quando, a supporto della
+    tracciabilità delle fonti. Degrada in modo silenzioso se lo stato dei feed
+    non è disponibile.
+    """
+    try:
+        status = get_feed_status()
+    except Exception:  # noqa: BLE001 - lo stato dei feed non deve mai bloccare il report
+        return None
+
+    feeds = status.get("feeds") or {}
+    definitions = status.get("definitions") or []
+    ok_labels = [
+        str(d.get("label", d.get("key")))
+        for d in definitions
+        if feeds.get(d.get("key"), {}).get("status") == "ok"
+    ]
+    labels = ok_labels or ["NVD / NIST", "CISA KEV", "FIRST.org EPSS"]
+
+    freshness = ""
+    last_run = status.get("last_run_at")
+    if last_run:
+        try:
+            dt = datetime.fromisoformat(last_run)
+            freshness = f" — last updated {dt.strftime('%Y-%m-%d %H:%M UTC')}"
+        except (TypeError, ValueError):
+            freshness = ""
+
+    text = "Threat intelligence sources: " + ", ".join(labels) + freshness
+    return Paragraph(html_escape(text), ss["BodyMuted"])
+
+
 def generate_report(
     scan_id: int,
     target: str,
@@ -1343,6 +1379,9 @@ def generate_report(
             ss["BodyMuted"],
         )
     )
+    sources_line = _threat_intel_sources_line(ss)
+    if sources_line is not None:
+        story.append(sources_line)
 
     # Scan type notice (light / wordpress)
     scan_type_notes = {

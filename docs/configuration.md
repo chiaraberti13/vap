@@ -264,6 +264,28 @@ python -m alembic revision -m "descrizione_migrazione"
 | `VAP_EXPLOITDB_TIMEOUT` | `10` | Timeout (sec). |
 | `VAP_EXPLOITDB_MAX_CVES` | `20` | Max CVE per query. |
 
+## Threat intelligence feeds (aggiornamento all'avvio)
+
+Aggiornamento automatico di vulnerabilità e definizioni scanner da **fonti
+ufficiali** (NVD/NIST, CISA KEV, FIRST.org EPSS, template Nuclei, Exploit-DB).
+Vedi la pagina [Threat Intelligence Feeds](threat-intelligence-feeds.md) per i
+dettagli sul funzionamento e sulla cache locale.
+
+| Variabile | Default | Descrizione |
+| --- | --- | --- |
+| `VAP_FEED_UPDATE_ENABLED` | `true` | Abilita/disabilita l'intero sottosistema feed. |
+| `VAP_FEED_UPDATE_ON_STARTUP` | `true` | Aggiorna i feed all'avvio (in background, non bloccante). |
+| `VAP_FEED_UPDATE_INTERVAL_HOURS` | `12` | Intervallo dell'aggiornamento periodico. |
+| `VAP_FEED_MIN_REFRESH_MINUTES` | `360` | Intervallo minimo tra due refresh (anti-stale). |
+| `VAP_FEED_UPDATE_TIMEOUT` | `60` | Timeout per ogni download/aggiornamento (sec). |
+| `VAP_FEEDS_DIR` | `feeds` | Directory della cache locale dei feed. |
+| `VAP_FEED_SOURCES` | `""` | Fonti da aggiornare (CSV). Vuoto = tutte. |
+| `VAP_FEED_CACHE_ENABLED` | `true` | Usa la cache locale (KEV/NVD) nell'enrichment. |
+| `VAP_NVD_RECENT_WINDOW_DAYS` | `7` | Finestra (giorni) per il corpus NVD recente. |
+| `VAP_NVD_FEED_MAX_RESULTS` | `2000` | Dimensione pagina del corpus NVD. |
+| `VAP_CISA_KEV_FEED_URL` | URL ufficiale CISA | Sorgente del catalogo KEV. |
+| `VAP_EPSS_FEED_URL` | `https://api.first.org/data/v1/epss` | Sorgente EPSS. |
+
 ## False Positive Model
 
 | Variabile | Default | Descrizione |
