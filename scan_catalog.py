@@ -70,8 +70,8 @@ def _entry(
 SCAN_CATALOG: Dict[str, ScanCatalogEntry] = {
     "full": _entry(
         id="full",
-        display_name="Full Stack Assessment",
-        category="Orchestrated",
+        display_name="Full Stack Assessment (web + web app + rete)",
+        category="Web App",
         level="intermediate",
         learning_objective="Comprendere una valutazione completa multi-tool end-to-end.",
         when_to_use="Assessment iniziale o prima di una release importante.",
@@ -90,7 +90,7 @@ SCAN_CATALOG: Dict[str, ScanCatalogEntry] = {
     "light": _entry(
         id="light",
         display_name="Light Baseline Scan",
-        category="Orchestrated",
+        category="Web",
         level="beginner",
         learning_objective="Eseguire una baseline rapida con basso impatto operativo.",
         when_to_use="Health-check periodico e triage iniziale di un asset.",
@@ -109,7 +109,7 @@ SCAN_CATALOG: Dict[str, ScanCatalogEntry] = {
     "wordpress": _entry(
         id="wordpress",
         display_name="WordPress Focused Assessment",
-        category="CMS",
+        category="Web App",
         level="intermediate",
         learning_objective="Analizzare rischi tipici di stack WordPress (core/plugin/theme).",
         when_to_use="Siti WordPress in produzione o staging con plugin di terze parti.",
@@ -125,33 +125,69 @@ SCAN_CATALOG: Dict[str, ScanCatalogEntry] = {
         interpretation_guide="Conferma manualmente versioni e vettori exploit prima di remediation.",
         next_learning_step="Studiare hardening WordPress (least privilege, update policy, WAF).",
     ),
+    "network": _entry(
+        id="network",
+        display_name="Network & Infrastructure Scan",
+        category="Rete",
+        level="intermediate",
+        learning_objective=(
+            "Mappare la superficie di rete (porte, servizi, versioni) e correlare i servizi "
+            "esposti a CVE note tramite gli script NSE di Nmap."
+        ),
+        when_to_use=(
+            "Quando vuoi capire cosa è raggiungibile a livello di rete/infrastruttura: porte aperte, "
+            "servizi e versioni potenzialmente vulnerabili, oltre alla configurazione TLS."
+        ),
+        when_not_to_use=(
+            "Su reti/sistemi senza autorizzazione esplicita o senza finestra di manutenzione concordata: "
+            "lo scan di rete è più rumoroso e visibile."
+        ),
+        owasp_tags=["A05", "A06"],
+        mitre_tags=["TA0007", "TA0043"],
+        expected_duration="10-45 min",
+        invasiveness="medium",
+        noise_level="high",
+        required_permissions="Autorizzazione esplicita del proprietario della rete/host.",
+        legal_notice="Lo scanning di rete non autorizzato è illegale: opera solo entro lo scope concordato.",
+        common_false_positives=[
+            "Versioni stimate da banner non sempre accurate",
+            "CVE associate via 'vulners' da confermare sul servizio reale",
+            "Porte filtrate segnalate in modo ambiguo",
+        ],
+        interpretation_guide=(
+            "Parti dai servizi con CVE ad alto CVSS/EPSS o presenti in CISA KEV; conferma versione e "
+            "raggiungibilità reali prima di pianificare il patching."
+        ),
+        next_learning_step="Approfondire NSE, segmentazione di rete e hardening dei servizi esposti.",
+    ),
 }
 
 
+# Categorie macro esposte al wizard: "Web", "Web App", "Rete".
 _TOOL_VARIANTS = {
     "nuclei": ("Nuclei", "Web", "Template signatures dipendenti da versione applicativa."),
-    "nmap": ("Nmap", "Infra", "Servizi filtrati o banner obfuscati possono alterare risultati."),
-    "whatweb": ("WhatWeb", "Recon", "Fingerprinting euristico suscettibile a header custom."),
-    "subfinder": ("Subfinder", "Recon", "Dati OSINT non sempre aggiornati o completi."),
-    "wpscan": ("WPScan", "CMS", "Enumerazione plugin/tema può rilevare componenti non realmente attivi."),
-    "wafw00f": ("wafw00f", "Recon", "Rilevamento WAF basato su signature può essere ambiguo."),
-    "testssl": ("testssl.sh", "Infra", "Cipher legacy segnalati anche quando mitigati da policy applicative."),
-    "theharvester": ("theHarvester", "Recon", "Le fonti OSINT possono restituire asset obsoleti o rumorosi."),
+    "nmap": ("Nmap", "Rete", "Servizi filtrati o banner obfuscati possono alterare risultati."),
+    "whatweb": ("WhatWeb", "Web", "Fingerprinting euristico suscettibile a header custom."),
+    "subfinder": ("Subfinder", "Web", "Dati OSINT non sempre aggiornati o completi."),
+    "wpscan": ("WPScan", "Web App", "Enumerazione plugin/tema può rilevare componenti non realmente attivi."),
+    "wafw00f": ("wafw00f", "Web", "Rilevamento WAF basato su signature può essere ambiguo."),
+    "testssl": ("testssl.sh", "Rete", "Cipher legacy segnalati anche quando mitigati da policy applicative."),
+    "theharvester": ("theHarvester", "Web", "Le fonti OSINT possono restituire asset obsoleti o rumorosi."),
     "nikto": ("Nikto", "Web", "Check storici non sempre rilevanti per stack moderni."),
     "dirsearch": ("Dirsearch", "Web", "Path protetti possono risultare come falsi negativi."),
-    "arjun": ("Arjun", "App", "Parametri candidati non sempre corrispondono a input realmente processati."),
-    "sqlmap": ("SQLMap", "App", "Parametri non exploitabili possono essere marcati come sospetti."),
-    "dalfox": ("Dalfox", "App", "Payload XSS riflessi possono non essere sfruttabili in contesto reale."),
-    "xsstrike": ("XSStrike", "App", "Payload riflessi non necessariamente sfruttabili."),
-    "zap": ("OWASP ZAP", "App", "Regole passive possono produrre warning informativi."),
-    "burp": ("Burp Scanner", "App", "Scanner automatico richiede sempre validazione manuale."),
-    "wapiti": ("Wapiti", "App", "Coverage limitata da crawling incompleto."),
-    "commix": ("Commix", "App", "Comandi filtrati lato server possono mascherare vulnerabilità reali."),
-    "httpx": ("httpx", "Recon", "Servizi intermittenti possono generare risultati non deterministici."),
-    "katana": ("Katana", "Recon", "Crawler può perdere route protette da autenticazione o feature flag."),
-    "nosqlmap": ("NoSQLMap", "App", "Endpoint non vulnerabili possono apparire sospetti in assenza di contesto."),
-    "acunetix": ("Acunetix", "App", "Euristiche proprietarie possono richiedere tuning per ridurre rumore."),
-    "nessus": ("Nessus", "Infra", "Plugin feed e credenziali influenzano profondità e accuratezza."),
+    "arjun": ("Arjun", "Web App", "Parametri candidati non sempre corrispondono a input realmente processati."),
+    "sqlmap": ("SQLMap", "Web App", "Parametri non exploitabili possono essere marcati come sospetti."),
+    "dalfox": ("Dalfox", "Web App", "Payload XSS riflessi possono non essere sfruttabili in contesto reale."),
+    "xsstrike": ("XSStrike", "Web App", "Payload riflessi non necessariamente sfruttabili."),
+    "zap": ("OWASP ZAP", "Web App", "Regole passive possono produrre warning informativi."),
+    "burp": ("Burp Scanner", "Web App", "Scanner automatico richiede sempre validazione manuale."),
+    "wapiti": ("Wapiti", "Web App", "Coverage limitata da crawling incompleto."),
+    "commix": ("Commix", "Web App", "Comandi filtrati lato server possono mascherare vulnerabilità reali."),
+    "httpx": ("httpx", "Web", "Servizi intermittenti possono generare risultati non deterministici."),
+    "katana": ("Katana", "Web", "Crawler può perdere route protette da autenticazione o feature flag."),
+    "nosqlmap": ("NoSQLMap", "Web App", "Endpoint non vulnerabili possono apparire sospetti in assenza di contesto."),
+    "acunetix": ("Acunetix", "Web App", "Euristiche proprietarie possono richiedere tuning per ridurre rumore."),
+    "nessus": ("Nessus", "Rete", "Plugin feed e credenziali influenzano profondità e accuratezza."),
 }
 
 _TOOL_COPYWRITING_OVERRIDES = {
@@ -288,6 +324,7 @@ TOOL_DESCRIPTIONS: Dict[str, str] = {
     "nuclei_wordpress": "Template Nuclei mirati a WordPress: CVE e configurazioni errate tipiche del CMS.",
     "nikto_headers": "Variante leggera di Nikto focalizzata sugli header di sicurezza HTTP.",
     "nmap_top_ports": "Scansione Nmap rapida sulle porte più comuni: bassa invasività, utile come baseline.",
+    "nmap_network": "Scansione Nmap di rete con rilevamento servizi/versioni e script NSE (vulners/vuln): associa i servizi esposti a CVE note.",
 }
 
 
@@ -361,6 +398,9 @@ GLOSSARY_TERMS: List[Dict[str, str]] = [
     {"term": "Enumeration", "definition": "Elencare in modo sistematico risorse del target: sottodomini, cartelle, utenti, plugin, parametri."},
     {"term": "Fingerprinting", "definition": "Identificare le tecnologie usate dal target (server, CMS, framework, versioni) dalle loro 'impronte'."},
     {"term": "Porta / servizio", "definition": "Una porta è un 'ingresso' di rete numerato; dietro può rispondere un servizio (web, mail, database). Le porte aperte sono superficie d'attacco."},
+    {"term": "Scansione di rete", "definition": "Analisi dell'infrastruttura per scoprire host, porte aperte e servizi raggiungibili: serve a capire cosa è esposto a livello di rete, non solo via web."},
+    {"term": "Service/version detection", "definition": "Tecnica (es. Nmap -sV) che identifica quale software e quale versione risponde su una porta: è il punto di partenza per correlare i servizi a CVE note."},
+    {"term": "NSE (Nmap Scripting Engine)", "definition": "Il motore di script di Nmap: estende la scansione con controlli avanzati, incluso lo script 'vulners' che mappa versione del servizio → CVE pubbliche."},
     {"term": "OWASP Top 10", "definition": "La lista, aggiornata periodicamente, delle 10 categorie di vulnerabilità web più critiche. Serve a classificare i findings."},
     {"term": "CVE", "definition": "Identificatore univoco di una vulnerabilità nota e pubblica (es. CVE-2024-1234)."},
     {"term": "CWE", "definition": "Classifica la categoria di debolezza sottostante (es. CWE-89 = SQL Injection), indipendente dal singolo CVE."},

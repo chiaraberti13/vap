@@ -14,6 +14,7 @@ Queste schede operative spiegano **quando usare ogni tipo di scansione** e come 
 - [Katana](katana.md)
 - [Light Baseline Scan](light.md)
 - [Nessus](nessus.md)
+- [Network & Infrastructure Scan](network.md)
 - [Nikto](nikto.md)
 - [Nmap](nmap.md)
 - [NoSQLMap](nosqlmap.md)

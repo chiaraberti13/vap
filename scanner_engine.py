@@ -98,6 +98,21 @@ class LightNmapScanner(NmapScanner):
         return super()._profile_args("quick")
 
 
+class NetworkNmapScanner(NmapScanner):
+    """Nmap variant for the network profile: service detection + NSE vuln scripts.
+
+    Esegue rilevamento servizio/versione e gli script NSE ``vulners`` e ``vuln``
+    che, a partire da prodotto/versione, individuano CVE note. Le CVE rilevate
+    confluiscono nell'enrichment (CVSS/CISA KEV/EPSS) dai feed ufficiali.
+    """
+
+    def _profile_args(self, _profile: str) -> List[str]:
+        return super()._profile_args("service")
+
+    def _script_args(self) -> List[str]:
+        return ["--script", "vulners,vuln"]
+
+
 SCANNERS_MAP = {
     "nuclei": NucleiScanner,
     "nmap": NmapScanner,
@@ -150,15 +165,18 @@ TOOL_DISPLAY_NAMES = {
     "nuclei_wordpress": "Nuclei (WordPress)",
     "nikto_headers": "Nikto (security headers)",
     "nmap_top_ports": "Nmap (top ports)",
+    "nmap_network": "Nmap (rete + CVE)",
 }
 PROFILE_SCANNERS_MAP = {
     "nuclei_wordpress": WordpressNucleiScanner,
     "nikto_headers": LightNiktoScanner,
     "nmap_top_ports": LightNmapScanner,
+    "nmap_network": NetworkNmapScanner,
 }
 SCAN_TYPE_PROFILES = {
     "light": ["whatweb", "nikto_headers", "nmap_top_ports", "httpx"],
     "wordpress": ["wpscan", "whatweb", "nikto", "nuclei_wordpress", "nmap", "wafw00f"],
+    "network": ["nmap_network", "testssl"],
 }
 PLUGIN_CONTRACT_VERSION = "1.0.0"
 

@@ -161,7 +161,8 @@ Open **http://localhost:8000**.
 - ✅ **Didactic modes** (Beginner / Analyst / Expert) with per‑parameter explanations and a built‑in glossary
 - ✅ **In‑app learning hub** (`/guida`): scan catalog, learning paths, glossary, safe‑usage rules
 - ✅ **Multi‑scanner orchestration** from one interface (Nmap, Nuclei, ZAP, SQLMap, WPScan, and 20+ more)
-- ✅ **Scan profiles** (`light`, `full`, `wordpress`) and tool‑specific scans
+- ✅ **Scan profiles** (`light`, `full`, `wordpress`, `network`) and tool‑specific scans, organized by category (**Web · Web App · Network**)
+- ✅ **Network & infrastructure scanning** (Nmap service/version detection + NSE `vulners`/`vuln`): exposed services are correlated to CVEs and enriched with CVSS/CISA KEV/EPSS
 - ✅ **Always‑updated threat‑intel feeds** from official sources (NVD/NIST, CISA KEV, FIRST.org EPSS, Nuclei templates, Exploit‑DB) — refreshed **at every startup** into a local, offline‑queryable cache
 - ✅ **Finding enrichment** (CVE/CWE/CVSS, NVD, ExploitDB, OWASP & MITRE ATT&CK mapping)
 - ✅ **Learning blocks** on every finding (junior explanation, business risk, manual verification, next skill)
@@ -477,7 +478,8 @@ Apri **http://localhost:8000**.
 - ✅ **Modalità didattiche** (Beginner / Analyst / Expert) con spiegazione di ogni parametro e glossario integrato
 - ✅ **Hub didattico integrato** (`/guida`): catalogo scansioni, percorsi, glossario, regole d'uso legale
 - ✅ **Orchestrazione multi‑scanner** da un'unica interfaccia (Nmap, Nuclei, ZAP, SQLMap, WPScan e oltre 20 altri)
-- ✅ **Profili di scansione** (`light`, `full`, `wordpress`) e scan mirati per singolo tool
+- ✅ **Profili di scansione** (`light`, `full`, `wordpress`, `network`) e scan mirati per singolo tool, organizzati per categoria (**Web · Web App · Rete**)
+- ✅ **Scansione di rete e infrastruttura** (Nmap service/version + script NSE `vulners`/`vuln`): i servizi esposti vengono correlati a CVE e arricchiti con CVSS/CISA KEV/EPSS
 - ✅ **Feed di threat intelligence sempre aggiornati** da fonti ufficiali (NVD/NIST, CISA KEV, FIRST.org EPSS, template Nuclei, Exploit‑DB) — aggiornati **a ogni avvio** in una cache locale interrogabile anche offline
 - ✅ **Enrichment dei findings** (CVE/CWE/CVSS, NVD, ExploitDB, mapping OWASP e MITRE ATT&CK)
 - ✅ **Learning blocks** su ogni finding (spiegazione junior, rischio business, verifica manuale, skill successiva)

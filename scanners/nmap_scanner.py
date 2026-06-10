@@ -4,12 +4,17 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Dict, List
 from urllib.parse import urlparse
+import re
 import shlex
 import shutil
 import subprocess
 import xml.etree.ElementTree as ET
 
 from config import settings
+
+
+# Riconosce gli identificatori CVE nell'output degli script NSE (es. vulners).
+CVE_REGEX = re.compile(r"CVE-\d{4}-\d{4,7}", re.IGNORECASE)
 
 
 VULNERABLE_SERVICE_HINTS = {
@@ -121,6 +126,7 @@ class NmapScanner:
                         "evidence": "HTTP/1.1 200 OK\nServer: nginx/1.18.0 (Ubuntu)\nX-Powered-By: PHP/7.4.3",
                         "affected_component": "HTTP Server — header di risposta",
                         "cwe": ["CWE-200"],
+                        "cve": ["CVE-2021-23017"],
                         "cvss_score": 3.7,
                         "tags": ["owasp-a05", "information-disclosure", "banner-disclosure"],
                         "references": [
@@ -189,16 +195,23 @@ class NmapScanner:
     def _build_command(self, target: str, profile: str) -> List[str]:
         base_args = ["nmap", "-sV", "-sC", "-O"]
         profile_args = self._profile_args(profile)
+        script_args = self._script_args()
         additional_args = shlex.split(settings.nmap_additional_args)
-        return [*base_args, *profile_args, *additional_args, "-oX", "-", target]
+        return [*base_args, *profile_args, *script_args, *additional_args, "-oX", "-", target]
 
     def _profile_args(self, profile: str) -> List[str]:
         profiles = {
             "quick": ["-T4", "-F"],
+            "service": ["-T4"],
             "full": ["-T4", "-p-"],
+            "vuln": ["-T4"],
             "stealth": ["-sS", "-T2", "-Pn"],
         }
         return profiles.get(profile, profiles["quick"])
+
+    def _script_args(self) -> List[str]:
+        """Argomenti NSE aggiuntivi. Le sottoclassi (es. rete) li sovrascrivono."""
+        return []
 
     def _parse_nmap_xml(self, xml_output: str) -> List[Dict[str, Any]]:
         findings: List[Dict[str, Any]] = []
@@ -303,14 +316,23 @@ class NmapScanner:
             output = script.get("output", "").strip()
             if not output:
                 continue
+            cves = sorted({match.upper() for match in CVE_REGEX.findall(output)})
             severity = "medium" if "VULNERABLE" in output.upper() else "info"
-            if "vuln" in script_id:
-                severity = "high"
-            findings.append(
-                {
-                    "title": f"Risultato script Nmap: {script_id}",
-                    "severity": severity,
-                    "description": f"{host_label}: {output}",
-                    "recommendation": "Analizzare il risultato e applicare le mitigazioni indicate.",
-                }
-            )
+            if "vuln" in script_id or "vulners" in script_id:
+                severity = "high" if cves else "medium"
+            title = f"Risultato script Nmap: {script_id}"
+            if cves:
+                title += f" — {len(cves)} CVE rilevate"
+            finding: Dict[str, Any] = {
+                "title": title,
+                "severity": severity,
+                "description": f"{host_label}: {output}",
+                "recommendation": "Analizzare il risultato e applicare le mitigazioni indicate.",
+            }
+            if cves:
+                finding["cve"] = cves
+                finding["recommendation"] = (
+                    "Verificare le CVE rilevate (vedi enrichment NVD/CVSS/EPSS) e applicare "
+                    "patch o aggiornamenti del servizio interessato."
+                )
+            findings.append(finding)
