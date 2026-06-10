@@ -215,6 +215,31 @@ class Settings:
     exploitdb_searchsploit_path: str = os.getenv("VAP_EXPLOITDB_SEARCHSPLOIT_PATH", "searchsploit")
     exploitdb_timeout_seconds: int = int(os.getenv("VAP_EXPLOITDB_TIMEOUT", "10"))
     exploitdb_max_cves: int = int(os.getenv("VAP_EXPLOITDB_MAX_CVES", "20"))
+    # ── Threat intelligence feeds (fonti ufficiali, aggiornate all'avvio) ─────
+    # Cache locale dei feed (CVE/CVSS NVD, CISA KEV, EPSS) interrogabile offline.
+    feeds_dir: Path = Path(os.getenv("VAP_FEEDS_DIR", "feeds"))
+    # Abilita/disabilita globalmente l'aggiornamento dei feed da fonti ufficiali.
+    feed_update_enabled: bool = os.getenv("VAP_FEED_UPDATE_ENABLED", "true").lower() == "true"
+    # Aggiorna i feed all'avvio dell'applicazione (in background, non bloccante).
+    feed_update_on_startup: bool = os.getenv("VAP_FEED_UPDATE_ON_STARTUP", "true").lower() == "true"
+    # Intervallo dell'aggiornamento periodico in background.
+    feed_update_interval_hours: int = int(os.getenv("VAP_FEED_UPDATE_INTERVAL_HOURS", "12"))
+    # Guardia anti-stale: intervallo minimo tra due refresh (evita download a ogni reload).
+    feed_min_refresh_interval_minutes: int = int(os.getenv("VAP_FEED_MIN_REFRESH_MINUTES", "360"))
+    # Timeout per ogni operazione di download/aggiornamento feed.
+    feed_update_timeout_seconds: int = int(os.getenv("VAP_FEED_UPDATE_TIMEOUT", "60"))
+    # Fonti da aggiornare (CSV). Vuoto = tutte: nvd,cisa_kev,epss,nuclei_templates,exploitdb.
+    feed_sources: str = os.getenv("VAP_FEED_SOURCES", "")
+    # Usa la cache locale dei feed nell'enrichment (KEV/NVD offline, più veloce).
+    feed_cache_enabled: bool = os.getenv("VAP_FEED_CACHE_ENABLED", "true").lower() == "true"
+    # Finestra (giorni) e dimensione pagina per il corpus NVD recente.
+    nvd_recent_window_days: int = int(os.getenv("VAP_NVD_RECENT_WINDOW_DAYS", "7"))
+    nvd_feed_max_results: int = int(os.getenv("VAP_NVD_FEED_MAX_RESULTS", "2000"))
+    cisa_kev_feed_url: str = os.getenv(
+        "VAP_CISA_KEV_FEED_URL",
+        "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json",
+    )
+    epss_feed_url: str = os.getenv("VAP_EPSS_FEED_URL", "https://api.first.org/data/v1/epss")
     false_positive_medium_threshold: float = float(os.getenv("VAP_FP_MEDIUM_THRESHOLD", "0.4"))
     false_positive_high_threshold: float = float(os.getenv("VAP_FP_HIGH_THRESHOLD", "0.7"))
     celery_broker_url: str = os.getenv("VAP_CELERY_BROKER_URL", "redis://localhost:6379/0")

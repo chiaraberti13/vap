@@ -13,6 +13,7 @@ import requests
 
 from config import settings
 from false_positive_model import FalsePositiveModel, build_features
+from feed_updater import load_local_kev_catalog, load_local_nvd_index
 
 
 MITRE_CWE_MAPPING: Dict[str, List[Dict[str, Any]]] = {
@@ -491,11 +492,31 @@ def _extract_cves(findings: Iterable[Dict[str, Any]]) -> List[str]:
 
 
 def _fetch_nvd_metadata(cves: List[str]) -> Dict[str, Dict[str, Any]]:
-    if not settings.enable_live_scans or not settings.nvd_api_key:
-        return {}
-
     results: Dict[str, Dict[str, Any]] = {}
+
+    # Sorgente offline: corpus locale delle CVE NVD recenti (aggiornato dai feed).
+    if getattr(settings, "feed_cache_enabled", False):
+        local_index = load_local_nvd_index()
+        for cve in cves:
+            entry = local_index.get(cve)
+            if not entry:
+                continue
+            results[cve] = {
+                "cve": cve,
+                "description": entry.get("description", ""),
+                "cvss_score": entry.get("cvss_score"),
+                "cvss_vector": entry.get("cvss_vector"),
+                "fixed_in_version": None,
+                "references": [],
+                "source": "NVD (cache locale)",
+            }
+
+    if not settings.enable_live_scans or not settings.nvd_api_key:
+        return results
+
     for cve in cves[: settings.nvd_max_cves]:
+        if cve in results:
+            continue  # già risolta dalla cache locale
         try:
             response = requests.get(
                 settings.nvd_api_base_url,
@@ -688,6 +709,12 @@ def _fetch_epss_metadata(cves: List[str]) -> Dict[str, Dict[str, Any]]:
 
 
 def _fetch_cisa_kev_catalog() -> Dict[str, Dict[str, Any]]:
+    # Sorgente offline preferita: catalogo KEV completo dalla cache locale.
+    if getattr(settings, "feed_cache_enabled", False):
+        local = load_local_kev_catalog()
+        if local:
+            return local
+
     if not settings.enable_live_scans:
         return {}
 

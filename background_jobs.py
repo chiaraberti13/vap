@@ -4,15 +4,16 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 import json
+import logging
 from pathlib import Path
 from typing import Any, Dict, List
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
-import requests
 
 from config import settings
 from database import AuditEvent, ConsentRecord, SessionLocal, Scan
+from feed_updater import refresh_all_feeds
 from tasks import orchestrate_scan
 
 
@@ -106,27 +107,31 @@ def compress_old_reports() -> None:
         db.commit()
 
 
-def update_cve_database() -> None:
-    payload = {"updated_at": datetime.now(timezone.utc).isoformat()}
-    cache_path = settings.reports_dir / "cve_cache.json"
-    cache_path.parent.mkdir(parents=True, exist_ok=True)
+def update_threat_intelligence_feeds() -> None:
+    """Aggiorna i feed di vulnerabilità/scanner da fonti ufficiali.
 
-    cve_url = "https://services.nvd.nist.gov/rest/json/cves/2.0?resultsPerPage=1"
+    Delega al gestore unificato in :mod:`feed_updater`, che scarica CVE/CVSS da
+    NVD, il catalogo CISA KEV, il modello EPSS e (se i tool sono installati) i
+    template di Nuclei e il database Exploit-DB, scrivendo un manifest di stato.
+    """
     try:
-        response = requests.get(cve_url, timeout=10)
-        response.raise_for_status()
-        payload["latest"] = response.json()
-    except Exception:
-        payload["error"] = "Aggiornamento CVE non riuscito."
-
-    cache_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+        refresh_all_feeds()
+    except Exception:  # noqa: BLE001 - un job periodico non deve mai propagare eccezioni
+        logging.getLogger("vap.feeds").exception("Aggiornamento feed periodico non riuscito.")
 
 
 def start_background_jobs() -> AsyncIOScheduler:
     scheduler = AsyncIOScheduler()
     scheduler.add_job(cleanup_old_reports, "interval", hours=24, id="cleanup_reports", replace_existing=True)
     scheduler.add_job(compress_old_reports, "interval", hours=24, id="compress_reports", replace_existing=True)
-    scheduler.add_job(update_cve_database, "interval", hours=12, id="update_cve", replace_existing=True)
+    if settings.feed_update_enabled:
+        scheduler.add_job(
+            update_threat_intelligence_feeds,
+            "interval",
+            hours=max(1, settings.feed_update_interval_hours),
+            id="update_threat_intel_feeds",
+            replace_existing=True,
+        )
     _schedule_scans(scheduler)
     scheduler.start()
     return scheduler
